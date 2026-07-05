@@ -27,7 +27,7 @@ async function count_duplicate(conditions: Condition): Promise<Response> {
         };
     }
 }
-async function create(payload: Payload, emp_id: string): Promise<Response> {
+async function create(payload: Payload, emp_id: string | null): Promise<Response> {
     const sql = `
         INSERT INTO public.customers (
             customer_name_th,
@@ -134,7 +134,7 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
             JOIN public.subdistricts ON customers.customer_subdistrict_id = subdistricts.subdistrict_id
             JOIN public.districts ON customers.customer_district_id = districts.district_id
             JOIN public.provinces ON customers.customer_province_id = provinces.province_id
-            JOIN public.employees ON customers.customer_emp_id = employees.emp_id
+            LEFT JOIN public.employees ON customers.customer_emp_id = employees.emp_id
             WHERE 1=1${conditions.sql}
             ORDER BY customer_created_at DESC
         )
@@ -164,7 +164,7 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
         };
     }
 }
-async function soft_delete(id: string, emp_id: string): Promise<Response> {
+async function soft_delete(id: string, emp_id: string | null): Promise<Response> {
     const sql = `
         UPDATE public.customers
         SET
@@ -197,7 +197,7 @@ async function soft_delete(id: string, emp_id: string): Promise<Response> {
         };
     }
 }
-async function update(id: string, payload: Payload, emp_id: string): Promise<Response> {
+async function update(id: string, payload: Payload, emp_id: string | null): Promise<Response> {
     const sql = `
         UPDATE public.customers
         SET
@@ -262,7 +262,7 @@ async function update(id: string, payload: Payload, emp_id: string): Promise<Res
         };
     }
 }
-async function update_status(id: string, status: string, emp_id: string): Promise<Response> {
+async function update_status(id: string, status: string, emp_id: string | null): Promise<Response> {
     const sql = `
         UPDATE public.customers
         SET
