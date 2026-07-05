@@ -41,19 +41,20 @@ const module_name = 'Customer';
 async function create(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
-        const user = request.user;
-        if (!user || !user.id) {
-            console.error("[Controller] Missing user ID from authenticated request.");
-            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
-                status: HttpStatus.UNAUTHORIZED,
-                statuscode: HttpStatusCode.UNAUTHORIZED,
-                details: {
-                    error: ReplyErrorField.UNAUTHORIZED,
-                    message: ReplyErrorMessage.UNAUTHORIZED
-                }
-            });
-        }
-        const emp_id = user.id;
+        // const user = request.user;
+        // if (!user || !user.id) {
+        //     console.error("[Controller] Missing user ID from authenticated request.");
+        //     return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
+        //         status: HttpStatus.UNAUTHORIZED,
+        //         statuscode: HttpStatusCode.UNAUTHORIZED,
+        //         details: {
+        //             error: ReplyErrorField.UNAUTHORIZED,
+        //             message: ReplyErrorMessage.UNAUTHORIZED
+        //         }
+        //     });
+        // }
+        // const emp_id: string = user.id;
+        const emp_id = null;
         const payload: Payload = sanitize_payload(request.body);
         console.log("[Controller] Creating customer with payload:", payload);
         const invalid_fields: ValidationError[] = [];
@@ -475,20 +476,20 @@ async function get(request: any, reply: any) {
 async function soft_delete(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
-        const user = request.user;
-        if (!user || !user.id) {
-            console.error("[Controller] Missing user ID from authenticated request.");
-            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
-                status: HttpStatus.UNAUTHORIZED,
-                statuscode: HttpStatusCode.UNAUTHORIZED,
-                details: {
-                    error: ReplyErrorField.UNAUTHORIZED,
-                    message: ReplyErrorMessage.UNAUTHORIZED
-                }
-            });
-        }
-        const emp_id = user.id;
-
+        // const user = request.user;
+        // if (!user || !user.id) {
+        //     console.error("[Controller] Missing user ID from authenticated request.");
+        //     return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
+        //         status: HttpStatus.UNAUTHORIZED,
+        //         statuscode: HttpStatusCode.UNAUTHORIZED,
+        //         details: {
+        //             error: ReplyErrorField.UNAUTHORIZED,
+        //             message: ReplyErrorMessage.UNAUTHORIZED
+        //         }
+        //     });
+        // }
+        // const emp_id: string = user.id;
+        const emp_id = null;
         if (!request.params.customer_id) {
             console.error("[Controller] Missing customer ID for customer deletion.");
             return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>{
@@ -592,19 +593,20 @@ async function soft_delete(request: any, reply: any) {
 async function update(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
-        const user = request.user;
-        if (!user || !user.id) {
-            console.error("[Controller] Missing user ID from authenticated request.");
-            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
-                status: HttpStatus.UNAUTHORIZED,
-                statuscode: HttpStatusCode.UNAUTHORIZED,
-                details: {
-                    error: ReplyErrorField.UNAUTHORIZED,
-                    message: ReplyErrorMessage.UNAUTHORIZED
-                }
-            });
-        }
-        const emp_id = user.id;
+        // const user = request.user;
+        // if (!user || !user.id) {
+        //     console.error("[Controller] Missing user ID from authenticated request.");
+        //     return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
+        //         status: HttpStatus.UNAUTHORIZED,
+        //         statuscode: HttpStatusCode.UNAUTHORIZED,
+        //         details: {
+        //             error: ReplyErrorField.UNAUTHORIZED,
+        //             message: ReplyErrorMessage.UNAUTHORIZED
+        //         }
+        //     });
+        // }
+        // const emp_id: string = user.id;
+        const emp_id = null;
         const payload: Payload = sanitize_payload(request.body);
         const customer_id: string = sanitize_string(request.params.customer_id);
         const customer_data = await service.get({ sql: ' AND customer_id = $1 ', params: [customer_id] });
@@ -882,20 +884,20 @@ async function update(request: any, reply: any) {
 async function update_status(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
-        const user = request.user;
-        if (!user || !user.id) {
-            console.error("[Controller] Missing user ID from authenticated request.");
-            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
-                status: HttpStatus.UNAUTHORIZED,
-                statuscode: HttpStatusCode.UNAUTHORIZED,
-                details: {
-                    error: ReplyErrorField.UNAUTHORIZED,
-                    message: ReplyErrorMessage.UNAUTHORIZED
-                }
-            });
-        }
-        const emp_id = user.id;
-
+        // const user = request.user;
+        // if (!user || !user.id) {
+        //     console.error("[Controller] Missing user ID from authenticated request.");
+        //     return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
+        //         status: HttpStatus.UNAUTHORIZED,
+        //         statuscode: HttpStatusCode.UNAUTHORIZED,
+        //         details: {
+        //             error: ReplyErrorField.UNAUTHORIZED,
+        //             message: ReplyErrorMessage.UNAUTHORIZED
+        //         }
+        //     });
+        // }
+        // const emp_id: string = user.id;
+        const emp_id = null;
         const missing_fields: string[] = field_validator(request.body, [
             'status'
         ]);
