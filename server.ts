@@ -17,6 +17,10 @@ app.prepare().then(async () => {
         prefix: "/api/:version/accounting/customers"
     });
 
+    server.register(import("./api/modules/steel_round_bars/router"), {
+        prefix: "/api/:version/steel-round-bars"
+    });
+
     server.register(import("./api/modules/ms_plates/router"), {
         prefix: "/api/:version/accounting/ms-plates"
     });
