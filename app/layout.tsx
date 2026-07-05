@@ -1,5 +1,13 @@
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <div>{children}</div>
-  )
+    <html lang="th">
+      <body>
+        {children}
+      </body>
+    </html>
+  );
 }
