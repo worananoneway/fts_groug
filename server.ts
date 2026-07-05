@@ -17,6 +17,10 @@ app.prepare().then(async () => {
         prefix: "/api/:version/accounting/customers"
     });
 
+    server.register(import("./api/modules/steel_round_bars/router"), {
+        prefix: "/api/:version/steel-round-bars"
+    });
+
     // server.register(import("../tfs_groug/api/modules/employee/router"), {
     //     prefix: "/api/:version/hrm-payroll/employees"
     // });
