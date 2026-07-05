@@ -112,6 +112,7 @@
  msp_remark
  msp_created_at
  msp_updated_at
+ msp_emp_id
 
 ## 8. wastrel_steel_round_bars
 
