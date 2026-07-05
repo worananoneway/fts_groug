@@ -4,10 +4,8 @@ import { Condition, Response, HttpStatusCode } from "@/api/utils/shared_types";
 
 async function count_duplicate(conditions: Condition): Promise<Response> {
     const sql = `
-        SELECT 
-            (SELECT COUNT(customer_id) FROM public.customers WHERE customer_tax_id = $1${conditions.sql}) AS duplicate_tax_id,
-            (SELECT COUNT(customer_id) FROM public.customers WHERE customer_name_th = $2${conditions.sql}) AS duplicate_name_th,
-            (SELECT COUNT(customer_id) FROM public.customers WHERE customer_name_en = $3${conditions.sql}) AS duplicate_name_en
+        SELECT
+            (SELECT COUNT(srb_id) FROM public.steel_round_bars WHERE srb_code = $1${conditions.sql}) AS duplicate_code
     `;
     try {
         const result = await sql_query(sql, [
@@ -27,51 +25,43 @@ async function count_duplicate(conditions: Condition): Promise<Response> {
         };
     }
 }
-async function create(payload: Payload, emp_id: string | null): Promise<Response> {
+async function create(payload: Payload): Promise<Response> {
     const sql = `
-        INSERT INTO public.customers (
-            customer_name_th,
-            customer_name_en,
-            customer_tax_id,
-            customer_tax_type,
-            customer_contact_name,
-            customer_contact_phone,
-            customer_contact_fax,
-            customer_contact_email,
-            customer_address,
-            customer_subdistrict_id,
-            customer_district_id,
-            customer_province_id,
-            customer_postcode,
-            customer_branch_type,
-            customer_branch_number,
-            customer_emp_id,
-            customer_status
+        INSERT INTO public.steel_round_bars (
+            srb_mm_id,
+            srb_code,
+            srb_diameter,
+            srb_length,
+            srb_quantity,
+            srb_available_quantity,
+            srb_loc_id,
+            srb_location_type,
+            srb_location,
+            srb_status,
+            srb_received_date,
+            srb_remark
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,'Active'
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, 'AVAILABLE', $10, $11
         ) RETURNING *;
     `;
     try {
+        const quantity = payload.quantity ?? 1;
+        const available_quantity = payload.available_quantity ?? quantity;
         const result = await sql_query(sql, [
-            payload.name_th,
-            payload.name_en,
-            payload.tax_id,
-            payload.tax_type,
-            payload.contact_name,
-            payload.contact_phone,
-            payload.contact_fax,
-            payload.contact_email,
-            payload.address,
-            payload.subdistrict_id,
-            payload.district_id,
-            payload.province_id,
-            payload.postcode,
-            payload.branch_type,
-            payload.branch_number,
-            emp_id
+            payload.mm_id,
+            payload.code,
+            payload.diameter,
+            payload.length,
+            quantity,
+            available_quantity,
+            payload.loc_id ?? null,
+            payload.location_type ?? null,
+            payload.location ?? null,
+            payload.received_date ?? null,
+            payload.remark ?? null
         ]);
         if (result.length === 0) {
-            console.error("[Service] Failed to create customer: No row was created.");
+            console.error("[Service] Failed to create steel round bar: No row was created.");
             return {
                 statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
                 error: "No row was created.",
@@ -84,7 +74,7 @@ async function create(payload: Payload, emp_id: string | null): Promise<Response
             data: result
         };
     } catch (error) {
-        console.error("[Service] An error occurred during creating customer:", error);
+        console.error("[Service] An error occurred during creating steel round bar:", error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -94,59 +84,45 @@ async function create(payload: Payload, emp_id: string | null): Promise<Response
 }
 async function get(conditions: Condition = { sql: "", params: [] }, filter: string = "*"): Promise<Response> {
     const sql = `
-        WITH customer_cte AS (
-            SELECT 
-                customer_id,
-                customer_display_id,
-                customer_name_th,
-                customer_name_en,
-                customer_tax_id,
-                customer_tax_type,
-                customer_contact_name,
-                customer_contact_phone,
-                customer_contact_fax,
-                customer_contact_email,
-                customer_address,
-                customer_subdistrict_id,
-                subdistrict_name_th AS customer_subdistrict_name_th,
-                subdistrict_name_en AS customer_subdistrict_name_en,
-                customer_district_id,
-                district_name_th AS customer_district_name_th,
-                district_name_en AS customer_district_name_en,
-                customer_province_id,
-                province_name_th AS customer_province_name_th,
-                province_name_en AS customer_province_name_en,
-                customer_postcode,
-                customer_branch_type,
-                customer_branch_number,
-                customer_pp20_file,
-                customer_certificate_file,
-                customer_created_at,
-                customer_updated_at,
-                customer_emp_id,
-                emp_prefix AS customer_emp_prefix,
-                emp_firstname_th AS customer_emp_firstname_th,
-                emp_lastname_th AS customer_emp_lastname_th,
-                emp_firstname_en AS customer_emp_firstname_en,
-                emp_lastname_en AS customer_emp_lastname_en,
-                customer_status
-            FROM public.customers
-            JOIN public.subdistricts ON customers.customer_subdistrict_id = subdistricts.subdistrict_id
-            JOIN public.districts ON customers.customer_district_id = districts.district_id
-            JOIN public.provinces ON customers.customer_province_id = provinces.province_id
-            LEFT JOIN public.employees ON customers.customer_emp_id = employees.emp_id
+        WITH srb_cte AS (
+            SELECT
+                srb_id,
+                srb_mm_id,
+                mm_code AS srb_mm_code,
+                mm_name AS srb_mm_name,
+                mm_shape_type AS srb_mm_shape_type,
+                mm_grade AS srb_mm_grade,
+                srb_code,
+                srb_diameter,
+                srb_length,
+                srb_quantity,
+                srb_available_quantity,
+                srb_loc_id,
+                loc_code AS srb_loc_code,
+                loc_name AS srb_loc_name,
+                loc_type AS srb_loc_type,
+                srb_location_type,
+                srb_location,
+                srb_status,
+                srb_received_date,
+                srb_remark,
+                srb_created_at,
+                srb_updated_at
+            FROM public.steel_round_bars
+            LEFT JOIN public.material_masters ON steel_round_bars.srb_mm_id = material_masters.mm_id
+            LEFT JOIN public.locations ON steel_round_bars.srb_loc_id = locations.loc_id
             WHERE 1=1${conditions.sql}
-            ORDER BY customer_created_at DESC
+            ORDER BY srb_created_at DESC
         )
-        SELECT ${filter} FROM customer_cte;
+        SELECT ${filter} FROM srb_cte;
     `;
     try {
         const results = await sql_query(sql, conditions.params);
         if (results.length === 0) {
-            console.error("[Service] Failed to update customer: Customer not found.");
+            console.error("[Service] Failed to find steel round bar(s): Not found.");
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "Customer not found.",
+                error: "Steel round bar not found.",
                 data: null
             };
         }
@@ -156,7 +132,7 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
             data: results
         };
     } catch (error) {
-        console.error("[Service] An error occurred during getting customers:", error);
+        console.error("[Service] An error occurred during getting steel round bars:", error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -166,17 +142,17 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
 }
 async function soft_delete(id: string, emp_id: string | null): Promise<Response> {
     const sql = `
-        UPDATE public.customers
+        UPDATE public.steel_round_bars
         SET
-            customer_status = 'Deleted',
-            customer_emp_id = $2
-        WHERE customer_id = $1
-        RETURNING customer_id;
+            srb_status = 'SCRAP'
+        WHERE srb_id = $1
+        customer_emp_id = $2
+        RETURNING srb_id;
     `;
     try {
-        const result = await sql_query(sql, [id, emp_id]);
+        const result = await sql_query(sql, [id]);
         if (result.length === 0) {
-            console.error("[Service] Failed to delete customer: No row was deleted.");
+            console.error("[Service] Failed to delete steel round bar: No row was deleted.");
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
                 error: "No row was deleted.",
@@ -189,7 +165,7 @@ async function soft_delete(id: string, emp_id: string | null): Promise<Response>
             data: null
         };
     } catch (error) {
-        console.error("[Service] An error occurred during deleting customer:", error);
+        console.error("[Service] An error occurred during deleting steel round bar:", error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -197,51 +173,41 @@ async function soft_delete(id: string, emp_id: string | null): Promise<Response>
         };
     }
 }
-async function update(id: string, payload: Payload, emp_id: string | null): Promise<Response> {
+async function update(id: string, payload: Payload): Promise<Response> {
     const sql = `
-        UPDATE public.customers
+        UPDATE public.steel_round_bars
         SET
-            customer_name_th = $1,
-            customer_name_en = $2,
-            customer_tax_id = $3,
-            customer_tax_type = $4,
-            customer_contact_name = $5,
-            customer_contact_phone = $6,
-            customer_contact_fax = $7,
-            customer_contact_email = $8,
-            customer_address = $9,
-            customer_subdistrict_id = $10,
-            customer_district_id = $11,
-            customer_province_id = $12,
-            customer_postcode = $13,
-            customer_branch_type = $14,
-            customer_branch_number = $15,
-            customer_emp_id = $16
-        WHERE customer_id = $17
-        RETURNING customer_id;
+            srb_mm_id = $1,
+            srb_code = $2,
+            srb_diameter = $3,
+            srb_length = $4,
+            srb_quantity = $5,
+            srb_available_quantity = $6,
+            srb_loc_id = $7,
+            srb_location_type = $8,
+            srb_location = $9,
+            srb_received_date = $10,
+            srb_remark = $11
+        WHERE srb_id = $12
+        RETURNING srb_id;
     `;
     try {
         const result = await sql_query(sql, [
-            payload.name_th,
-            payload.name_en,
-            payload.tax_id,
-            payload.tax_type,
-            payload.contact_name,
-            payload.contact_phone,
-            payload.contact_fax,
-            payload.contact_email,
-            payload.address,
-            payload.subdistrict_id,
-            payload.district_id,
-            payload.province_id,
-            payload.postcode,
-            payload.branch_type,
-            payload.branch_number,
-            emp_id,
+            payload.mm_id,
+            payload.code,
+            payload.diameter,
+            payload.length,
+            payload.quantity,
+            payload.available_quantity,
+            payload.loc_id,
+            payload.location_type,
+            payload.location,
+            payload.received_date,
+            payload.remark,
             id
         ]);
         if (result.length === 0) {
-            console.error("[Service] Failed to update customer: No row was updated.");
+            console.error("[Service] Failed to update steel round bar: No row was updated.");
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
                 error: "No row was updated.",
@@ -254,7 +220,7 @@ async function update(id: string, payload: Payload, emp_id: string | null): Prom
             data: null
         };
     } catch (error) {
-        console.error("[Service] An error occurred during updating customer:", error);
+        console.error("[Service] An error occurred during updating steel round bar:", error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
