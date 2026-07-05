@@ -4,11 +4,13 @@ import dotenv from "dotenv";
 dotenv.config({ path: `${__dirname}/../config/db.env` });
 const db_config = process.env.DB_MODE === "prod" ? {
     host: process.env.DB_HOST_PROD,
+    port: Number(process.env.DB_PORT_PROD),
     user: process.env.DB_USER_PROD,
     password: process.env.DB_PASSWORD_PROD,
     database: process.env.DB_DATABASE_PROD,
 } : {
     host: process.env.DB_HOST_DEV,
+    port: Number(process.env.DB_PORT_DEV),
     user: process.env.DB_USER_DEV,
     password: process.env.DB_PASSWORD_DEV,
     database: process.env.DB_DATABASE_DEV,
