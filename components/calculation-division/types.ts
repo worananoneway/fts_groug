@@ -170,7 +170,7 @@ export interface Notice {
 export interface DataStatus {
   loading: boolean;
   error: string | null;
-  source: "sample" | "api";
+  source: "api" | "none";
 }
 
 export interface CalculationDivisionContextValue {
