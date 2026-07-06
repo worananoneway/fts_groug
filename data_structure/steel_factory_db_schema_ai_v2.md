@@ -1115,6 +1115,245 @@ tables:
         nullable: true
         not_null: false
         default: null
+  - name: projects
+    columns:
+      - name: project_id
+        type: 'varchar(20)'
+        nullable: false
+        not_null: true
+        default: 'generate_unique_id()'
+        primary_key: true
+      - name: project_display_id
+        type: 'varchar(11)'
+        nullable: false
+        not_null: true
+        default: 'gen_project_display_id()'
+      - name: project_name_th
+        type: 'varchar(100)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: project_name_en
+        type: 'varchar(100)'
+        nullable: false
+        not_null: true
+        default: null
+      - name: project_contact_email
+        type: 'varchar(100)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: project_contact_fax
+        type: 'varchar(15)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: project_contact_name
+        type: 'varchar(100)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: project_contact_phone
+        type: 'varchar(15)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: project_customer_id
+        type: 'varchar(20)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: project_budget
+        type: 'numeric(15, 2)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: project_closing_date
+        type: 'date'
+        nullable: true
+        not_null: false
+        default: null
+      - name: project_note
+        type: 'varchar(400)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: project_manager_id
+        type: 'varchar(20)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: project_status
+        type: 'public."project_enum"'
+        nullable: false
+        not_null: true
+        default: '''Opened''::public."project_enum"'
+      - name: project_emp_id
+        type: 'varchar(20)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: project_created_at
+        type: 'timestamptz'
+        nullable: false
+        not_null: true
+        default: 'CURRENT_TIMESTAMP'
+      - name: project_updated_at
+        type: 'timestamptz'
+        nullable: false
+        not_null: true
+        default: 'CURRENT_TIMESTAMP'
+      - name: project_customer_po
+        type: 'varchar'
+        nullable: true
+        not_null: false
+        default: null
+  - name: purchase_orders
+    columns:
+      - name: po_id
+        type: 'varchar(20)'
+        nullable: false
+        not_null: true
+        default: 'generate_unique_id()'
+        primary_key: true
+      - name: po_number
+        type: 'varchar(20)'
+        nullable: false
+        not_null: true
+        default: 'gen_purchase_order_number()'
+      - name: po_issue_date
+        type: 'date'
+        nullable: true
+        not_null: false
+        default: null
+      - name: po_ship_via
+        type: 'varchar(150)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: po_qt_on
+        type: 'varchar(50)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: po_shipping_terms
+        type: 'varchar(100)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: po_tax_rate
+        type: 'float4'
+        nullable: false
+        not_null: true
+        default: null
+      - name: po_recipient_id
+        type: 'varchar(20)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: po_comment
+        type: 'varchar(300)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: po_status_sent_date
+        type: 'date'
+        nullable: true
+        not_null: false
+        default: null
+      - name: po_status_goods_received_
+        type: 'date'
+        nullable: true
+        not_null: false
+        default: null
+      - name: po_status_paid_date
+        type: 'date'
+        nullable: true
+        not_null: false
+        default: null
+      - name: po_status_note
+        type: 'varchar(200)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: po_emp_id
+        type: 'varchar(20)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: po_created_at
+        type: 'timestamptz'
+        nullable: false
+        not_null: true
+        default: 'CURRENT_TIMESTAMP'
+      - name: po_updated_at
+        type: 'timestamptz'
+        nullable: true
+        not_null: false
+        default: 'CURRENT_TIMESTAMP'
+      - name: po_status
+        type: 'public."purchase_order_enum"'
+        nullable: false
+        not_null: true
+        default: '''Post Sent''::public."purchase_order_enum"'
+      - name: po_project_id
+        type: 'varchar(20)'
+        nullable: true
+        not_null: false
+        default: null
+  - name: purchase_orders_details
+    columns:
+      - name: podetail_id
+        type: 'varchar(20)'
+        nullable: false
+        not_null: true
+        default: 'generate_unique_id()'
+        primary_key: true
+      - name: podetail_on
+        type: 'int4'
+        nullable: true
+        not_null: false
+        default: null
+      - name: podetail_description
+        type: 'varchar(1000)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: podetail_qty
+        type: 'int4'
+        nullable: true
+        not_null: false
+        default: null
+      - name: podetail_discount
+        type: 'numeric(15, 2)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: podetail_unit_price
+        type: 'numeric(15, 2)'
+        nullable: true
+        not_null: false
+        default: null
+      - name: podetail_emp_id
+        type: 'varchar(20)'
+        nullable: false
+        not_null: true
+        default: null
+      - name: podetail_created_at
+        type: 'timestamptz'
+        nullable: false
+        not_null: true
+        default: 'CURRENT_TIMESTAMP'
+      - name: podetail_updated_at
+        type: 'timestamptz'
+        nullable: false
+        not_null: true
+        default: 'CURRENT_TIMESTAMP'
+      - name: podetail_po_id
+        type: 'varchar(20)'
+        nullable: false
+        not_null: true
+        default: null
 
 primary_keys:
   material_masters: [mm_id]
@@ -1130,6 +1369,9 @@ primary_keys:
   timeline_wsrbs: [tlwsrb_id]
   timeline_msps: [tlmsp_id]
   timeline_wmsps: [tlwmsp_id]
+  projects: [project_id]
+  purchase_orders: [po_id]
+  purchase_orders_details: [podetail_id]
 
 foreign_keys:
   - from: locations.loc_parent_id
