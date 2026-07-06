@@ -24,7 +24,7 @@ export function FactoryHeader({
 
   return (
     <header className="bg-[#1a2f7a] text-white shadow-lg">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 pt-5">
+      <div className="flex w-full flex-wrap items-center justify-between gap-4 px-4 pt-5 sm:px-6 lg:px-10">
         <div className="flex items-center gap-4">
           <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-amber-400 text-[#1a2f7a] shadow-md">
             <Scissors className="h-6 w-6" strokeWidth={2.5} />
@@ -44,8 +44,8 @@ export function FactoryHeader({
         </div>
       </div>
 
-      <nav className="mx-auto mt-4 max-w-6xl px-6">{moduleTabs}</nav>
-      {subTabs ? <nav className="mx-auto max-w-6xl px-6 pb-1">{subTabs}</nav> : null}
+      <nav className="mt-4 w-full px-4 sm:px-6 lg:px-10">{moduleTabs}</nav>
+      {subTabs ? <nav className="w-full px-4 pb-1 sm:px-6 lg:px-10">{subTabs}</nav> : null}
     </header>
   );
 }

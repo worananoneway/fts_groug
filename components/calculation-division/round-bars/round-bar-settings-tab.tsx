@@ -32,7 +32,7 @@ export function RoundBarSettingsTab() {
   } = useCalculationDivision();
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[5fr_7fr]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(300px,3fr)_minmax(0,7fr)]">
       <section className="rounded-lg bg-white p-6 shadow-sm">
         <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-slate-800">
           <Ruler className="h-5 w-5 text-blue-600" />
@@ -103,11 +103,8 @@ export function RoundBarSettingsTab() {
             รวม <b className="text-base text-slate-800">{roundTotalPieces}</b> ชิ้น
           </span>
         </div>
-      </section>
-
-      <div className="lg:col-start-2">
         <Button
-          className="w-full rounded-2xl py-5 text-xl"
+          className="mt-4 w-full py-4 text-base"
           disabled={roundMatchedCount === 0}
           icon={<Scissors className="h-5 w-5" />}
           onClick={calculateRound}
@@ -116,7 +113,7 @@ export function RoundBarSettingsTab() {
           คำนวณแผนการตัด
           <ChevronRight className="h-5 w-5" />
         </Button>
-      </div>
+      </section>
     </div>
   );
 }

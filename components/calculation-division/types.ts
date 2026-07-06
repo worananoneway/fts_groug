@@ -194,6 +194,7 @@ export interface CalculationDivisionContextValue {
   selectedOrderRows: OrderDetail[];
   selectedRoundRows: OrderDetail[];
   selectedPlateRows: OrderDetail[];
+  pushOrderDetailToCutting: (orderDetailId: string) => void;
   pushRoundFromPo: (poId: string | null) => void;
   pushPlateFromPo: (poId: string | null) => void;
 
@@ -213,9 +214,11 @@ export interface CalculationDivisionContextValue {
   plateItems: PlateItem[];
   plateForm: PlateFormState;
   setPlateForm: Dispatch<SetStateAction<PlateFormState>>;
+  plateEditingItemId: number | null;
   plateLoadedFromPo: string | null;
   clearPlatePoLoad: () => void;
   addPlateItem: () => void;
+  editPlateItem: (id: number) => void;
   removePlateItem: (id: number) => void;
   calculatePlate: () => void;
   plateResult: PlateResult | null;
@@ -244,9 +247,11 @@ export interface CalculationDivisionContextValue {
   roundItems: RoundItem[];
   roundForm: RoundFormState;
   setRoundForm: Dispatch<SetStateAction<RoundFormState>>;
+  roundEditingItemId: number | null;
   roundLoadedFromPo: string | null;
   clearRoundPoLoad: () => void;
   addRoundItem: () => void;
+  editRoundItem: (id: number) => void;
   removeRoundItem: (id: number) => void;
   calculateRound: () => void;
   roundResult: RoundResult | null;

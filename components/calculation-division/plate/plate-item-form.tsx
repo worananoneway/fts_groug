@@ -1,13 +1,13 @@
 "use client";
 
-import { Package } from "lucide-react";
+import { Package, Save } from "lucide-react";
 
 import { Button } from "../../ui/button";
 import { Field } from "../../ui/field";
 import { useCalculationDivision } from "../hooks/use-calculation-division";
 
 export function PlateItemForm() {
-  const { addPlateItem, plateForm, setPlateForm } = useCalculationDivision();
+  const { addPlateItem, plateEditingItemId, plateForm, setPlateForm } = useCalculationDivision();
 
   return (
     <div className="mb-4 grid grid-cols-2 items-end gap-3 md:grid-cols-[1fr_1fr_1fr_1fr_auto]">
@@ -41,10 +41,10 @@ export function PlateItemForm() {
       />
       <Button
         className="h-[46px] px-4 md:mt-0"
-        icon={<Package className="h-5 w-5" />}
+        icon={plateEditingItemId ? <Save className="h-5 w-5" /> : <Package className="h-5 w-5" />}
         onClick={addPlateItem}
       >
-        <span className="sr-only">เพิ่มรายการ</span>
+        <span className="sr-only">{plateEditingItemId ? "บันทึกรายการ" : "เพิ่มรายการ"}</span>
       </Button>
     </div>
   );

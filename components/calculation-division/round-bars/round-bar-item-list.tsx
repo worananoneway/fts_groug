@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 import { Badge } from "../../ui/badge";
 import { EmptyState } from "../../ui/empty-state";
@@ -9,7 +9,7 @@ import { fmt } from "../mappers";
 import { useCalculationDivision } from "../hooks/use-calculation-division";
 
 export function RoundBarItemList() {
-  const { barDiameter, removeRoundItem, roundItems } = useCalculationDivision();
+  const { barDiameter, editRoundItem, removeRoundItem, roundItems } = useCalculationDivision();
 
   return (
     <div className="flex-1 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100">
@@ -37,6 +37,12 @@ export function RoundBarItemList() {
               <div className="flex items-center gap-3">
                 {mismatch ? <Badge tone="amber">ไม่ตรง Ø</Badge> : null}
                 <span className="font-mono text-sm text-slate-500">x{item.qty}</span>
+                <IconButton
+                  icon={<Pencil className="h-4 w-4" />}
+                  label={`แก้ไขรายการ ${item.code}`}
+                  onClick={() => editRoundItem(item.id)}
+                  tone="primary"
+                />
                 <IconButton
                   icon={<Trash2 className="h-4 w-4" />}
                   label={`ลบรายการ ${item.code}`}

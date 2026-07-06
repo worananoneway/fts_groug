@@ -24,7 +24,7 @@ export function FactoryAppShell({
         subTabs={subTabs}
         subtitle={subtitle}
       />
-      <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+      <main className="w-full px-4 py-6 sm:px-6 lg:px-10">{children}</main>
       <footer className="border-t border-slate-200 py-6 text-center font-mono text-sm text-slate-400">
         FTS-GROUP | Factory Cutting Division
       </footer>

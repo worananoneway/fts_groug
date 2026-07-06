@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 import { EmptyState } from "../../ui/empty-state";
 import { IconButton } from "../../ui/icon-button";
@@ -8,7 +8,7 @@ import { fmt } from "../mappers";
 import { useCalculationDivision } from "../hooks/use-calculation-division";
 
 export function PlateItemList() {
-  const { plateItems, removePlateItem } = useCalculationDivision();
+  const { editPlateItem, plateItems, removePlateItem } = useCalculationDivision();
 
   return (
     <div className="flex-1 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100">
@@ -35,6 +35,12 @@ export function PlateItemList() {
             </div>
             <div className="flex items-center gap-3">
               <span className="font-mono text-sm text-slate-500">x{item.qty}</span>
+              <IconButton
+                icon={<Pencil className="h-4 w-4" />}
+                label={`แก้ไขรายการ ${item.code}`}
+                onClick={() => editPlateItem(item.id)}
+                tone="primary"
+              />
               <IconButton
                 icon={<Trash2 className="h-4 w-4" />}
                 label={`ลบรายการ ${item.code}`}

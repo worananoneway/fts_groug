@@ -8,8 +8,14 @@ import { OrderShapeTable } from "./order-shape-table";
 import { usePurchaseOrders } from "../hooks/use-purchase-orders";
 
 export function PurchaseOrderDetail() {
-  const { selectedOrderRows, selectedPlateRows, selectedPo, selectedPoId, selectedRoundRows } =
-    usePurchaseOrders();
+  const {
+    pushOrderDetailToCutting,
+    selectedOrderRows,
+    selectedPlateRows,
+    selectedPo,
+    selectedPoId,
+    selectedRoundRows,
+  } = usePurchaseOrders();
 
   if (!selectedPo || !selectedPoId) {
     return (
@@ -40,7 +46,11 @@ export function PurchaseOrderDetail() {
       </div>
 
       <div className="space-y-5">
-        <OrderShapeTable rows={selectedOrderRows} title="รายการทั้งหมด" />
+        <OrderShapeTable
+          onRowClick={(row) => pushOrderDetailToCutting(row.id)}
+          rows={selectedOrderRows}
+          title="รายการทั้งหมด"
+        />
       </div>
     </section>
   );

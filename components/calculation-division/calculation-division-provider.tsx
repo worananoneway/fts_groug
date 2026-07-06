@@ -75,6 +75,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     height: "",
     quantity: "1",
   });
+  const [plateEditingItemId, setPlateEditingItemId] = useState<number | null>(null);
   const [plateSavedScrapKeys, setPlateSavedScrapKeys] = useState<string[]>([]);
   const [plateScrapMessage, setPlateScrapMessage] = useState<Notice | null>(null);
   const [plateLoadedFromPo, setPlateLoadedFromPo] = useState<string | null>(null);
@@ -94,6 +95,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     length: "",
     quantity: "1",
   });
+  const [roundEditingItemId, setRoundEditingItemId] = useState<number | null>(null);
   const [roundSavedScrapKeys, setRoundSavedScrapKeys] = useState<string[]>([]);
   const [roundScrapMessage, setRoundScrapMessage] = useState<Notice | null>(null);
   const [roundLoadedFromPo, setRoundLoadedFromPo] = useState<string | null>(null);
@@ -213,8 +215,21 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     const h = Number(plateForm.height);
     if (!w || !h || w <= 0 || h <= 0) return;
 
-    const code = (plateForm.code.trim().toUpperCase() || nextCode(plateItems.map((item) => item.code))).slice(0, 3);
+    const codeSourceItems = plateEditingItemId
+      ? plateItems.filter((item) => item.id !== plateEditingItemId)
+      : plateItems;
+    const code = (plateForm.code.trim().toUpperCase() || nextCode(codeSourceItems.map((item) => item.code))).slice(0, 3);
     const qty = Math.max(1, Math.floor(Number(plateForm.quantity) || 1));
+    if (plateEditingItemId) {
+      setPlateItems((items) =>
+        items.map((item) => (item.id === plateEditingItemId ? { ...item, code, w, h, qty } : item)),
+      );
+      setPlateEditingItemId(null);
+      setPlateForm({ code: "", width: "", height: "", quantity: "1" });
+      setPlateResult(null);
+      return;
+    }
+
     setPlateItems((items) => [
       ...items,
       {
@@ -228,10 +243,28 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     ]);
     setPlateNextId((id) => id + 1);
     setPlateForm({ code: "", width: "", height: "", quantity: "1" });
+    setPlateResult(null);
   }
 
   function removePlateItem(id: number) {
     setPlateItems((items) => items.filter((item) => item.id !== id));
+    if (plateEditingItemId === id) {
+      setPlateEditingItemId(null);
+      setPlateForm({ code: "", width: "", height: "", quantity: "1" });
+    }
+    setPlateResult(null);
+  }
+
+  function editPlateItem(id: number) {
+    const item = plateItems.find((plateItem) => plateItem.id === id);
+    if (!item) return;
+    setPlateEditingItemId(id);
+    setPlateForm({
+      code: item.code,
+      width: String(item.w),
+      height: String(item.h),
+      quantity: String(item.qty),
+    });
   }
 
   function calculatePlate() {
@@ -292,8 +325,21 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     const length = Number(roundForm.length);
     if (!length || length <= 0) return;
 
-    const code = (roundForm.code.trim().toUpperCase() || nextCode(roundItems.map((item) => item.code))).slice(0, 3);
+    const codeSourceItems = roundEditingItemId
+      ? roundItems.filter((item) => item.id !== roundEditingItemId)
+      : roundItems;
+    const code = (roundForm.code.trim().toUpperCase() || nextCode(codeSourceItems.map((item) => item.code))).slice(0, 3);
     const qty = Math.max(1, Math.floor(Number(roundForm.quantity) || 1));
+    if (roundEditingItemId) {
+      setRoundItems((items) =>
+        items.map((item) => (item.id === roundEditingItemId ? { ...item, code, length, qty } : item)),
+      );
+      setRoundEditingItemId(null);
+      setRoundForm({ code: "", length: "", quantity: "1" });
+      setRoundResult(null);
+      return;
+    }
+
     setRoundItems((items) => [
       ...items,
       {
@@ -306,10 +352,27 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     ]);
     setRoundNextId((id) => id + 1);
     setRoundForm({ code: "", length: "", quantity: "1" });
+    setRoundResult(null);
   }
 
   function removeRoundItem(id: number) {
     setRoundItems((items) => items.filter((item) => item.id !== id));
+    if (roundEditingItemId === id) {
+      setRoundEditingItemId(null);
+      setRoundForm({ code: "", length: "", quantity: "1" });
+    }
+    setRoundResult(null);
+  }
+
+  function editRoundItem(id: number) {
+    const item = roundItems.find((roundItem) => roundItem.id === id);
+    if (!item) return;
+    setRoundEditingItemId(id);
+    setRoundForm({
+      code: item.code,
+      length: String(item.length),
+      quantity: String(item.qty),
+    });
   }
 
   function calculateRound() {
@@ -365,6 +428,78 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     }
   }
 
+  function pushOrderDetailToCutting(orderDetailId: string) {
+    if (!selectedPoId) return;
+    const row = (orderDetails[selectedPoId] ?? []).find((item) => item.id === orderDetailId);
+    const po = purchaseOrders.find((item) => item.id === selectedPoId);
+    if (!row) return;
+
+    if (row.shape === "ROUND") {
+      const startId = roundNextId;
+      const nextItem: RoundItem = {
+        id: startId,
+        code: "R1",
+        length: row.length,
+        qty: row.qty,
+        diameter: row.diameter,
+        color: ITEM_COLORS[0],
+        orderDetailId: row.id,
+      };
+      const diameter = Number(row.diameter ?? barDiameter);
+      const matchBar = stockBars.find((bar) => Number(bar.diameter) === diameter);
+
+      setModule("roundbar");
+      setRoundTab("settings");
+      setRoundItems([nextItem]);
+      setRoundNextId(startId + 1);
+      setBarDiameter(diameter);
+      if (matchBar) {
+        rawSetSelectedBarId(matchBar.id);
+        setBarLength(matchBar.length);
+      } else {
+        rawSetSelectedBarId("");
+      }
+      setRoundLoadedFromPo(po?.no ?? null);
+      setRoundEditingItemId(null);
+      setRoundForm({ code: "", length: "", quantity: "1" });
+      setRoundResult(null);
+      setRoundSavedScrapKeys([]);
+      setRoundScrapMessage(null);
+      return;
+    }
+
+    const startId = plateNextId;
+    const nextItem: PlateItem = {
+      id: startId,
+      code: "P1",
+      w: row.width ?? 0,
+      h: row.length,
+      qty: row.qty,
+      thickness: row.thickness,
+      color: ITEM_COLORS[0],
+      orderDetailId: row.id,
+    };
+    const matchPlate = stockPlates.find((plate) => Number(plate.thickness) === Number(row.thickness));
+
+    setModule("plate");
+    setPlateTab("settings");
+    setPlateItems([nextItem]);
+    setPlateNextId(startId + 1);
+    if (matchPlate) {
+      rawSetSelectedPlateId(matchPlate.id);
+      setSheetW(matchPlate.length);
+      setSheetH(matchPlate.width);
+    } else {
+      rawSetSelectedPlateId("");
+    }
+    setPlateLoadedFromPo(po?.no ?? null);
+    setPlateEditingItemId(null);
+    setPlateForm({ code: "", width: "", height: "", quantity: "1" });
+    setPlateResult(null);
+    setPlateSavedScrapKeys([]);
+    setPlateScrapMessage(null);
+  }
+
   function pushRoundFromPo(poId: string | null) {
     if (!poId) return;
     const rows = (orderDetails[poId] ?? []).filter((row) => row.shape === "ROUND");
@@ -401,6 +536,8 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
       rawSetSelectedBarId("");
     }
     setRoundLoadedFromPo(po?.no ?? null);
+    setRoundEditingItemId(null);
+    setRoundForm({ code: "", length: "", quantity: "1" });
     setRoundResult(null);
     setRoundSavedScrapKeys([]);
     setRoundScrapMessage(null);
@@ -438,6 +575,8 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
       rawSetSelectedPlateId("");
     }
     setPlateLoadedFromPo(po?.no ?? null);
+    setPlateEditingItemId(null);
+    setPlateForm({ code: "", width: "", height: "", quantity: "1" });
     setPlateResult(null);
     setPlateSavedScrapKeys([]);
     setPlateScrapMessage(null);
@@ -464,6 +603,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     selectedOrderRows,
     selectedRoundRows,
     selectedPlateRows,
+    pushOrderDetailToCutting,
     pushRoundFromPo,
     pushPlateFromPo,
 
@@ -489,9 +629,11 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     plateItems,
     plateForm,
     setPlateForm,
+    plateEditingItemId,
     plateLoadedFromPo,
     clearPlatePoLoad: () => setPlateLoadedFromPo(null),
     addPlateItem,
+    editPlateItem,
     removePlateItem,
     calculatePlate,
     plateResult,
@@ -526,9 +668,11 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     roundItems,
     roundForm,
     setRoundForm,
+    roundEditingItemId,
     roundLoadedFromPo,
     clearRoundPoLoad: () => setRoundLoadedFromPo(null),
     addRoundItem,
+    editRoundItem,
     removeRoundItem,
     calculateRound,
     roundResult,

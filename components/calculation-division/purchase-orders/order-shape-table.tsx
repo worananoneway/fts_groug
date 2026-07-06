@@ -3,7 +3,15 @@ import { DataTable } from "../../ui/data-table";
 import { fmt } from "../mappers";
 import type { DataTableColumn, OrderDetail } from "../types";
 
-export function OrderShapeTable({ rows, title }: { rows: OrderDetail[]; title: string }) {
+export function OrderShapeTable({
+  onRowClick,
+  rows,
+  title,
+}: {
+  onRowClick?: (row: OrderDetail) => void;
+  rows: OrderDetail[];
+  title: string;
+}) {
   const columns: Array<DataTableColumn<OrderDetail>> = [
     {
       key: "shape",
@@ -34,7 +42,7 @@ export function OrderShapeTable({ rows, title }: { rows: OrderDetail[]; title: s
     <div>
       <h3 className="mb-3 text-sm font-bold text-slate-700">{title}</h3>
       <div className="overflow-hidden rounded-lg border border-slate-100">
-        <DataTable columns={columns} rowKey={(row) => row.id} rows={rows} />
+        <DataTable columns={columns} onRowClick={onRowClick} rowKey={(row) => row.id} rows={rows} />
       </div>
     </div>
   );
