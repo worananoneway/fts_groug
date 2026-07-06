@@ -525,18 +525,21 @@ async function update(request: WastrelSteelRoundBarRequest, reply: FastifyReply)
 async function update_status(request: WastrelSteelRoundBarRequest, reply: FastifyReply) {
     try {
         const invalid_fields: ValidationError[] = [];
-        if (!request.params.wsrb_id) {
-            invalid_fields.push({ field: ErrorField.ID, message: ErrorMessage.ID_REQUIRED });
-        }
-        if (!request.body?.status) {
-            invalid_fields.push({ field: ErrorField.STATUS, message: ErrorMessage.STATUS_REQUIRED });
-        }
-        if (invalid_fields.length > 0) {
+        const wsrb_id_param = request.params.wsrb_id;
+        const status_payload = request.body?.status;
+
+        if (!wsrb_id_param || !status_payload) {
+            if (!wsrb_id_param) {
+                invalid_fields.push({ field: ErrorField.ID, message: ErrorMessage.ID_REQUIRED });
+            }
+            if (!status_payload) {
+                invalid_fields.push({ field: ErrorField.STATUS, message: ErrorMessage.STATUS_REQUIRED });
+            }
             return send_validation_errors(reply, invalid_fields, HttpStatusCode.BAD_REQUEST);
         }
 
-        const wsrb_id: string = sanitize_string(request.params.wsrb_id);
-        const raw_status = sanitize_input(request.body.status);
+        const wsrb_id: string = sanitize_string(wsrb_id_param);
+        const raw_status = sanitize_input(status_payload);
         if (!is_enum_key(status_enum, raw_status)) {
             return send_validation_errors(reply, [{
                 field: ErrorField.STATUS,
