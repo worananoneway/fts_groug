@@ -24,6 +24,12 @@ app.prepare().then(async () => {
     server.register(import("./api/modules/ms_plates/router"), {
         prefix: "/api/:version/accounting/ms-plates"
     });
+    server.register(import("./api/modules/projects/router"), {
+        prefix: "/api/:version/accounting/projects"
+    });
+    server.register(import("./api/modules/purchase_orders/router"), {
+        prefix: "/api/:version/accounting/purchase-orders"
+    });
 
     // server.register(import("../tfs_groug/api/modules/employee/router"), {
     //     prefix: "/api/:version/hrm-payroll/employees"
