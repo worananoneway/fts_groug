@@ -25,6 +25,10 @@ app.prepare().then(async () => {
         prefix: "/api/:version/wastrel-steel-round-bars"
     });
 
+    server.register(import("./api/modules/wastrel_ms_plates/router"), {
+        prefix: "/api/:version/wastrel-ms-plates"
+    });
+
     server.register(import("./api/modules/master-data/ms_plates/router"), {
         prefix: "/api/:version/accounting/ms-plates"
     });
