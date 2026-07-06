@@ -43,6 +43,10 @@ app.prepare().then(async () => {
         prefix: "/api/:version/calculation-division"
     });
 
+    server.register(import("./api/modules/timeline_wmsps/router"), {
+        prefix: "/api/:version/timeline-wmsps"
+    });
+
     server.all("/*", async (request: FastifyRequest, reply: FastifyReply) => {
         try {
             await handle(request.raw, reply.raw);
