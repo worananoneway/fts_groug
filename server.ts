@@ -39,6 +39,10 @@ app.prepare().then(async () => {
         prefix: "/api/:version/addresses"
     });
 
+    server.register(import("./api/modules/calculation_division/router"), {
+        prefix: "/api/:version/calculation-division"
+    });
+
     server.all("/*", async (request: FastifyRequest, reply: FastifyReply) => {
         try {
             await handle(request.raw, reply.raw);
