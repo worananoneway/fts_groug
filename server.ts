@@ -33,6 +33,14 @@ app.prepare().then(async () => {
         prefix: "/api/:version/accounting/timeline-msps"
     });
 
+    server.register(import("./api/modules/timeline_srbs/router"), {
+        prefix: "/api/:version/accounting/timeline-srbs"
+    });
+
+    server.register(import("./api/modules/timeline_wsrbs/router"), {
+        prefix: "/api/:version/accounting/timeline-wsrbs"
+    });
+
     server.register(import("./api/modules/projects/router"), {
         prefix: "/api/:version/accounting/projects"
     });
