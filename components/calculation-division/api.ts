@@ -1,5 +1,12 @@
-import type { OrderDetail, PlateStock, PurchaseOrder, RoundBarStock } from "./types";
-import { mapPlateStock, mapPurchaseOrder, mapRoundStock } from "./mappers";
+import type {
+  OrderDetail,
+  PlateStock,
+  PurchaseOrder,
+  RoundBarStock,
+  SavedPlateScrap,
+  SavedRoundScrap,
+} from "./types";
+import { mapOrderDetails, mapPlateStock, mapPurchaseOrder, mapRoundStock } from "./mappers";
 
 const API_VERSION = "v1";
 
@@ -8,29 +15,39 @@ export interface FactoryData {
   orderDetails: Record<string, OrderDetail[]>;
   stockPlates: PlateStock[];
   stockBars: RoundBarStock[];
+  scrapPlates: SavedPlateScrap[];
+  scrapBars: SavedRoundScrap[];
 }
 
 export async function loadFactoryData(): Promise<Partial<FactoryData>> {
-  const [purchaseOrders, stockPlates, stockBars] = await Promise.all([
-    safeRequest(loadPurchaseOrders),
+  const [orders, stockPlates, stockBars, scrapPlates, scrapBars] = await Promise.all([
+    loadOrders().catch(() => ({ purchaseOrders: [], orderDetails: {} })),
     safeRequest(loadMsPlates),
     safeRequest(loadSteelRoundBars),
+    safeRequest(loadWastrelPlates),
+    safeRequest(loadWastrelBars),
   ]);
 
   return {
-    purchaseOrders,
+    purchaseOrders: orders.purchaseOrders,
+    orderDetails: orders.orderDetails,
     stockPlates,
     stockBars,
-    orderDetails: {},
+    scrapPlates,
+    scrapBars,
   };
 }
 
-export async function loadPurchaseOrders(): Promise<PurchaseOrder[]> {
-  const payload = await requestJson(`/api/${API_VERSION}/accounting/purchase-orders`);
-  const rawRows = readArray(payload, "purchase_orders");
-  return rawRows
+export async function loadOrders(): Promise<{
+  purchaseOrders: PurchaseOrder[];
+  orderDetails: Record<string, OrderDetail[]>;
+}> {
+  const payload = await requestJson(`/api/${API_VERSION}/orders`);
+  const purchaseOrders = readArray(payload, "orders")
     .map((row) => mapPurchaseOrder(row))
     .filter((row): row is PurchaseOrder => Boolean(row));
+  const orderDetails = mapOrderDetails(readArray(payload, "order_details"));
+  return { purchaseOrders, orderDetails };
 }
 
 export async function loadMsPlates(): Promise<PlateStock[]> {
@@ -47,6 +64,93 @@ export async function loadSteelRoundBars(): Promise<RoundBarStock[]> {
   return rawRows
     .map((row) => mapRoundStock(row))
     .filter((row): row is RoundBarStock => Boolean(row));
+}
+
+export async function loadWastrelPlates(): Promise<SavedPlateScrap[]> {
+  const payload = await requestJson(`/api/${API_VERSION}/wastrel-ms-plates`);
+  return readArray(payload, "wastrel_ms_plates")
+    .filter((row) => row.status !== "Deleted" && row.status !== "Inactive")
+    .map((row) => ({
+      id: String(row.id ?? ""),
+      code: String(row.stock_code ?? row.code ?? ""),
+      length: Number(row.length) || 0,
+      width: Number(row.width) || 0,
+      thickness: Number(row.thickness) || 0,
+      remark: String(row.remark ?? ""),
+    }))
+    .filter((row) => row.id);
+}
+
+export async function loadWastrelBars(): Promise<SavedRoundScrap[]> {
+  const payload = await requestJson(`/api/${API_VERSION}/wastrel-steel-round-bars`);
+  return readArray(payload, "wastrel_steel_round_bars")
+    .filter((row) => row.status !== "Deleted" && row.status !== "Inactive")
+    .map((row) => ({
+      id: String(row.id ?? ""),
+      code: String(row.code ?? ""),
+      diameter: Number(row.diameter) || 0,
+      length: Number(row.length) || 0,
+      quantity: Number(row.quantity) || 1,
+      remark: String(row.remark ?? ""),
+    }))
+    .filter((row) => row.id);
+}
+
+export interface WastrelPlatePayload {
+  mm_id: string;
+  msp_id?: string;
+  stock_code: string;
+  length: number;
+  width: number;
+  thickness: number;
+  quantity: number;
+  available_quantity: number;
+  ord_id?: string;
+  remark?: string;
+}
+
+export interface WastrelBarPayload {
+  mm_id: string;
+  srb_id?: string;
+  code: string;
+  diameter: number;
+  length: number;
+  quantity: number;
+  available_quantity: number;
+  ord_id?: string;
+  remark?: string;
+}
+
+export async function createWastrelPlate(body: WastrelPlatePayload): Promise<void> {
+  await requestJson(`/api/${API_VERSION}/wastrel-ms-plates`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function createWastrelBar(body: WastrelBarPayload): Promise<void> {
+  await requestJson(`/api/${API_VERSION}/wastrel-steel-round-bars`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteWastrelPlate(id: string): Promise<void> {
+  await requestJson(`/api/${API_VERSION}/wastrel-ms-plates/status/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "Deleted" }),
+  });
+}
+
+export async function deleteWastrelBar(id: string): Promise<void> {
+  await requestJson(`/api/${API_VERSION}/wastrel-steel-round-bars/status/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "Deleted" }),
+  });
 }
 
 export async function calculateDivision(body: unknown): Promise<unknown> {
@@ -71,7 +175,9 @@ async function requestJson(url: string, init?: RequestInit): Promise<{
 }> {
   const response = await fetch(url, init);
   if (!response.ok) throw new Error(`Request failed: ${response.status}`);
-  return response.json();
+  if (response.status === 204) return {};
+  const text = await response.text();
+  return text ? JSON.parse(text) : {};
 }
 
 async function safeRequest<T>(loader: () => Promise<T[]>): Promise<T[]> {

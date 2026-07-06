@@ -175,8 +175,8 @@ async function create_rev(payload: Payload, emp_id: string): Promise<Response> {
 }
 async function get(conditions: Condition = { sql: "", params: [] }): Promise<Response> {
 const sql = `
-    SELECT 
-        po.po_id
+    SELECT
+        po.*
     FROM public.purchase_orders po
     WHERE 1=1 ${conditions.sql}
 `;

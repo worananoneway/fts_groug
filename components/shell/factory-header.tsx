@@ -20,7 +20,7 @@ export function FactoryHeader({
     ? "กำลังโหลดข้อมูล"
     : dataStatus.source === "api"
       ? "เชื่อมต่อข้อมูลจริง"
-      : "ใช้ข้อมูลตัวอย่าง";
+      : "เชื่อมต่อข้อมูลไม่สำเร็จ";
 
   return (
     <header className="bg-[#1a2f7a] text-white shadow-lg">

@@ -9,25 +9,23 @@ import {
   type ReactNode,
 } from "react";
 
-import { loadFactoryData } from "./api";
 import {
-  ITEM_COLORS,
-  MODULE_SUBTITLES,
-  SAMPLE_ORDER_DETAILS,
-  SAMPLE_PLATE_ITEMS,
-  SAMPLE_PLATE_STOCK,
-  SAMPLE_PURCHASE_ORDERS,
-  SAMPLE_ROUND_ITEMS,
-  SAMPLE_ROUND_STOCK,
-  SAMPLE_SAVED_PLATE_SCRAPS,
-  SAMPLE_SAVED_ROUND_SCRAPS,
-} from "./constants";
+  createWastrelBar,
+  createWastrelPlate,
+  deleteWastrelBar,
+  deleteWastrelPlate,
+  loadFactoryData,
+  loadWastrelBars,
+  loadWastrelPlates,
+} from "./api";
+import { ITEM_COLORS, MODULE_SUBTITLES } from "./constants";
 import { nextCode, packGuillotine, packRoundBars } from "./mappers";
 import type {
   CalculationDivisionContextValue,
   DataStatus,
   ModuleKey,
   Notice,
+  OrderDetail,
   PlateFormState,
   PlateItem,
   PlateResult,
@@ -53,23 +51,23 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
   const [dataStatus, setDataStatus] = useState<DataStatus>({
     loading: true,
     error: null,
-    source: "sample",
+    source: "none",
   });
 
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(SAMPLE_PURCHASE_ORDERS);
-  const [orderDetails, setOrderDetails] = useState(SAMPLE_ORDER_DETAILS);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [orderDetails, setOrderDetails] = useState<Record<string, OrderDetail[]>>({});
   const [poSearch, setPoSearch] = useState("");
   const [selectedPoId, setSelectedPoId] = useState<string | null>(null);
 
-  const [stockPlates, setStockPlates] = useState<PlateStock[]>(SAMPLE_PLATE_STOCK);
-  const [scrapPlates, setScrapPlates] = useState<SavedPlateScrap[]>(SAMPLE_SAVED_PLATE_SCRAPS);
+  const [stockPlates, setStockPlates] = useState<PlateStock[]>([]);
+  const [scrapPlates, setScrapPlates] = useState<SavedPlateScrap[]>([]);
   const [selectedPlateId, rawSetSelectedPlateId] = useState("");
   const [sheetW, setSheetW] = useState(2400);
   const [sheetH, setSheetH] = useState(1200);
   const [kerf, setKerf] = useState(3);
   const [minScrap, setMinScrap] = useState(150);
-  const [plateItems, setPlateItems] = useState<PlateItem[]>(SAMPLE_PLATE_ITEMS);
-  const [plateNextId, setPlateNextId] = useState(5);
+  const [plateItems, setPlateItems] = useState<PlateItem[]>([]);
+  const [plateNextId, setPlateNextId] = useState(1);
   const [plateResult, setPlateResult] = useState<PlateResult | null>(null);
   const [plateForm, setPlateForm] = useState<PlateFormState>({
     code: "",
@@ -81,15 +79,15 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
   const [plateScrapMessage, setPlateScrapMessage] = useState<Notice | null>(null);
   const [plateLoadedFromPo, setPlateLoadedFromPo] = useState<string | null>(null);
 
-  const [stockBars, setStockBars] = useState<RoundBarStock[]>(SAMPLE_ROUND_STOCK);
-  const [scrapBars, setScrapBars] = useState<SavedRoundScrap[]>(SAMPLE_SAVED_ROUND_SCRAPS);
+  const [stockBars, setStockBars] = useState<RoundBarStock[]>([]);
+  const [scrapBars, setScrapBars] = useState<SavedRoundScrap[]>([]);
   const [selectedBarId, rawSetSelectedBarId] = useState("");
   const [barDiameter, setBarDiameter] = useState(50);
   const [barLength, setBarLength] = useState(6000);
   const [rKerf, setRKerf] = useState(3);
   const [rMinScrap, setRMinScrap] = useState(300);
-  const [roundItems, setRoundItems] = useState<RoundItem[]>(SAMPLE_ROUND_ITEMS);
-  const [roundNextId, setRoundNextId] = useState(4);
+  const [roundItems, setRoundItems] = useState<RoundItem[]>([]);
+  const [roundNextId, setRoundNextId] = useState(1);
   const [roundResult, setRoundResult] = useState<RoundResult | null>(null);
   const [roundForm, setRoundForm] = useState<RoundFormState>({
     code: "",
@@ -105,15 +103,16 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     loadFactoryData()
       .then((data) => {
         if (!active) return;
-        if (data.purchaseOrders?.length) setPurchaseOrders(data.purchaseOrders);
-        if (data.orderDetails && Object.keys(data.orderDetails).length) setOrderDetails(data.orderDetails);
-        if (data.stockPlates?.length) setStockPlates(data.stockPlates);
-        if (data.stockBars?.length) setStockBars(data.stockBars);
+        setPurchaseOrders(data.purchaseOrders ?? []);
+        setOrderDetails(data.orderDetails ?? {});
+        setStockPlates(data.stockPlates ?? []);
+        setStockBars(data.stockBars ?? []);
+        setScrapPlates(data.scrapPlates ?? []);
+        setScrapBars(data.scrapBars ?? []);
         setDataStatus({
           loading: false,
           error: null,
-          source:
-            data.purchaseOrders?.length || data.stockPlates?.length || data.stockBars?.length ? "api" : "sample",
+          source: "api",
         });
       })
       .catch((error) => {
@@ -121,7 +120,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
         setDataStatus({
           loading: false,
           error: error instanceof Error ? error.message : "โหลดข้อมูลไม่สำเร็จ",
-          source: "sample",
+          source: "none",
         });
       });
 
@@ -243,25 +242,50 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     setPlateTab("layout");
   }
 
-  function savePlateScraps() {
+  async function savePlateScraps() {
     if (unsavedPlateScraps.length === 0) return;
-    const stamp = Date.now().toString(36).toUpperCase();
-    const rows = unsavedPlateScraps.map((scrap, index) => ({
-      id: `sp${Date.now()}${index}`,
-      code: `SCRAP-${stamp}-${index + 1}`,
-      length: Math.floor(scrap.w),
-      width: Math.floor(scrap.h),
-      thickness: selectedPlate?.thickness ?? 1,
-      remark: `เศษจากแผ่นที่ ${scrap.sheetNo}${plateLoadedFromPo ? ` (${plateLoadedFromPo})` : ""}`,
-    }));
+    if (!selectedPlate?.material_master_id) {
+      setPlateScrapMessage({
+        ok: false,
+        text: "กรุณาเลือกแผ่นจากคลังก่อนบันทึกเศษ เพื่อระบุวัสดุของเศษ",
+      });
+      return;
+    }
 
-    setScrapPlates((current) => [...rows, ...current]);
-    setPlateSavedScrapKeys((keys) => [...keys, ...unsavedPlateScraps.map(plateScrapKey)]);
-    setPlateScrapMessage({ ok: true, text: `บันทึกเศษลงคลังแล้ว ${rows.length} ชิ้น` });
+    const stamp = Date.now().toString(36).toUpperCase();
+    const ordId = purchaseOrders.find((po) => po.no === plateLoadedFromPo)?.id;
+    const scraps = unsavedPlateScraps;
+
+    try {
+      for (const [index, scrap] of scraps.entries()) {
+        await createWastrelPlate({
+          mm_id: selectedPlate.material_master_id,
+          msp_id: selectedPlate.id,
+          stock_code: `SCRAP-${stamp}-${index + 1}`,
+          length: Math.max(1, Math.floor(scrap.w)),
+          width: Math.max(1, Math.floor(scrap.h)),
+          thickness: selectedPlate.thickness || 1,
+          quantity: 1,
+          available_quantity: 1,
+          ord_id: ordId,
+          remark: `เศษจากแผ่นที่ ${scrap.sheetNo}${plateLoadedFromPo ? ` (${plateLoadedFromPo})` : ""}`,
+        });
+      }
+      setScrapPlates(await loadWastrelPlates());
+      setPlateSavedScrapKeys((keys) => [...keys, ...scraps.map(plateScrapKey)]);
+      setPlateScrapMessage({ ok: true, text: `บันทึกเศษลงคลัง (wastrel_ms_plates) แล้ว ${scraps.length} ชิ้น` });
+    } catch {
+      setPlateScrapMessage({ ok: false, text: "บันทึกเศษลงคลังไม่สำเร็จ กรุณาลองใหม่" });
+    }
   }
 
-  function removeScrapPlate(id: string) {
-    setScrapPlates((items) => items.filter((item) => item.id !== id));
+  async function removeScrapPlate(id: string) {
+    try {
+      await deleteWastrelPlate(id);
+      setScrapPlates((items) => items.filter((item) => item.id !== id));
+    } catch {
+      setPlateScrapMessage({ ok: false, text: "ลบเศษออกจากคลังไม่สำเร็จ กรุณาลองใหม่" });
+    }
   }
 
   function addRoundItem() {
@@ -296,25 +320,49 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     setRoundTab("layout");
   }
 
-  function saveRoundScraps() {
+  async function saveRoundScraps() {
     if (unsavedRoundScraps.length === 0) return;
-    const stamp = Date.now().toString(36).toUpperCase();
-    const rows = unsavedRoundScraps.map((scrap, index) => ({
-      id: `sb${Date.now()}${index}`,
-      code: `WSRB-${stamp}-${index + 1}`,
-      diameter: barDiameter,
-      length: Math.floor(scrap.length),
-      quantity: 1,
-      remark: `เศษจากแท่งที่ ${scrap.barNo}${roundLoadedFromPo ? ` (${roundLoadedFromPo})` : ""}`,
-    }));
+    if (!selectedBar?.material_master_id) {
+      setRoundScrapMessage({
+        ok: false,
+        text: "กรุณาเลือกแท่งจากคลังก่อนบันทึกเศษ เพื่อระบุวัสดุของเศษ",
+      });
+      return;
+    }
 
-    setScrapBars((current) => [...rows, ...current]);
-    setRoundSavedScrapKeys((keys) => [...keys, ...unsavedRoundScraps.map(roundScrapKey)]);
-    setRoundScrapMessage({ ok: true, text: `บันทึกเศษลงคลังแล้ว ${rows.length} ชิ้น` });
+    const stamp = Date.now().toString(36).toUpperCase();
+    const ordId = purchaseOrders.find((po) => po.no === roundLoadedFromPo)?.id;
+    const scraps = unsavedRoundScraps;
+
+    try {
+      for (const [index, scrap] of scraps.entries()) {
+        await createWastrelBar({
+          mm_id: selectedBar.material_master_id,
+          srb_id: selectedBar.id,
+          code: `WSRB-${stamp}-${index + 1}`,
+          diameter: barDiameter,
+          length: Math.max(1, Math.floor(scrap.length)),
+          quantity: 1,
+          available_quantity: 1,
+          ord_id: ordId,
+          remark: `เศษจากแท่งที่ ${scrap.barNo}${roundLoadedFromPo ? ` (${roundLoadedFromPo})` : ""}`,
+        });
+      }
+      setScrapBars(await loadWastrelBars());
+      setRoundSavedScrapKeys((keys) => [...keys, ...scraps.map(roundScrapKey)]);
+      setRoundScrapMessage({ ok: true, text: `บันทึกเศษลงคลัง (wastrel_steel_round_bars) แล้ว ${scraps.length} ชิ้น` });
+    } catch {
+      setRoundScrapMessage({ ok: false, text: "บันทึกเศษลงคลังไม่สำเร็จ กรุณาลองใหม่" });
+    }
   }
 
-  function removeScrapBar(id: string) {
-    setScrapBars((items) => items.filter((item) => item.id !== id));
+  async function removeScrapBar(id: string) {
+    try {
+      await deleteWastrelBar(id);
+      setScrapBars((items) => items.filter((item) => item.id !== id));
+    } catch {
+      setRoundScrapMessage({ ok: false, text: "ลบเศษออกจากคลังไม่สำเร็จ กรุณาลองใหม่" });
+    }
   }
 
   function pushRoundFromPo(poId: string | null) {

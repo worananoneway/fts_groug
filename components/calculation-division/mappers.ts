@@ -206,7 +206,7 @@ export function mapOrderDetails(raw: unknown): Record<string, OrderDetail[]> {
       width: numberValue(row.width ?? row.required_width ?? row.required_width_mm),
       thickness: numberValue(row.thickness ?? row.required_thickness ?? row.required_thickness_mm),
       qty: Math.max(1, Math.floor(numberValue(row.qty ?? row.quantity) || 1)),
-      remaining: Math.max(1, Math.floor(numberValue(row.remaining ?? row.quantity) || 1)),
+      remaining: Math.max(0, Math.floor(numberValue(row.remaining ?? row.quantity))),
     };
 
     acc[poId] = [...(acc[poId] ?? []), detail];
@@ -254,7 +254,7 @@ export function statusLabel(status: PurchaseOrderStatus): string {
 function mapPoStatus(value: unknown): PurchaseOrderStatus {
   const normalized = stringValue(value).trim().replace(/\s+/g, "_").toUpperCase();
   if (normalized === "DONE" || normalized === "PAID" || normalized === "COMPLETED") return "DONE";
-  if (normalized === "IN_PROGRESS" || normalized === "PROCESSING") return "IN_PROGRESS";
+  if (normalized === "IN_PROGRESS" || normalized === "IN_PROCESS" || normalized === "PROCESSING") return "IN_PROGRESS";
   return "PENDING";
 }
 
