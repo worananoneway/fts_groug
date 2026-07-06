@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { CutItem, PackResult, pack_guillotine } from "../lib/guillotine";
+import { CutItem, PackResult, pack_guillotine } from "../app/lib/guillotine";
 
 export const ITEM_COLORS = [
     "#3b82f6", // blue

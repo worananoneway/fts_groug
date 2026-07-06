@@ -8,7 +8,7 @@ import {
     create_ms_plate,
     delete_ms_plate,
     list_ms_plates,
-} from "../lib/ms_plates_api";
+} from "../app/lib/ms_plates_api";
 
 /**
  * Hook wrapping the ms_plates backend module.
