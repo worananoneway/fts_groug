@@ -21,9 +21,18 @@ app.prepare().then(async () => {
         prefix: "/api/:version/steel-round-bars"
     });
 
+    server.register(import("./api/modules/wastrel_steel_round_bars/router"), {
+        prefix: "/api/:version/wastrel-steel-round-bars"
+    });
+
     server.register(import("./api/modules/master-data/ms_plates/router"), {
         prefix: "/api/:version/accounting/ms-plates"
     });
+
+    server.register(import("./api/modules/timeline_msps/router"), {
+        prefix: "/api/:version/accounting/timeline-msps"
+    });
+
     server.register(import("./api/modules/projects/router"), {
         prefix: "/api/:version/accounting/projects"
     });
@@ -45,6 +54,10 @@ app.prepare().then(async () => {
 
     server.register(import("./api/modules/timeline_wmsps/router"), {
         prefix: "/api/:version/timeline-wmsps"
+    });
+
+    server.register(import("./api/modules/stock_reservations/router"), {
+        prefix: "/api/:version/stock-reservations"
     });
 
     server.all("/*", async (request: FastifyRequest, reply: FastifyReply) => {
