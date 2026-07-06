@@ -52,6 +52,10 @@ app.prepare().then(async () => {
         prefix: "/api/:version/accounting/purchase-orders"
     });
 
+    server.register(import("./api/modules/orders/router"), {
+        prefix: "/api/:version/orders"
+    });
+
     // server.register(import("../tfs_groug/api/modules/employee/router"), {
     //     prefix: "/api/:version/hrm-payroll/employees"
     // });
