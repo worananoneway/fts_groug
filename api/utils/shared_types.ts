@@ -238,6 +238,7 @@ export enum Status {
     UNAUTHORIZED = 'Unauthorized',
     VERIFIED = 'Verified',
     WAITING = 'Waiting',
+    RESERVED = 'Reserved'
 }
 export enum BillingNoteStatus {
     PENDING = 'Pending',

@@ -13,8 +13,22 @@ app.prepare().then(async () => {
     //register plugins
 
     //register routes
-    server.register(import("./api/modules/customer/router"), {
+    server.register(import("./api/modules/master-data/customer/router"), {
         prefix: "/api/:version/accounting/customers"
+    });
+
+    server.register(import("./api/modules/master-data/steel_round_bars/router"), {
+        prefix: "/api/:version/steel-round-bars"
+    });
+
+    server.register(import("./api/modules/master-data/ms_plates/router"), {
+        prefix: "/api/:version/accounting/ms-plates"
+    });
+    server.register(import("./api/modules/projects/router"), {
+        prefix: "/api/:version/accounting/projects"
+    });
+    server.register(import("./api/modules/purchase_orders/router"), {
+        prefix: "/api/:version/accounting/purchase-orders"
     });
 
     // server.register(import("../tfs_groug/api/modules/employee/router"), {
