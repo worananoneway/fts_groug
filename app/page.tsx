@@ -16,8 +16,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useCuttingPlan } from "./hooks/use_cutting_plan";
-import { useMsPlates } from "./hooks/use_ms_plates";
+import { useCuttingPlan } from "../hooks/use_cutting_plan";
+import { useMsPlates } from "../hooks/use_ms_plates";
 import { SCRAP_CODE_PREFIX } from "./lib/ms_plates_api";
 
 /* ---------- constants ---------- */
@@ -164,13 +164,12 @@ export default function Home() {
               Guillotine Packing Algorithm
             </div>
             <span
-              className={`flex items-center gap-1.5 text-xs ${
-                inventory.loading
+              className={`flex items-center gap-1.5 text-xs ${inventory.loading
                   ? "text-blue-200"
                   : inventory.error
                     ? "text-amber-300"
                     : "text-emerald-300"
-              }`}
+                }`}
             >
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-current" />
               {inventory.loading
@@ -188,11 +187,10 @@ export default function Home() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 border-b-3 px-5 py-3 text-sm font-semibold transition ${
-                tab === t.key
+              className={`flex items-center gap-2 border-b-3 px-5 py-3 text-sm font-semibold transition ${tab === t.key
                   ? "border-amber-400 text-white"
                   : "border-transparent text-blue-200 hover:text-white"
-              }`}
+                }`}
             >
               <t.icon className="h-4 w-4" />
               {t.label}
@@ -579,11 +577,10 @@ export default function Home() {
               </div>
               {scrapMessage && (
                 <p
-                  className={`mb-4 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm ${
-                    scrapMessage.ok
+                  className={`mb-4 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm ${scrapMessage.ok
                       ? "bg-emerald-50 text-emerald-700"
                       : "bg-amber-50 text-amber-700"
-                  }`}
+                    }`}
                 >
                   {scrapMessage.ok ? (
                     <CheckCircle2 className="h-4 w-4 shrink-0" />
