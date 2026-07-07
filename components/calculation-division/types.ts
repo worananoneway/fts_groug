@@ -20,9 +20,17 @@ export interface PurchaseOrder {
   status: PurchaseOrderStatus;
 }
 
+export interface MaterialMaster {
+  id: string;
+  name: string;
+  shape: OrderShape;
+  status?: string;
+}
+
 export interface OrderDetail {
   id: string;
   shape: OrderShape;
+  materialId?: string;
   material: string;
   diameter?: number;
   length: number;
@@ -89,6 +97,7 @@ export interface PlatePiece {
   w: number;
   h: number;
   color: string;
+  orderDetailId?: string;
   rotated: boolean;
 }
 
@@ -99,7 +108,7 @@ export interface PlateSheet {
 
 export interface PlateResult {
   sheets: PlateSheet[];
-  unplaced: Array<{ code: string; w: number; h: number }>;
+  unplaced: Array<{ code: string; w: number; h: number; orderDetailId?: string }>;
 }
 
 export interface RoundPiece {
@@ -107,6 +116,7 @@ export interface RoundPiece {
   start: number;
   length: number;
   color: string;
+  orderDetailId?: string;
 }
 
 export interface RoundBarLayout {
@@ -116,7 +126,7 @@ export interface RoundBarLayout {
 
 export interface RoundResult {
   bars: RoundBarLayout[];
-  unplaced: Array<{ code: string; length: number; color?: string }>;
+  unplaced: Array<{ code: string; length: number; color?: string; orderDetailId?: string }>;
 }
 
 export interface PlateScrap {
@@ -197,13 +207,14 @@ export interface CalculationDivisionContextValue {
   selectPo: (id: string) => void;
   filteredPurchaseOrders: PurchaseOrder[];
   selectedPo: PurchaseOrder | null;
+  materialMasters: MaterialMaster[];
   selectedOrderRows: OrderDetail[];
   selectedRoundRows: OrderDetail[];
   selectedPlateRows: OrderDetail[];
   pushOrderDetailToCutting: (orderDetailId: string) => void;
-  addOrderDetailLocal: (detail: OrderDetail) => Notice;
+  addOrderDetail: (detail: OrderDetail) => Promise<Notice>;
   cancelOrderDetail: (orderDetailId: string) => Promise<Notice>;
-  updateOrderDetailLocal: (detail: OrderDetail) => Notice;
+  updateOrderDetail: (detail: OrderDetail) => Promise<Notice>;
   pushRoundFromPo: (poId: string | null) => void;
   pushPlateFromPo: (poId: string | null) => void;
 
@@ -231,8 +242,8 @@ export interface CalculationDivisionContextValue {
   editPlateItem: (id: number) => void;
   removePlateItem: (id: number) => void;
   calculatePlate: () => Promise<void>;
-  confirmPlatePlan: () => Promise<Notice>;
-  cancelPlatePlan: () => Promise<Notice>;
+  confirmPlatePlan: (options?: PlanActionOptions) => Promise<Notice>;
+  cancelPlatePlan: (options?: PlanActionOptions) => Promise<Notice>;
   plateResult: PlateResult | null;
   plateTotalPieces: number;
   plateAverageUtilization: string;
@@ -267,8 +278,8 @@ export interface CalculationDivisionContextValue {
   editRoundItem: (id: number) => void;
   removeRoundItem: (id: number) => void;
   calculateRound: () => Promise<void>;
-  confirmRoundPlan: () => Promise<Notice>;
-  cancelRoundPlan: () => Promise<Notice>;
+  confirmRoundPlan: (options?: PlanActionOptions) => Promise<Notice>;
+  cancelRoundPlan: (options?: PlanActionOptions) => Promise<Notice>;
   roundResult: RoundResult | null;
   roundTotalPieces: number;
   roundMatchedCount: number;
@@ -281,6 +292,11 @@ export interface CalculationDivisionContextValue {
   roundScrapMessage: Notice | null;
   saveRoundScraps: () => void;
   removeScrapBar: (id: string) => void;
+}
+
+export interface PlanActionOptions {
+  detailIds?: string[];
+  scrapSourceNo?: number;
 }
 
 export interface DataTableColumn<T> {

@@ -1,4 +1,5 @@
 import type {
+  MaterialMaster,
   OrderDetail,
   OrderDetailStatus,
   PlateStock,
@@ -7,13 +8,21 @@ import type {
   SavedPlateScrap,
   SavedRoundScrap,
 } from "./types";
-import { mapOrderDetails, mapPlateStock, mapPurchaseOrder, mapRoundStock, orderDetailApiStatus } from "./mappers";
+import {
+  mapMaterialMasters,
+  mapOrderDetails,
+  mapPlateStock,
+  mapPurchaseOrder,
+  mapRoundStock,
+  orderDetailApiStatus,
+} from "./mappers";
 
 const API_VERSION = "v1";
 
 export interface FactoryData {
   purchaseOrders: PurchaseOrder[];
   orderDetails: Record<string, OrderDetail[]>;
+  materialMasters: MaterialMaster[];
   stockPlates: PlateStock[];
   stockBars: RoundBarStock[];
   scrapPlates: SavedPlateScrap[];
@@ -22,7 +31,7 @@ export interface FactoryData {
 
 export async function loadFactoryData(): Promise<Partial<FactoryData>> {
   const [orders, stockPlates, stockBars, scrapPlates, scrapBars] = await Promise.all([
-    loadOrders().catch(() => ({ purchaseOrders: [], orderDetails: {} })),
+    loadOrders().catch(() => ({ materialMasters: [], purchaseOrders: [], orderDetails: {} })),
     safeRequest(loadMsPlates),
     safeRequest(loadSteelRoundBars),
     safeRequest(loadWastrelPlates),
@@ -32,6 +41,7 @@ export async function loadFactoryData(): Promise<Partial<FactoryData>> {
   return {
     purchaseOrders: orders.purchaseOrders,
     orderDetails: orders.orderDetails,
+    materialMasters: orders.materialMasters,
     stockPlates,
     stockBars,
     scrapPlates,
@@ -42,13 +52,15 @@ export async function loadFactoryData(): Promise<Partial<FactoryData>> {
 export async function loadOrders(): Promise<{
   purchaseOrders: PurchaseOrder[];
   orderDetails: Record<string, OrderDetail[]>;
+  materialMasters: MaterialMaster[];
 }> {
   const payload = await requestJson(`/api/${API_VERSION}/orders`);
   const purchaseOrders = readArray(payload, "orders")
     .map((row) => mapPurchaseOrder(row))
     .filter((row): row is PurchaseOrder => Boolean(row));
   const orderDetails = mapOrderDetails(readArray(payload, "order_details"));
-  return { purchaseOrders, orderDetails };
+  const materialMasters = mapMaterialMasters(readArray(payload, "material_masters"));
+  return { purchaseOrders, orderDetails, materialMasters };
 }
 
 export async function loadMsPlates(): Promise<PlateStock[]> {
@@ -186,6 +198,22 @@ export async function updateOrderDetailStatus(orderDetailId: string, status: Ord
   });
 }
 
+export async function createOrderDetail(orderId: string, detail: OrderDetail): Promise<void> {
+  await requestJson(`/api/${API_VERSION}/orders/${orderId}/details`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(orderDetailPayload(detail)),
+  });
+}
+
+export async function updateOrderDetail(detail: OrderDetail): Promise<void> {
+  await requestJson(`/api/${API_VERSION}/orders/details/${detail.id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(orderDetailPayload(detail)),
+  });
+}
+
 function readArray(payload: unknown, key: string): Array<Record<string, unknown>> {
   if (!payload || typeof payload !== "object") return [];
   const details = (payload as { details?: Record<string, unknown> }).details;
@@ -230,4 +258,17 @@ function flatString(row: Record<string, unknown>, ...keys: string[]): string | u
     }
   }
   return undefined;
+}
+
+function orderDetailPayload(detail: OrderDetail) {
+  return {
+    diameter: detail.shape === "ROUND" ? detail.diameter : undefined,
+    length: detail.length,
+    mm_id: detail.materialId,
+    quantity: detail.qty,
+    remaining_quantity: detail.remaining,
+    shape: detail.shape,
+    thickness: detail.shape === "PLATE" ? detail.thickness : undefined,
+    width: detail.shape === "PLATE" ? detail.width : undefined,
+  };
 }

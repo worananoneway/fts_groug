@@ -7,6 +7,7 @@ import { Button } from "../../ui/button";
 import { ConfirmDialog } from "../../ui/confirm-dialog";
 import { EmptyState } from "../../ui/empty-state";
 import { Modal } from "../../ui/modal";
+import { TimedToast } from "../../ui/timed-toast";
 import { CalculationSummary } from "../shared/calculation-summary";
 import { UnfulfilledAlert } from "../shared/unfulfilled-alert";
 import { fmt } from "../mappers";
@@ -26,8 +27,7 @@ export function PlateLayoutTab() {
     sheetW,
   } = useCalculationDivision();
   const [previewSheet, setPreviewSheet] = useState<{ sheet: PlateSheet; sheetNo: number } | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [cancelOpen, setCancelOpen] = useState(false);
+  const [planAction, setPlanAction] = useState<PlanAction | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   if (!plateResult) {
@@ -42,25 +42,27 @@ export function PlateLayoutTab() {
       : "";
 
   async function runConfirm() {
-    const result = await confirmPlatePlan();
+    if (!planAction) return;
+    const result = await confirmPlatePlan({ detailIds: planAction.detailIds, scrapSourceNo: planAction.sourceNo });
     setNotice(result);
-    setConfirmOpen(false);
+    setPlanAction(null);
   }
 
   async function runCancel() {
-    const result = await cancelPlatePlan();
+    if (!planAction) return;
+    const result = await cancelPlatePlan({ detailIds: planAction.detailIds, scrapSourceNo: planAction.sourceNo });
     setNotice(result);
-    setCancelOpen(false);
+    setPlanAction(null);
   }
 
   const columns = splitInTwo(plateResult.sheets);
 
   return (
     <div className="space-y-6">
+      <TimedToast notice={notice} onClose={() => setNotice(null)} />
       <UnfulfilledAlert message={unfulfilledMessage} />
-      {notice ? <AlertBanner tone={notice.ok ? "success" : "warning"}>{notice.text}</AlertBanner> : null}
       <div className="grid gap-5 xl:grid-cols-[minmax(160px,1fr)_minmax(0,4fr)_minmax(0,4fr)]">
-        <div className="space-y-4 xl:sticky xl:top-64 xl:row-span-2 xl:self-start">
+        <div className="space-y-4 xl:sticky xl:top-48 xl:self-start">
           <CalculationSummary
             averageUtilization={plateAverageUtilization}
             scrapCount={plateScraps.length}
@@ -69,17 +71,11 @@ export function PlateLayoutTab() {
             vertical
           />
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-2 rounded-lg bg-white p-4 shadow-sm xl:col-span-2">
-          <Button onClick={() => setConfirmOpen(true)} variant="success">
-            ยืนยัน
-          </Button>
-          <Button onClick={() => setCancelOpen(true)} variant="danger">
-            ยกเลิก
-          </Button>
-        </div>
         {columns.map((column, columnIndex) => (
           <div key={columnIndex} className="space-y-5">
-            {column.map(({ sheet, index }) => (
+            {column.map(({ sheet, index }) => {
+              const detailIds = detailIdsForSheet(sheet);
+              return (
               <div
                 key={index}
                 role="button"
@@ -93,6 +89,30 @@ export function PlateLayoutTab() {
                 }}
               >
                 <PlateLayoutCanvas
+                  actions={
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setPlanAction({ detailIds, mode: "confirm", sourceNo: index + 1 });
+                        }}
+                        variant="success"
+                      >
+                        ยืนยัน
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setPlanAction({ detailIds, mode: "cancel", sourceNo: index + 1 });
+                        }}
+                        variant="danger"
+                      >
+                        ยกเลิก
+                      </Button>
+                    </>
+                  }
                   sheet={sheet}
                   sheetH={sheetH}
                   sheetNo={index + 1}
@@ -100,7 +120,8 @@ export function PlateLayoutTab() {
                   sourceCode={selectedPlate?.code}
                 />
               </div>
-            ))}
+              );
+            })}
           </div>
         ))}
       </div>
@@ -116,23 +137,23 @@ export function PlateLayoutTab() {
         ) : null}
       </Modal>
       <ConfirmDialog
-        open={confirmOpen}
-        title="ยืนยันแผนการตัด"
-        onCancel={() => setConfirmOpen(false)}
+        open={planAction?.mode === "confirm"}
+        title={`ยืนยันแผนการตัดแผ่นที่ ${planAction?.sourceNo ?? ""}`}
+        onCancel={() => setPlanAction(null)}
         onConfirm={() => void runConfirm()}
         confirmLabel="ยืนยัน"
         variant="success"
       >
-        ระบบจะเปลี่ยนสถานะรายการที่เลือกเป็น Completed และบันทึกเศษลงคลัง
+        ระบบจะเปลี่ยนสถานะรายการในแผ่นนี้เป็น Completed และบันทึกเศษของแผ่นนี้ลงคลัง
       </ConfirmDialog>
       <ConfirmDialog
-        open={cancelOpen}
-        title="ยกเลิกแผนการตัด"
-        onCancel={() => setCancelOpen(false)}
+        open={planAction?.mode === "cancel"}
+        title={`ยกเลิกแผนการตัดแผ่นที่ ${planAction?.sourceNo ?? ""}`}
+        onCancel={() => setPlanAction(null)}
         onConfirm={() => void runCancel()}
         confirmLabel="ยืนยันยกเลิก"
       >
-        ระบบจะเปลี่ยนสถานะรายการที่เลือกเป็น Cancelled
+        ระบบจะเปลี่ยนสถานะรายการในแผ่นนี้เป็น Cancelled
       </ConfirmDialog>
     </div>
   );
@@ -143,5 +164,15 @@ function splitInTwo<T>(items: T[]): Array<Array<{ sheet: T; index: number }>> {
     items.map((sheet, index) => ({ sheet, index })).filter((_, index) => index % 2 === 0),
     items.map((sheet, index) => ({ sheet, index })).filter((_, index) => index % 2 === 1),
   ];
+}
+
+interface PlanAction {
+  detailIds: string[];
+  mode: "confirm" | "cancel";
+  sourceNo: number;
+}
+
+function detailIdsForSheet(sheet: PlateSheet): string[] {
+  return Array.from(new Set(sheet.pieces.map((piece) => piece.orderDetailId).filter(Boolean))) as string[];
 }
 

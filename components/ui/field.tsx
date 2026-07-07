@@ -3,12 +3,13 @@ import type { InputHTMLAttributes, ReactNode } from "react";
 import { cn } from "./button";
 
 interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
+  children?: ReactNode;
   label: string;
   helper?: ReactNode;
   inputClassName?: string;
 }
 
-export function Field({ className, helper, inputClassName, label, ...props }: FieldProps) {
+export function Field({ children, className, helper, inputClassName, label, ...props }: FieldProps) {
   return (
     <label className={cn("block", className)}>
       <span className="mb-1.5 block text-sm text-slate-600">{label}</span>
@@ -19,6 +20,7 @@ export function Field({ className, helper, inputClassName, label, ...props }: Fi
         )}
         {...props}
       />
+      {children}
       {helper ? <span className="mt-1.5 block text-xs text-slate-400">{helper}</span> : null}
     </label>
   );

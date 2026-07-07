@@ -1,5 +1,6 @@
 import type {
   FreeRect,
+  MaterialMaster,
   OrderDetail,
   OrderDetailStatus,
   PlateItem,
@@ -62,6 +63,7 @@ export function packGuillotine(sheetW: number, sheetH: number, kerf: number, ite
         w: item.w,
         h: item.h,
         color: item.color,
+        orderDetailId: item.orderDetailId,
       })),
     )
     .sort((a, b) => b.w * b.h - a.w * a.h);
@@ -101,6 +103,7 @@ export function packGuillotine(sheetW: number, sheetH: number, kerf: number, ite
         w,
         h,
         color: piece.color,
+        orderDetailId: piece.orderDetailId,
         rotated: best.rotated,
       });
       sheet.freeRects.splice(best.idx, 1);
@@ -121,7 +124,7 @@ export function packGuillotine(sheetW: number, sheetH: number, kerf: number, ite
     const w = rotated ? piece.h : piece.w;
     const h = rotated ? piece.w : piece.h;
     const sheet: PlateSheet = { pieces: [], freeRects: [] };
-    sheet.pieces.push({ code: piece.code, x: 0, y: 0, w, h, color: piece.color, rotated });
+    sheet.pieces.push({ code: piece.code, x: 0, y: 0, w, h, color: piece.color, orderDetailId: piece.orderDetailId, rotated });
     splitFreeRect(sheet, { x: 0, y: 0, w: sheetW, h: sheetH }, w, h, kerf);
     sheets.push(sheet);
   }
@@ -136,6 +139,7 @@ export function packRoundBars(barLength: number, kerf: number, items: RoundItem[
         code: item.code,
         length: item.length,
         color: item.color,
+        orderDetailId: item.orderDetailId,
       })),
     )
     .sort((a, b) => b.length - a.length);
@@ -164,7 +168,7 @@ export function packRoundBars(barLength: number, kerf: number, items: RoundItem[
     }
 
     const start = target.used + (target.pieces.length > 0 ? kerf : 0);
-    target.pieces.push({ code: piece.code, start, length: piece.length, color: piece.color });
+    target.pieces.push({ code: piece.code, start, length: piece.length, color: piece.color, orderDetailId: piece.orderDetailId });
     target.used = start + piece.length;
   }
 
@@ -201,6 +205,7 @@ export function mapOrderDetails(raw: unknown): Record<string, OrderDetail[]> {
     const detail: OrderDetail = {
       id,
       shape,
+      materialId: stringValue(row.material_id ?? row.mm_id ?? row.odd_mm_id),
       material: stringValue(row.material ?? row.material_name ?? row.mm_name) || "ไม่ระบุวัสดุ",
       diameter: numberValue(row.diameter ?? row.required_diameter ?? row.required_diameter_mm),
       length: numberValue(row.length ?? row.required_length ?? row.required_length_mm),
@@ -251,6 +256,25 @@ export function statusLabel(status: PurchaseOrderStatus): string {
   if (status === "IN_PROGRESS") return "กำลังตัด";
   if (status === "DONE") return "เสร็จสิ้น";
   return "รอดำเนินการ";
+}
+
+export function mapMaterialMasters(raw: unknown): MaterialMaster[] {
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    .map((row) => {
+      const id = stringValue(row.id ?? row.mm_id);
+      const shape = stringValue(row.shape ?? row.mm_shape_type).toUpperCase();
+      if (!id || (shape !== "ROUND" && shape !== "PLATE")) return null;
+      return {
+        id,
+        name: stringValue(row.name ?? row.mm_name) || id,
+        shape,
+        status: stringValue(row.status ?? row.mm_status),
+      };
+    })
+    .filter((row): row is MaterialMaster => Boolean(row));
 }
 
 export function orderDetailStatusLabel(status: OrderDetailStatus): string {

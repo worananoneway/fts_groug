@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 
-import { AlertBanner } from "../../ui/alert-banner";
 import { Badge } from "../../ui/badge";
 import { ConfirmDialog } from "../../ui/confirm-dialog";
 import { EmptyState } from "../../ui/empty-state";
 import { IconButton } from "../../ui/icon-button";
+import { TimedToast } from "../../ui/timed-toast";
 import { fmt } from "../mappers";
 import { useCalculationDivision } from "../hooks/use-calculation-division";
 import type { Notice, RoundItem } from "../types";
@@ -26,7 +26,7 @@ export function RoundBarItemList() {
 
   return (
     <>
-      {notice ? <AlertBanner className="mb-3" tone={notice.ok ? "success" : "warning"}>{notice.text}</AlertBanner> : null}
+      <TimedToast notice={notice} onClose={() => setNotice(null)} />
       <div className="flex-1 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100">
         {roundItems.length === 0 ? (
           <EmptyState>ยังไม่มีรายการ เพิ่มชิ้นงานที่ต้องการตัดด้านบน</EmptyState>

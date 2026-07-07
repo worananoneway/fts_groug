@@ -1,12 +1,15 @@
 import { fmt } from "../mappers";
 import type { RoundBarLayout } from "../types";
+import type { ReactNode } from "react";
 
 export function RoundBarLayoutCanvas({
+  actions,
   bar,
   barDiameter,
   barLength,
   barNo,
 }: {
+  actions?: ReactNode;
   bar: RoundBarLayout;
   barDiameter: number;
   barLength: number;
@@ -28,6 +31,7 @@ export function RoundBarLayoutCanvas({
           ใช้ความยาว {utilization.toFixed(1)}%
         </span>
       </div>
+      {actions ? <div className="mb-4 flex justify-end gap-2">{actions}</div> : null}
       <svg
         aria-label={`แผนผังการตัดแท่งที่ ${barNo}`}
         className="h-36 w-full rounded-lg border border-slate-200 bg-slate-50"

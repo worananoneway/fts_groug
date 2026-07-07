@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import {
+  createOrderDetail,
   createWastrelBar,
   createWastrelPlate,
   deleteWastrelBar,
@@ -17,6 +18,7 @@ import {
   loadFactoryData,
   loadWastrelBars,
   loadWastrelPlates,
+  updateOrderDetail,
   updateOrderDetailStatus,
   updateOrderStatus,
 } from "./api";
@@ -25,10 +27,12 @@ import { nextCode, packGuillotine, packRoundBars } from "./mappers";
 import type {
   CalculationDivisionContextValue,
   DataStatus,
+  MaterialMaster,
   ModuleKey,
   Notice,
   OrderDetail,
   OrderDetailStatus,
+  PlanActionOptions,
   PlateFormState,
   PlateItem,
   PlateResult,
@@ -59,6 +63,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
 
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [orderDetails, setOrderDetails] = useState<Record<string, OrderDetail[]>>({});
+  const [materialMasters, setMaterialMasters] = useState<MaterialMaster[]>([]);
   const [poSearch, setPoSearch] = useState("");
   const [selectedPoId, setSelectedPoId] = useState<string | null>(null);
 
@@ -74,8 +79,8 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
   const [plateResult, setPlateResult] = useState<PlateResult | null>(null);
   const [plateForm, setPlateForm] = useState<PlateFormState>({
     code: "",
-    width: "",
-    height: "",
+    width: "1",
+    height: "1",
     quantity: "1",
   });
   const [plateEditingItemId, setPlateEditingItemId] = useState<number | null>(null);
@@ -95,7 +100,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
   const [roundResult, setRoundResult] = useState<RoundResult | null>(null);
   const [roundForm, setRoundForm] = useState<RoundFormState>({
     code: "",
-    length: "",
+    length: "1",
     quantity: "1",
   });
   const [roundEditingItemId, setRoundEditingItemId] = useState<number | null>(null);
@@ -108,17 +113,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     loadFactoryData()
       .then((data) => {
         if (!active) return;
-        setPurchaseOrders(data.purchaseOrders ?? []);
-        setOrderDetails(data.orderDetails ?? {});
-        setStockPlates(data.stockPlates ?? []);
-        setStockBars(data.stockBars ?? []);
-        setScrapPlates(data.scrapPlates ?? []);
-        setScrapBars(data.scrapBars ?? []);
-        setDataStatus({
-          loading: false,
-          error: null,
-          source: "api",
-        });
+        applyFactoryData(data);
       })
       .catch((error) => {
         if (!active) return;
@@ -148,8 +143,8 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
 
   const selectedPo = selectedPoId ? purchaseOrders.find((po) => po.id === selectedPoId) ?? null : null;
   const selectedOrderRows = selectedPoId ? orderDetails[selectedPoId] ?? [] : [];
-  const selectedRoundRows = selectedOrderRows.filter((row) => row.shape === "ROUND");
-  const selectedPlateRows = selectedOrderRows.filter((row) => row.shape === "PLATE");
+  const selectedRoundRows = selectedOrderRows.filter((row) => row.shape === "ROUND" && isCuttableOrderDetail(row));
+  const selectedPlateRows = selectedOrderRows.filter((row) => row.shape === "PLATE" && isCuttableOrderDetail(row));
   const activePlateOrderDetailIds = uniqueIds(plateItems.map((item) => item.orderDetailId));
   const activeRoundOrderDetailIds = uniqueIds(roundItems.map((item) => item.orderDetailId));
   const visibleScrapPlates = selectedPoId
@@ -221,9 +216,29 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     }
   }
 
+  async function refreshFactoryData() {
+    const data = await loadFactoryData();
+    applyFactoryData(data);
+  }
+
+  function applyFactoryData(data: Awaited<ReturnType<typeof loadFactoryData>>) {
+    setPurchaseOrders(data.purchaseOrders ?? []);
+    setOrderDetails(data.orderDetails ?? {});
+    setMaterialMasters(data.materialMasters ?? []);
+    setStockPlates(data.stockPlates ?? []);
+    setStockBars(data.stockBars ?? []);
+    setScrapPlates(data.scrapPlates ?? []);
+    setScrapBars(data.scrapBars ?? []);
+    setDataStatus({
+      loading: false,
+      error: null,
+      source: "api",
+    });
+  }
+
   function beginNewPlateItem() {
     setPlateEditingItemId(null);
-    setPlateForm({ code: "", width: "", height: "", quantity: "1" });
+    setPlateForm({ code: "", width: "1", height: "1", quantity: "1" });
   }
 
   function addPlateItem() {
@@ -241,7 +256,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
         items.map((item) => (item.id === plateEditingItemId ? { ...item, code, w, h, qty } : item)),
       );
       setPlateEditingItemId(null);
-      setPlateForm({ code: "", width: "", height: "", quantity: "1" });
+      setPlateForm({ code: "", width: "1", height: "1", quantity: "1" });
       setPlateResult(null);
       return;
     }
@@ -258,7 +273,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
       },
     ]);
     setPlateNextId((id) => id + 1);
-    setPlateForm({ code: "", width: "", height: "", quantity: "1" });
+    setPlateForm({ code: "", width: "1", height: "1", quantity: "1" });
     setPlateResult(null);
   }
 
@@ -266,7 +281,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     setPlateItems((items) => items.filter((item) => item.id !== id));
     if (plateEditingItemId === id) {
       setPlateEditingItemId(null);
-      setPlateForm({ code: "", width: "", height: "", quantity: "1" });
+      setPlateForm({ code: "", width: "1", height: "1", quantity: "1" });
     }
     setPlateResult(null);
   }
@@ -310,6 +325,9 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
           : order,
       ),
     );
+    if (remoteDetailIds.length > 0) {
+      await refreshFactoryData();
+    }
   }
 
   async function cancelOrderDetail(orderDetailId: string): Promise<Notice> {
@@ -321,22 +339,32 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     }
   }
 
-  function addOrderDetailLocal(detail: OrderDetail): Notice {
+  async function addOrderDetail(detail: OrderDetail): Promise<Notice> {
     if (!selectedPoId) return { ok: false, text: "ไม่พบใบสั่งซื้อที่เลือก" };
-    setOrderDetails((current) => ({
-      ...current,
-      [selectedPoId]: [...(current[selectedPoId] ?? []), detail],
-    }));
-    return { ok: true, text: "เพิ่มรายการสำเร็จ" };
+    if (!detail.materialId) return { ok: false, text: "กรุณาเลือกวัสดุจากรายการ" };
+    try {
+      await createOrderDetail(selectedPoId, detail);
+      await refreshFactoryData();
+      return { ok: true, text: "เพิ่มรายการสำเร็จ" };
+    } catch {
+      return { ok: false, text: "เพิ่มรายการไม่สำเร็จ" };
+    }
   }
 
-  function updateOrderDetailLocal(detail: OrderDetail): Notice {
+  async function updateOrderDetailRow(detail: OrderDetail): Promise<Notice> {
     if (!selectedPoId) return { ok: false, text: "ไม่พบใบสั่งซื้อที่เลือก" };
-    setOrderDetails((current) => ({
-      ...current,
-      [selectedPoId]: (current[selectedPoId] ?? []).map((row) => (row.id === detail.id ? detail : row)),
-    }));
-    return { ok: true, text: "แก้ไขรายละเอียดสำเร็จ" };
+    if (!detail.materialId) return { ok: false, text: "กรุณาเลือกวัสดุจากรายการ" };
+    try {
+      if (isLocalOrderDetailId(detail.id)) {
+        await createOrderDetail(selectedPoId, detail);
+      } else {
+        await updateOrderDetail(detail);
+      }
+      await refreshFactoryData();
+      return { ok: true, text: "แก้ไขรายละเอียดสำเร็จ" };
+    } catch {
+      return { ok: false, text: "แก้ไขรายละเอียดไม่สำเร็จ" };
+    }
   }
 
   async function calculatePlate() {
@@ -352,8 +380,11 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     setPlateTab("layout");
   }
 
-  async function persistPlateScraps() {
-    if (unsavedPlateScraps.length === 0) return;
+  async function persistPlateScraps(sourceNo?: number) {
+    const targetScraps = sourceNo
+      ? unsavedPlateScraps.filter((scrap) => scrap.sheetNo === sourceNo)
+      : unsavedPlateScraps;
+    if (targetScraps.length === 0) return;
     if (!selectedPlate?.material_master_id) {
       throw new Error("กรุณาเลือกแผ่นจากคลังก่อนบันทึกเศษ เพื่อระบุวัสดุของเศษ");
     }
@@ -361,7 +392,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     const stamp = Date.now().toString(36).toUpperCase();
     const ordId = selectedPoId ?? purchaseOrders.find((po) => po.no === plateLoadedFromPo)?.id;
     const oddId = firstRemoteOrderDetailId(activePlateOrderDetailIds);
-    const scraps = unsavedPlateScraps;
+    const scraps = targetScraps;
 
     for (const [index, scrap] of scraps.entries()) {
       await createWastrelPlate({
@@ -395,10 +426,11 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     }
   }
 
-  async function confirmPlatePlan(): Promise<Notice> {
+  async function confirmPlatePlan(options: PlanActionOptions = {}): Promise<Notice> {
     try {
-      const count = await persistPlateScraps();
-      await setSelectedOrderDetailsStatus(activePlateOrderDetailIds, "COMPLETED");
+      const detailIds = options.detailIds?.length ? options.detailIds : activePlateOrderDetailIds;
+      const count = await persistPlateScraps(options.scrapSourceNo);
+      await setSelectedOrderDetailsStatus(detailIds, "COMPLETED");
       return { ok: true, text: `ยืนยันแผนการตัดแล้ว และบันทึกเศษ ${count ?? 0} ชิ้น` };
     } catch (error) {
       return {
@@ -408,9 +440,10 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     }
   }
 
-  async function cancelPlatePlan(): Promise<Notice> {
+  async function cancelPlatePlan(options: PlanActionOptions = {}): Promise<Notice> {
     try {
-      await setSelectedOrderDetailsStatus(activePlateOrderDetailIds, "CANCELLED");
+      const detailIds = options.detailIds?.length ? options.detailIds : activePlateOrderDetailIds;
+      await setSelectedOrderDetailsStatus(detailIds, "CANCELLED");
       return { ok: true, text: "ยกเลิกแผนการตัดแล้ว" };
     } catch {
       return { ok: false, text: "ยกเลิกแผนการตัดไม่สำเร็จ" };
@@ -440,7 +473,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
         items.map((item) => (item.id === roundEditingItemId ? { ...item, code, length, qty } : item)),
       );
       setRoundEditingItemId(null);
-      setRoundForm({ code: "", length: "", quantity: "1" });
+      setRoundForm({ code: "", length: "1", quantity: "1" });
       setRoundResult(null);
       return;
     }
@@ -456,7 +489,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
       },
     ]);
     setRoundNextId((id) => id + 1);
-    setRoundForm({ code: "", length: "", quantity: "1" });
+    setRoundForm({ code: "", length: "1", quantity: "1" });
     setRoundResult(null);
   }
 
@@ -464,7 +497,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     setRoundItems((items) => items.filter((item) => item.id !== id));
     if (roundEditingItemId === id) {
       setRoundEditingItemId(null);
-      setRoundForm({ code: "", length: "", quantity: "1" });
+      setRoundForm({ code: "", length: "1", quantity: "1" });
     }
     setRoundResult(null);
   }
@@ -482,7 +515,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
 
   function beginNewRoundItem() {
     setRoundEditingItemId(null);
-    setRoundForm({ code: "", length: "", quantity: "1" });
+    setRoundForm({ code: "", length: "1", quantity: "1" });
   }
 
   async function calculateRound() {
@@ -498,8 +531,11 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     setRoundTab("layout");
   }
 
-  async function persistRoundScraps() {
-    if (unsavedRoundScraps.length === 0) return;
+  async function persistRoundScraps(sourceNo?: number) {
+    const targetScraps = sourceNo
+      ? unsavedRoundScraps.filter((scrap) => scrap.barNo === sourceNo)
+      : unsavedRoundScraps;
+    if (targetScraps.length === 0) return;
     if (!selectedBar?.material_master_id) {
       throw new Error("กรุณาเลือกแท่งจากคลังก่อนบันทึกเศษ เพื่อระบุวัสดุของเศษ");
     }
@@ -507,7 +543,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     const stamp = Date.now().toString(36).toUpperCase();
     const ordId = selectedPoId ?? purchaseOrders.find((po) => po.no === roundLoadedFromPo)?.id;
     const oddId = firstRemoteOrderDetailId(activeRoundOrderDetailIds);
-    const scraps = unsavedRoundScraps;
+    const scraps = targetScraps;
 
     for (const [index, scrap] of scraps.entries()) {
       await createWastrelBar({
@@ -540,10 +576,11 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     }
   }
 
-  async function confirmRoundPlan(): Promise<Notice> {
+  async function confirmRoundPlan(options: PlanActionOptions = {}): Promise<Notice> {
     try {
-      const count = await persistRoundScraps();
-      await setSelectedOrderDetailsStatus(activeRoundOrderDetailIds, "COMPLETED");
+      const detailIds = options.detailIds?.length ? options.detailIds : activeRoundOrderDetailIds;
+      const count = await persistRoundScraps(options.scrapSourceNo);
+      await setSelectedOrderDetailsStatus(detailIds, "COMPLETED");
       return { ok: true, text: `ยืนยันแผนการตัดแล้ว และบันทึกเศษ ${count ?? 0} ชิ้น` };
     } catch (error) {
       return {
@@ -553,9 +590,10 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     }
   }
 
-  async function cancelRoundPlan(): Promise<Notice> {
+  async function cancelRoundPlan(options: PlanActionOptions = {}): Promise<Notice> {
     try {
-      await setSelectedOrderDetailsStatus(activeRoundOrderDetailIds, "CANCELLED");
+      const detailIds = options.detailIds?.length ? options.detailIds : activeRoundOrderDetailIds;
+      await setSelectedOrderDetailsStatus(detailIds, "CANCELLED");
       return { ok: true, text: "ยกเลิกแผนการตัดแล้ว" };
     } catch {
       return { ok: false, text: "ยกเลิกแผนการตัดไม่สำเร็จ" };
@@ -606,7 +644,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
       }
       setRoundLoadedFromPo(po?.no ?? null);
       setRoundEditingItemId(null);
-      setRoundForm({ code: "", length: "", quantity: "1" });
+      setRoundForm({ code: "", length: "1", quantity: "1" });
       setRoundResult(shouldShowLayout ? packRoundBars(nextBarLength, rKerf, [nextItem]) : null);
       setRoundSavedScrapKeys([]);
       setRoundScrapMessage(null);
@@ -642,7 +680,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     }
     setPlateLoadedFromPo(po?.no ?? null);
     setPlateEditingItemId(null);
-    setPlateForm({ code: "", width: "", height: "", quantity: "1" });
+    setPlateForm({ code: "", width: "1", height: "1", quantity: "1" });
     setPlateResult(shouldShowLayout ? packGuillotine(nextSheetW, nextSheetH, kerf, [nextItem]) : null);
     setPlateSavedScrapKeys([]);
     setPlateScrapMessage(null);
@@ -650,7 +688,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
 
   function pushRoundFromPo(poId: string | null) {
     if (!poId) return;
-    const rows = (orderDetails[poId] ?? []).filter((row) => row.shape === "ROUND");
+    const rows = (orderDetails[poId] ?? []).filter((row) => row.shape === "ROUND" && isCuttableOrderDetail(row));
     if (!rows.length) return;
 
     const counts = rows.reduce<Record<string, number>>((acc, row) => {
@@ -685,7 +723,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     }
     setRoundLoadedFromPo(po?.no ?? null);
     setRoundEditingItemId(null);
-    setRoundForm({ code: "", length: "", quantity: "1" });
+    setRoundForm({ code: "", length: "1", quantity: "1" });
     setRoundResult(null);
     setRoundSavedScrapKeys([]);
     setRoundScrapMessage(null);
@@ -693,7 +731,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
 
   function pushPlateFromPo(poId: string | null) {
     if (!poId) return;
-    const rows = (orderDetails[poId] ?? []).filter((row) => row.shape === "PLATE");
+    const rows = (orderDetails[poId] ?? []).filter((row) => row.shape === "PLATE" && isCuttableOrderDetail(row));
     if (!rows.length) return;
 
     const startId = plateNextId;
@@ -724,7 +762,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     }
     setPlateLoadedFromPo(po?.no ?? null);
     setPlateEditingItemId(null);
-    setPlateForm({ code: "", width: "", height: "", quantity: "1" });
+    setPlateForm({ code: "", width: "1", height: "1", quantity: "1" });
     setPlateResult(null);
     setPlateSavedScrapKeys([]);
     setPlateScrapMessage(null);
@@ -748,13 +786,14 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     selectPo,
     filteredPurchaseOrders,
     selectedPo,
+    materialMasters,
     selectedOrderRows,
     selectedRoundRows,
     selectedPlateRows,
     pushOrderDetailToCutting,
-    addOrderDetailLocal,
+    addOrderDetail,
     cancelOrderDetail,
-    updateOrderDetailLocal,
+    updateOrderDetail: updateOrderDetailRow,
     pushRoundFromPo,
     pushPlateFromPo,
 
@@ -879,5 +918,9 @@ function isLocalOrderDetailId(id: string): boolean {
 
 function firstRemoteOrderDetailId(ids: string[]): string | undefined {
   return ids.find((id) => !isLocalOrderDetailId(id));
+}
+
+function isCuttableOrderDetail(row: OrderDetail): boolean {
+  return row.status === "PENDING" || row.status === "IN_PROCESS";
 }
 

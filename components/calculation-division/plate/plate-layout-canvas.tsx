@@ -1,13 +1,16 @@
 import { fmt } from "../mappers";
 import type { PlateSheet } from "../types";
+import type { ReactNode } from "react";
 
 export function PlateLayoutCanvas({
+  actions,
   sheet,
   sheetH,
   sheetNo,
   sheetW,
   sourceCode,
 }: {
+  actions?: ReactNode;
   sheet: PlateSheet;
   sheetH: number;
   sheetNo: number;
@@ -30,6 +33,7 @@ export function PlateLayoutCanvas({
           ใช้พื้นที่ {utilization.toFixed(1)}%
         </span>
       </div>
+      {actions ? <div className="mb-4 flex justify-end gap-2">{actions}</div> : null}
       <svg
         aria-label={`แผนผังการตัดแผ่นที่ ${sheetNo}`}
         className="w-full rounded-lg border border-slate-200 bg-slate-50"

@@ -3,29 +3,31 @@
 import { useState } from "react";
 import { ClipboardList, Plus } from "lucide-react";
 
-import { AlertBanner } from "../../ui/alert-banner";
 import { Button } from "../../ui/button";
 import { ConfirmDialog } from "../../ui/confirm-dialog";
 import { EmptyState } from "../../ui/empty-state";
 import { Field } from "../../ui/field";
 import { Modal } from "../../ui/modal";
+import { TimedToast } from "../../ui/timed-toast";
+import { MaterialAutocomplete } from "./material-autocomplete";
 import { PushToCuttingActions } from "./push-to-cutting-actions";
 import { OrderShapeTable } from "./order-shape-table";
 import { fmt, orderDetailStatusLabel } from "../mappers";
 import { usePurchaseOrders } from "../hooks/use-purchase-orders";
-import type { Notice, OrderDetail } from "../types";
+import type { MaterialMaster, Notice, OrderDetail } from "../types";
 
 export function PurchaseOrderDetail() {
   const {
-    addOrderDetailLocal,
+    addOrderDetail,
     cancelOrderDetail,
+    materialMasters,
     pushOrderDetailToCutting,
     selectedOrderRows,
     selectedPlateRows,
     selectedPo,
     selectedPoId,
     selectedRoundRows,
-    updateOrderDetailLocal,
+    updateOrderDetail,
   } = usePurchaseOrders();
   const [detailView, setDetailView] = useState<OrderDetail | null>(null);
   const [addDetail, setAddDetail] = useState<OrderDetail | null>(null);
@@ -41,14 +43,19 @@ export function PurchaseOrderDetail() {
     pushOrderDetailToCutting(row.id);
   }
 
-  function saveEdit() {
+  async function saveEdit() {
     if (!editDetail) return;
-    const result = updateOrderDetailLocal(editDetail);
+    const validation = validateDetail(editDetail);
+    if (validation) {
+      setNotice({ ok: false, text: validation });
+      return;
+    }
+    const result = await updateOrderDetail(editDetail);
     setNotice(result);
     if (result.ok) setEditDetail(null);
   }
 
-  function saveAdd() {
+  async function saveAdd() {
     if (!addDetail) return;
     const normalized: OrderDetail = {
       ...addDetail,
@@ -56,7 +63,12 @@ export function PurchaseOrderDetail() {
       qty: Math.max(1, Math.floor(addDetail.qty || 1)),
       remaining: Math.max(0, Math.floor(addDetail.remaining || addDetail.qty || 1)),
     };
-    const result = addOrderDetailLocal(normalized);
+    const validation = validateDetail(normalized);
+    if (validation) {
+      setNotice({ ok: false, text: validation });
+      return;
+    }
+    const result = await addOrderDetail(normalized);
     setNotice(result);
     if (result.ok) setAddDetail(null);
   }
@@ -70,14 +82,15 @@ export function PurchaseOrderDetail() {
 
   if (!selectedPo || !selectedPoId) {
     return (
-      <section className="rounded-lg bg-white p-6 shadow-sm">
+      <section className="rounded-lg bg-white p-6 shadow-sm lg:sticky lg:top-48 lg:h-[calc(100vh-14rem)] lg:overflow-auto">
         <EmptyState>เลือกใบสั่งซื้อจากรายการด้านซ้ายเพื่อดูรายการตัด</EmptyState>
       </section>
     );
   }
 
   return (
-    <section className="rounded-lg bg-white p-6 shadow-sm lg:sticky lg:top-64 lg:h-[calc(100vh-18rem)] lg:overflow-auto">
+    <section className="rounded-lg bg-white p-6 shadow-sm lg:sticky lg:top-48 lg:h-[calc(100vh-14rem)] lg:overflow-auto">
+      <TimedToast notice={notice} onClose={() => setNotice(null)} />
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800">
@@ -100,10 +113,6 @@ export function PurchaseOrderDetail() {
           />
         </div>
       </div>
-
-      {notice ? (
-        <AlertBanner className="mb-4" tone={notice.ok ? "success" : "warning"}>{notice.text}</AlertBanner>
-      ) : null}
 
       <div className="space-y-5">
         <OrderShapeTable
@@ -132,7 +141,9 @@ export function PurchaseOrderDetail() {
           </div>
         }
       >
-        {addDetail ? <OrderDetailFields detail={addDetail} onChange={setAddDetail} /> : null}
+        {addDetail ? (
+          <OrderDetailFields detail={addDetail} materials={materialMasters} onChange={setAddDetail} />
+        ) : null}
       </Modal>
 
       <Modal
@@ -148,7 +159,9 @@ export function PurchaseOrderDetail() {
           </div>
         }
       >
-        {editDetail ? <OrderDetailFields detail={editDetail} onChange={setEditDetail} /> : null}
+        {editDetail ? (
+          <OrderDetailFields detail={editDetail} materials={materialMasters} onChange={setEditDetail} />
+        ) : null}
       </Modal>
 
       <ConfirmDialog
@@ -168,9 +181,9 @@ function newOrderDetailDraft(): OrderDetail {
     id: `LOCAL-${Date.now().toString(36).toUpperCase()}`,
     shape: "PLATE",
     material: "",
-    length: 0,
-    width: 0,
-    thickness: 0,
+    length: 1,
+    width: 1,
+    thickness: 1,
     qty: 1,
     remaining: 1,
     status: "PENDING",
@@ -179,9 +192,11 @@ function newOrderDetailDraft(): OrderDetail {
 
 function OrderDetailFields({
   detail,
+  materials,
   onChange,
 }: {
   detail: OrderDetail;
+  materials: MaterialMaster[];
   onChange: (detail: OrderDetail) => void;
 }) {
   const updateQty = (qty: number) => onChange({ ...detail, qty, remaining: Math.max(0, detail.remaining || qty) });
@@ -190,76 +205,134 @@ function OrderDetailFields({
     <div className="space-y-4">
       <div className="flex gap-2">
         <Button
-          onClick={() => onChange({ ...detail, shape: "PLATE", diameter: undefined })}
+          onClick={() =>
+            onChange({
+              ...detail,
+              diameter: undefined,
+              material: "",
+              materialId: undefined,
+              shape: "PLATE",
+              thickness: positiveInt(detail.thickness),
+              width: positiveInt(detail.width),
+            })
+          }
           variant={detail.shape === "PLATE" ? "primary" : "secondary"}
         >
           แผ่น
         </Button>
         <Button
-          onClick={() => onChange({ ...detail, shape: "ROUND", width: undefined, thickness: undefined })}
+          onClick={() =>
+            onChange({
+              ...detail,
+              diameter: positiveInt(detail.diameter),
+              material: "",
+              materialId: undefined,
+              shape: "ROUND",
+              thickness: undefined,
+              width: undefined,
+            })
+          }
           variant={detail.shape === "ROUND" ? "primary" : "secondary"}
         >
           เพลา
         </Button>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label="วัสดุ"
-          value={detail.material}
-          onChange={(event) => onChange({ ...detail, material: event.target.value })}
+        <MaterialAutocomplete
+          materialId={detail.materialId}
+          materialName={detail.material}
+          materials={materials}
+          shape={detail.shape}
+          onChange={(material) => onChange({ ...detail, material: material.name, materialId: material.id })}
         />
         <Field
           label="จำนวน"
+          min={1}
+          step={1}
           type="number"
           value={String(detail.qty)}
-          onChange={(event) => updateQty(Number(event.target.value) || 1)}
+          onChange={(event) => updateQty(positiveInt(event.target.value))}
         />
         <Field
           label="คงเหลือ"
+          min={0}
+          step={1}
           type="number"
           value={String(detail.remaining)}
-          onChange={(event) => onChange({ ...detail, remaining: Number(event.target.value) || 0 })}
+          onChange={(event) => onChange({ ...detail, remaining: nonNegativeInt(event.target.value) })}
         />
         {detail.shape === "ROUND" ? (
           <>
             <Field
               label="เส้นผ่านศูนย์กลาง Ø"
+              min={1}
+              step={1}
               type="number"
               value={String(detail.diameter ?? "")}
-              onChange={(event) => onChange({ ...detail, diameter: Number(event.target.value) || 0 })}
+              onChange={(event) => onChange({ ...detail, diameter: positiveInt(event.target.value) })}
             />
             <Field
               label="ความยาว"
+              min={1}
+              step={1}
               type="number"
               value={String(detail.length)}
-              onChange={(event) => onChange({ ...detail, length: Number(event.target.value) || 0 })}
+              onChange={(event) => onChange({ ...detail, length: positiveInt(event.target.value) })}
             />
           </>
         ) : (
           <>
             <Field
               label="กว้าง W"
+              min={1}
+              step={1}
               type="number"
               value={String(detail.width ?? "")}
-              onChange={(event) => onChange({ ...detail, width: Number(event.target.value) || 0 })}
+              onChange={(event) => onChange({ ...detail, width: positiveInt(event.target.value) })}
             />
             <Field
               label="ยาว H"
+              min={1}
+              step={1}
               type="number"
               value={String(detail.length)}
-              onChange={(event) => onChange({ ...detail, length: Number(event.target.value) || 0 })}
+              onChange={(event) => onChange({ ...detail, length: positiveInt(event.target.value) })}
             />
             <Field
               label="หนา"
+              min={1}
+              step={1}
               type="number"
               value={String(detail.thickness ?? "")}
-              onChange={(event) => onChange({ ...detail, thickness: Number(event.target.value) || 0 })}
+              onChange={(event) => onChange({ ...detail, thickness: positiveInt(event.target.value) })}
             />
           </>
         )}
       </div>
     </div>
   );
+}
+
+function validateDetail(detail: OrderDetail): string | null {
+  if (!detail.materialId) return "กรุณาเลือกวัสดุจากรายการ";
+  if (detail.qty < 1) return "จำนวนต้องมากกว่า 0";
+  if (detail.remaining < 0) return "คงเหลือต้องไม่ติดลบ";
+  if (detail.length < 1) return "ความยาวต้องมากกว่า 0";
+  if (detail.shape === "ROUND" && (detail.diameter ?? 0) < 1) return "เส้นผ่านศูนย์กลางต้องมากกว่า 0";
+  if (detail.shape === "PLATE" && ((detail.width ?? 0) < 1 || (detail.thickness ?? 0) < 1)) {
+    return "ขนาดแผ่นและความหนาต้องมากกว่า 0";
+  }
+  return null;
+}
+
+function positiveInt(value: unknown): number {
+  const numeric = Math.floor(Number(value));
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : 1;
+}
+
+function nonNegativeInt(value: unknown): number {
+  const numeric = Math.floor(Number(value));
+  return Number.isFinite(numeric) && numeric >= 0 ? numeric : 0;
 }
 
 function DetailReadOnly({ row }: { row: OrderDetail }) {
