@@ -23,7 +23,7 @@ export function FactoryHeader({
       : "เชื่อมต่อข้อมูลไม่สำเร็จ";
 
   return (
-    <header className="bg-[#1a2f7a] text-white shadow-lg">
+    <header className="sticky top-0 z-40 bg-[#1a2f7a] text-white shadow-lg">
       <div className="flex w-full flex-wrap items-center justify-between gap-4 px-4 pt-5 sm:px-6 lg:px-10">
         <div className="flex items-center gap-4">
           <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-amber-400 text-[#1a2f7a] shadow-md">

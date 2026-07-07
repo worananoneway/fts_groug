@@ -17,6 +17,8 @@ import {
   loadFactoryData,
   loadWastrelBars,
   loadWastrelPlates,
+  updateOrderDetailStatus,
+  updateOrderStatus,
 } from "./api";
 import { ITEM_COLORS, MODULE_SUBTITLES } from "./constants";
 import { nextCode, packGuillotine, packRoundBars } from "./mappers";
@@ -26,6 +28,7 @@ import type {
   ModuleKey,
   Notice,
   OrderDetail,
+  OrderDetailStatus,
   PlateFormState,
   PlateItem,
   PlateResult,
@@ -147,6 +150,14 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
   const selectedOrderRows = selectedPoId ? orderDetails[selectedPoId] ?? [] : [];
   const selectedRoundRows = selectedOrderRows.filter((row) => row.shape === "ROUND");
   const selectedPlateRows = selectedOrderRows.filter((row) => row.shape === "PLATE");
+  const activePlateOrderDetailIds = uniqueIds(plateItems.map((item) => item.orderDetailId));
+  const activeRoundOrderDetailIds = uniqueIds(roundItems.map((item) => item.orderDetailId));
+  const visibleScrapPlates = selectedPoId
+    ? scrapPlates.filter((scrap) => scrap.orderId === selectedPoId)
+    : scrapPlates;
+  const visibleScrapBars = selectedPoId
+    ? scrapBars.filter((scrap) => scrap.orderId === selectedPoId)
+    : scrapBars;
 
   const plateScraps = useMemo<PlateScrap[]>(() => {
     if (!plateResult) return [];
@@ -210,6 +221,11 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     }
   }
 
+  function beginNewPlateItem() {
+    setPlateEditingItemId(null);
+    setPlateForm({ code: "", width: "", height: "", quantity: "1" });
+  }
+
   function addPlateItem() {
     const w = Number(plateForm.width);
     const h = Number(plateForm.height);
@@ -267,48 +283,137 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     });
   }
 
-  function calculatePlate() {
+  async function setSelectedOrderDetailsStatus(detailIds: string[], status: OrderDetailStatus) {
+    if (!selectedPoId || detailIds.length === 0) return;
+
+    const remoteDetailIds = detailIds.filter((detailId) => !isLocalOrderDetailId(detailId));
+    await Promise.all(remoteDetailIds.map((detailId) => updateOrderDetailStatus(detailId, status)));
+
+    const nextRows = (orderDetails[selectedPoId] ?? []).map((row) =>
+      detailIds.includes(row.id) ? { ...row, status } : row,
+    );
+    setOrderDetails((current) => ({ ...current, [selectedPoId]: nextRows }));
+
+    const nextOrderStatus =
+      status === "IN_PROCESS"
+        ? "IN_PROCESS"
+        : nextRows.every((row) => row.status !== "PENDING" && row.status !== "IN_PROCESS")
+          ? "COMPLETED"
+          : null;
+
+    if (!nextOrderStatus) return;
+    await updateOrderStatus(selectedPoId, nextOrderStatus);
+    setPurchaseOrders((orders) =>
+      orders.map((order) =>
+        order.id === selectedPoId
+          ? { ...order, status: nextOrderStatus === "COMPLETED" ? "DONE" : "IN_PROGRESS" }
+          : order,
+      ),
+    );
+  }
+
+  async function cancelOrderDetail(orderDetailId: string): Promise<Notice> {
+    try {
+      await setSelectedOrderDetailsStatus([orderDetailId], "CANCELLED");
+      return { ok: true, text: "ลบรายการสำเร็จ" };
+    } catch {
+      return { ok: false, text: "ลบรายการไม่สำเร็จ" };
+    }
+  }
+
+  function addOrderDetailLocal(detail: OrderDetail): Notice {
+    if (!selectedPoId) return { ok: false, text: "ไม่พบใบสั่งซื้อที่เลือก" };
+    setOrderDetails((current) => ({
+      ...current,
+      [selectedPoId]: [...(current[selectedPoId] ?? []), detail],
+    }));
+    return { ok: true, text: "เพิ่มรายการสำเร็จ" };
+  }
+
+  function updateOrderDetailLocal(detail: OrderDetail): Notice {
+    if (!selectedPoId) return { ok: false, text: "ไม่พบใบสั่งซื้อที่เลือก" };
+    setOrderDetails((current) => ({
+      ...current,
+      [selectedPoId]: (current[selectedPoId] ?? []).map((row) => (row.id === detail.id ? detail : row)),
+    }));
+    return { ok: true, text: "แก้ไขรายละเอียดสำเร็จ" };
+  }
+
+  async function calculatePlate() {
     if (plateItems.length === 0) return;
     setPlateResult(packGuillotine(sheetW, sheetH, kerf, plateItems));
     setPlateSavedScrapKeys([]);
     setPlateScrapMessage(null);
+    try {
+      await setSelectedOrderDetailsStatus(activePlateOrderDetailIds, "IN_PROCESS");
+    } catch {
+      setPlateScrapMessage({ ok: false, text: "อัปเดตสถานะรายการเป็น In Process ไม่สำเร็จ" });
+    }
     setPlateTab("layout");
   }
 
-  async function savePlateScraps() {
+  async function persistPlateScraps() {
     if (unsavedPlateScraps.length === 0) return;
     if (!selectedPlate?.material_master_id) {
-      setPlateScrapMessage({
-        ok: false,
-        text: "กรุณาเลือกแผ่นจากคลังก่อนบันทึกเศษ เพื่อระบุวัสดุของเศษ",
-      });
-      return;
+      throw new Error("กรุณาเลือกแผ่นจากคลังก่อนบันทึกเศษ เพื่อระบุวัสดุของเศษ");
     }
 
     const stamp = Date.now().toString(36).toUpperCase();
-    const ordId = purchaseOrders.find((po) => po.no === plateLoadedFromPo)?.id;
+    const ordId = selectedPoId ?? purchaseOrders.find((po) => po.no === plateLoadedFromPo)?.id;
+    const oddId = firstRemoteOrderDetailId(activePlateOrderDetailIds);
     const scraps = unsavedPlateScraps;
 
+    for (const [index, scrap] of scraps.entries()) {
+      await createWastrelPlate({
+        mm_id: selectedPlate.material_master_id,
+        msp_id: selectedPlate.id,
+        stock_code: `SCRAP-${stamp}-${index + 1}`,
+        length: Math.max(1, Math.floor(scrap.w)),
+        width: Math.max(1, Math.floor(scrap.h)),
+        thickness: selectedPlate.thickness || 1,
+        quantity: 1,
+        available_quantity: 1,
+        ord_id: ordId,
+        odd_id: oddId,
+        remark: `เศษจากแผ่นที่ ${scrap.sheetNo}${plateLoadedFromPo ? ` (${plateLoadedFromPo})` : ""}`,
+      });
+    }
+    setScrapPlates(await loadWastrelPlates());
+    setPlateSavedScrapKeys((keys) => [...keys, ...scraps.map(plateScrapKey)]);
+    return scraps.length;
+  }
+
+  async function savePlateScraps() {
     try {
-      for (const [index, scrap] of scraps.entries()) {
-        await createWastrelPlate({
-          mm_id: selectedPlate.material_master_id,
-          msp_id: selectedPlate.id,
-          stock_code: `SCRAP-${stamp}-${index + 1}`,
-          length: Math.max(1, Math.floor(scrap.w)),
-          width: Math.max(1, Math.floor(scrap.h)),
-          thickness: selectedPlate.thickness || 1,
-          quantity: 1,
-          available_quantity: 1,
-          ord_id: ordId,
-          remark: `เศษจากแผ่นที่ ${scrap.sheetNo}${plateLoadedFromPo ? ` (${plateLoadedFromPo})` : ""}`,
-        });
-      }
-      setScrapPlates(await loadWastrelPlates());
-      setPlateSavedScrapKeys((keys) => [...keys, ...scraps.map(plateScrapKey)]);
-      setPlateScrapMessage({ ok: true, text: `บันทึกเศษลงคลัง (wastrel_ms_plates) แล้ว ${scraps.length} ชิ้น` });
+      const count = await persistPlateScraps();
+      setPlateScrapMessage({ ok: true, text: `บันทึกเศษลงคลัง (wastrel_ms_plates) แล้ว ${count ?? 0} ชิ้น` });
+    } catch (error) {
+      setPlateScrapMessage({
+        ok: false,
+        text: error instanceof Error ? error.message : "บันทึกเศษลงคลังไม่สำเร็จ กรุณาลองใหม่",
+      });
+    }
+  }
+
+  async function confirmPlatePlan(): Promise<Notice> {
+    try {
+      const count = await persistPlateScraps();
+      await setSelectedOrderDetailsStatus(activePlateOrderDetailIds, "COMPLETED");
+      return { ok: true, text: `ยืนยันแผนการตัดแล้ว และบันทึกเศษ ${count ?? 0} ชิ้น` };
+    } catch (error) {
+      return {
+        ok: false,
+        text: error instanceof Error ? error.message : "ยืนยันแผนการตัดไม่สำเร็จ",
+      };
+    }
+  }
+
+  async function cancelPlatePlan(): Promise<Notice> {
+    try {
+      await setSelectedOrderDetailsStatus(activePlateOrderDetailIds, "CANCELLED");
+      return { ok: true, text: "ยกเลิกแผนการตัดแล้ว" };
     } catch {
-      setPlateScrapMessage({ ok: false, text: "บันทึกเศษลงคลังไม่สำเร็จ กรุณาลองใหม่" });
+      return { ok: false, text: "ยกเลิกแผนการตัดไม่สำเร็จ" };
     }
   }
 
@@ -375,47 +480,85 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     });
   }
 
-  function calculateRound() {
+  function beginNewRoundItem() {
+    setRoundEditingItemId(null);
+    setRoundForm({ code: "", length: "", quantity: "1" });
+  }
+
+  async function calculateRound() {
     if (roundMatchedItems.length === 0) return;
     setRoundResult(packRoundBars(barLength, rKerf, roundMatchedItems));
     setRoundSavedScrapKeys([]);
     setRoundScrapMessage(null);
+    try {
+      await setSelectedOrderDetailsStatus(activeRoundOrderDetailIds, "IN_PROCESS");
+    } catch {
+      setRoundScrapMessage({ ok: false, text: "อัปเดตสถานะรายการเป็น In Process ไม่สำเร็จ" });
+    }
     setRoundTab("layout");
   }
 
-  async function saveRoundScraps() {
+  async function persistRoundScraps() {
     if (unsavedRoundScraps.length === 0) return;
     if (!selectedBar?.material_master_id) {
-      setRoundScrapMessage({
-        ok: false,
-        text: "กรุณาเลือกแท่งจากคลังก่อนบันทึกเศษ เพื่อระบุวัสดุของเศษ",
-      });
-      return;
+      throw new Error("กรุณาเลือกแท่งจากคลังก่อนบันทึกเศษ เพื่อระบุวัสดุของเศษ");
     }
 
     const stamp = Date.now().toString(36).toUpperCase();
-    const ordId = purchaseOrders.find((po) => po.no === roundLoadedFromPo)?.id;
+    const ordId = selectedPoId ?? purchaseOrders.find((po) => po.no === roundLoadedFromPo)?.id;
+    const oddId = firstRemoteOrderDetailId(activeRoundOrderDetailIds);
     const scraps = unsavedRoundScraps;
 
+    for (const [index, scrap] of scraps.entries()) {
+      await createWastrelBar({
+        mm_id: selectedBar.material_master_id,
+        srb_id: selectedBar.id,
+        code: `WSRB-${stamp}-${index + 1}`,
+        diameter: barDiameter,
+        length: Math.max(1, Math.floor(scrap.length)),
+        quantity: 1,
+        available_quantity: 1,
+        ord_id: ordId,
+        odd_id: oddId,
+        remark: `เศษจากแท่งที่ ${scrap.barNo}${roundLoadedFromPo ? ` (${roundLoadedFromPo})` : ""}`,
+      });
+    }
+    setScrapBars(await loadWastrelBars());
+    setRoundSavedScrapKeys((keys) => [...keys, ...scraps.map(roundScrapKey)]);
+    return scraps.length;
+  }
+
+  async function saveRoundScraps() {
     try {
-      for (const [index, scrap] of scraps.entries()) {
-        await createWastrelBar({
-          mm_id: selectedBar.material_master_id,
-          srb_id: selectedBar.id,
-          code: `WSRB-${stamp}-${index + 1}`,
-          diameter: barDiameter,
-          length: Math.max(1, Math.floor(scrap.length)),
-          quantity: 1,
-          available_quantity: 1,
-          ord_id: ordId,
-          remark: `เศษจากแท่งที่ ${scrap.barNo}${roundLoadedFromPo ? ` (${roundLoadedFromPo})` : ""}`,
-        });
-      }
-      setScrapBars(await loadWastrelBars());
-      setRoundSavedScrapKeys((keys) => [...keys, ...scraps.map(roundScrapKey)]);
-      setRoundScrapMessage({ ok: true, text: `บันทึกเศษลงคลัง (wastrel_steel_round_bars) แล้ว ${scraps.length} ชิ้น` });
+      const count = await persistRoundScraps();
+      setRoundScrapMessage({ ok: true, text: `บันทึกเศษลงคลัง (wastrel_steel_round_bars) แล้ว ${count ?? 0} ชิ้น` });
+    } catch (error) {
+      setRoundScrapMessage({
+        ok: false,
+        text: error instanceof Error ? error.message : "บันทึกเศษลงคลังไม่สำเร็จ กรุณาลองใหม่",
+      });
+    }
+  }
+
+  async function confirmRoundPlan(): Promise<Notice> {
+    try {
+      const count = await persistRoundScraps();
+      await setSelectedOrderDetailsStatus(activeRoundOrderDetailIds, "COMPLETED");
+      return { ok: true, text: `ยืนยันแผนการตัดแล้ว และบันทึกเศษ ${count ?? 0} ชิ้น` };
+    } catch (error) {
+      return {
+        ok: false,
+        text: error instanceof Error ? error.message : "ยืนยันแผนการตัดไม่สำเร็จ",
+      };
+    }
+  }
+
+  async function cancelRoundPlan(): Promise<Notice> {
+    try {
+      await setSelectedOrderDetailsStatus(activeRoundOrderDetailIds, "CANCELLED");
+      return { ok: true, text: "ยกเลิกแผนการตัดแล้ว" };
     } catch {
-      setRoundScrapMessage({ ok: false, text: "บันทึกเศษลงคลังไม่สำเร็จ กรุณาลองใหม่" });
+      return { ok: false, text: "ยกเลิกแผนการตัดไม่สำเร็จ" };
     }
   }
 
@@ -447,9 +590,11 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
       };
       const diameter = Number(row.diameter ?? barDiameter);
       const matchBar = stockBars.find((bar) => Number(bar.diameter) === diameter);
+      const shouldShowLayout = row.status === "IN_PROCESS";
+      const nextBarLength = matchBar?.length ?? barLength;
 
       setModule("roundbar");
-      setRoundTab("settings");
+      setRoundTab(shouldShowLayout ? "layout" : "settings");
       setRoundItems([nextItem]);
       setRoundNextId(startId + 1);
       setBarDiameter(diameter);
@@ -462,7 +607,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
       setRoundLoadedFromPo(po?.no ?? null);
       setRoundEditingItemId(null);
       setRoundForm({ code: "", length: "", quantity: "1" });
-      setRoundResult(null);
+      setRoundResult(shouldShowLayout ? packRoundBars(nextBarLength, rKerf, [nextItem]) : null);
       setRoundSavedScrapKeys([]);
       setRoundScrapMessage(null);
       return;
@@ -480,9 +625,12 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
       orderDetailId: row.id,
     };
     const matchPlate = stockPlates.find((plate) => Number(plate.thickness) === Number(row.thickness));
+    const shouldShowLayout = row.status === "IN_PROCESS";
+    const nextSheetW = matchPlate?.length ?? sheetW;
+    const nextSheetH = matchPlate?.width ?? sheetH;
 
     setModule("plate");
-    setPlateTab("settings");
+    setPlateTab(shouldShowLayout ? "layout" : "settings");
     setPlateItems([nextItem]);
     setPlateNextId(startId + 1);
     if (matchPlate) {
@@ -495,7 +643,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     setPlateLoadedFromPo(po?.no ?? null);
     setPlateEditingItemId(null);
     setPlateForm({ code: "", width: "", height: "", quantity: "1" });
-    setPlateResult(null);
+    setPlateResult(shouldShowLayout ? packGuillotine(nextSheetW, nextSheetH, kerf, [nextItem]) : null);
     setPlateSavedScrapKeys([]);
     setPlateScrapMessage(null);
   }
@@ -604,11 +752,14 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     selectedRoundRows,
     selectedPlateRows,
     pushOrderDetailToCutting,
+    addOrderDetailLocal,
+    cancelOrderDetail,
+    updateOrderDetailLocal,
     pushRoundFromPo,
     pushPlateFromPo,
 
     stockPlates,
-    scrapPlates,
+    scrapPlates: visibleScrapPlates,
     selectedPlateId,
     selectedPlate,
     setSelectedPlateId,
@@ -633,9 +784,12 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     plateLoadedFromPo,
     clearPlatePoLoad: () => setPlateLoadedFromPo(null),
     addPlateItem,
+    beginNewPlateItem,
     editPlateItem,
     removePlateItem,
     calculatePlate,
+    confirmPlatePlan,
+    cancelPlatePlan,
     plateResult,
     plateTotalPieces,
     plateAverageUtilization,
@@ -647,7 +801,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     removeScrapPlate,
 
     stockBars,
-    scrapBars,
+    scrapBars: visibleScrapBars,
     selectedBarId,
     selectedBar,
     setSelectedBarId,
@@ -672,9 +826,12 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
     roundLoadedFromPo,
     clearRoundPoLoad: () => setRoundLoadedFromPo(null),
     addRoundItem,
+    beginNewRoundItem,
     editRoundItem,
     removeRoundItem,
     calculateRound,
+    confirmRoundPlan,
+    cancelRoundPlan,
     roundResult,
     roundTotalPieces,
     roundMatchedCount,
@@ -710,5 +867,17 @@ function plateScrapKey(scrap: PlateScrap): string {
 
 function roundScrapKey(scrap: RoundScrap): string {
   return `${scrap.barNo}:${scrap.length}`;
+}
+
+function uniqueIds(values: Array<string | undefined>): string[] {
+  return Array.from(new Set(values.filter((value): value is string => Boolean(value))));
+}
+
+function isLocalOrderDetailId(id: string): boolean {
+  return id.startsWith("LOCAL-");
+}
+
+function firstRemoteOrderDetailId(ids: string[]): string | undefined {
+  return ids.find((id) => !isLocalOrderDetailId(id));
 }
 

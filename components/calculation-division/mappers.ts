@@ -1,6 +1,7 @@
 import type {
   FreeRect,
   OrderDetail,
+  OrderDetailStatus,
   PlateItem,
   PlateResult,
   PlateSheet,
@@ -207,6 +208,7 @@ export function mapOrderDetails(raw: unknown): Record<string, OrderDetail[]> {
       thickness: numberValue(row.thickness ?? row.required_thickness ?? row.required_thickness_mm),
       qty: Math.max(1, Math.floor(numberValue(row.qty ?? row.quantity) || 1)),
       remaining: Math.max(0, Math.floor(numberValue(row.remaining ?? row.quantity))),
+      status: mapOrderDetailStatus(row.status ?? row.odd_status),
     };
 
     acc[poId] = [...(acc[poId] ?? []), detail];
@@ -249,6 +251,37 @@ export function statusLabel(status: PurchaseOrderStatus): string {
   if (status === "IN_PROGRESS") return "กำลังตัด";
   if (status === "DONE") return "เสร็จสิ้น";
   return "รอดำเนินการ";
+}
+
+export function orderDetailStatusLabel(status: OrderDetailStatus): string {
+  if (status === "IN_PROCESS") return "กำลังดำเนินการ";
+  if (status === "COMPLETED") return "เสร็จสิ้น";
+  if (status === "CANCELLED") return "ยกเลิก";
+  if (status === "REJECTED") return "ปฏิเสธ";
+  if (status === "REVISED") return "แก้ไขแล้ว";
+  if (status === "DRAFT") return "ฉบับร่าง";
+  return "รอดำเนินการ";
+}
+
+export function mapOrderDetailStatus(value: unknown): OrderDetailStatus {
+  const normalized = stringValue(value).trim().replace(/\s+/g, "_").toUpperCase();
+  if (normalized === "IN_PROGRESS" || normalized === "IN_PROCESS" || normalized === "PROCESSING") return "IN_PROCESS";
+  if (normalized === "DONE" || normalized === "COMPLETED") return "COMPLETED";
+  if (normalized === "CANCELLED" || normalized === "CANCELED") return "CANCELLED";
+  if (normalized === "REJECTED") return "REJECTED";
+  if (normalized === "REVISED") return "REVISED";
+  if (normalized === "DRAFT") return "DRAFT";
+  return "PENDING";
+}
+
+export function orderDetailApiStatus(status: OrderDetailStatus): string {
+  if (status === "IN_PROCESS") return "In Process";
+  if (status === "COMPLETED") return "Completed";
+  if (status === "CANCELLED") return "Cancelled";
+  if (status === "REJECTED") return "Rejected";
+  if (status === "REVISED") return "Revised";
+  if (status === "DRAFT") return "Draft";
+  return "Pending";
 }
 
 function mapPoStatus(value: unknown): PurchaseOrderStatus {

@@ -90,7 +90,7 @@ export function RoundBarSettingsTab() {
         <RoundBarSourcePlanCard />
       </section>
 
-      <section className="flex flex-col rounded-lg bg-white p-6 shadow-sm">
+      <section className="flex flex-col rounded-lg bg-white p-6 shadow-sm lg:sticky lg:top-64 lg:h-[calc(100vh-18rem)] lg:overflow-auto">
         <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-slate-800">
           <Package className="h-5 w-5 text-blue-600" />
           รายการสั่งตัดเพลา

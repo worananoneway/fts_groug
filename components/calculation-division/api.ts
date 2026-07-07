@@ -1,12 +1,13 @@
 import type {
   OrderDetail,
+  OrderDetailStatus,
   PlateStock,
   PurchaseOrder,
   RoundBarStock,
   SavedPlateScrap,
   SavedRoundScrap,
 } from "./types";
-import { mapOrderDetails, mapPlateStock, mapPurchaseOrder, mapRoundStock } from "./mappers";
+import { mapOrderDetails, mapPlateStock, mapPurchaseOrder, mapRoundStock, orderDetailApiStatus } from "./mappers";
 
 const API_VERSION = "v1";
 
@@ -77,6 +78,8 @@ export async function loadWastrelPlates(): Promise<SavedPlateScrap[]> {
       width: Number(row.width) || 0,
       thickness: Number(row.thickness) || 0,
       remark: String(row.remark ?? ""),
+      orderId: flatString(row, "ord_id", "wmsp_ord_id") ?? nestedString(row.order, "id"),
+      orderDetailId: flatString(row, "odd_id", "wmsp_odd_id") ?? nestedString(row.order_detail, "id"),
     }))
     .filter((row) => row.id);
 }
@@ -92,6 +95,8 @@ export async function loadWastrelBars(): Promise<SavedRoundScrap[]> {
       length: Number(row.length) || 0,
       quantity: Number(row.quantity) || 1,
       remark: String(row.remark ?? ""),
+      orderId: flatString(row, "ord_id", "wsrb_ord_id") ?? nestedString(row.order, "id"),
+      orderDetailId: flatString(row, "odd_id", "wsrb_odd_id") ?? nestedString(row.order_detail, "id"),
     }))
     .filter((row) => row.id);
 }
@@ -106,6 +111,7 @@ export interface WastrelPlatePayload {
   quantity: number;
   available_quantity: number;
   ord_id?: string;
+  odd_id?: string;
   remark?: string;
 }
 
@@ -118,6 +124,7 @@ export interface WastrelBarPayload {
   quantity: number;
   available_quantity: number;
   ord_id?: string;
+  odd_id?: string;
   remark?: string;
 }
 
@@ -163,6 +170,22 @@ export async function calculateDivision(body: unknown): Promise<unknown> {
   return payload?.details?.calculation_plan ?? null;
 }
 
+export async function updateOrderStatus(orderId: string, status: OrderDetailStatus): Promise<void> {
+  await requestJson(`/api/${API_VERSION}/orders/${orderId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: orderDetailApiStatus(status) }),
+  });
+}
+
+export async function updateOrderDetailStatus(orderDetailId: string, status: OrderDetailStatus): Promise<void> {
+  await requestJson(`/api/${API_VERSION}/orders/details/${orderDetailId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: orderDetailApiStatus(status) }),
+  });
+}
+
 function readArray(payload: unknown, key: string): Array<Record<string, unknown>> {
   if (!payload || typeof payload !== "object") return [];
   const details = (payload as { details?: Record<string, unknown> }).details;
@@ -190,4 +213,21 @@ async function safeRequest<T>(loader: () => Promise<T[]>): Promise<T[]> {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object";
+}
+
+function nestedString(value: unknown, key: string): string | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const nested = (value as Record<string, unknown>)[key];
+  if (nested === null || nested === undefined || typeof nested === "object") return undefined;
+  return String(nested);
+}
+
+function flatString(row: Record<string, unknown>, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = row[key];
+    if (value !== null && value !== undefined && typeof value !== "object" && String(value)) {
+      return String(value);
+    }
+  }
+  return undefined;
 }

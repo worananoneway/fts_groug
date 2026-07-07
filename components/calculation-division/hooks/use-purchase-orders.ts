@@ -16,6 +16,9 @@ export function usePurchaseOrders() {
     selectedRoundRows: context.selectedRoundRows,
     selectedPlateRows: context.selectedPlateRows,
     pushOrderDetailToCutting: context.pushOrderDetailToCutting,
+    addOrderDetailLocal: context.addOrderDetailLocal,
+    cancelOrderDetail: context.cancelOrderDetail,
+    updateOrderDetailLocal: context.updateOrderDetailLocal,
     pushRoundFromPo: context.pushRoundFromPo,
     pushPlateFromPo: context.pushPlateFromPo,
   };

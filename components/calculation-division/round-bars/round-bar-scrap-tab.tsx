@@ -1,9 +1,8 @@
 "use client";
 
-import { Recycle, Save } from "lucide-react";
+import { Recycle } from "lucide-react";
 
 import { AlertBanner } from "../../ui/alert-banner";
-import { Button } from "../../ui/button";
 import { EmptyState } from "../../ui/empty-state";
 import { WastrelProposalTable } from "../shared/wastrel-proposal-table";
 import { fmt } from "../mappers";
@@ -15,28 +14,16 @@ export function RoundBarScrapTab() {
     removeScrapBar,
     roundScrapMessage,
     roundScraps,
-    saveRoundScraps,
     scrapBars,
-    unsavedRoundScraps,
   } = useCalculationDivision();
 
   return (
     <div className="space-y-6">
       <section className="rounded-lg bg-white p-6 shadow-sm">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800">
-            <Recycle className="h-5 w-5 text-blue-600" />
-            เศษจากการคำนวณล่าสุด
-          </h2>
-          <Button
-            disabled={unsavedRoundScraps.length === 0}
-            icon={<Save className="h-4 w-4" />}
-            onClick={saveRoundScraps}
-            variant="success"
-          >
-            บันทึกเศษลงคลัง ({unsavedRoundScraps.length})
-          </Button>
-        </div>
+        <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-slate-800">
+          <Recycle className="h-5 w-5 text-blue-600" />
+          เศษจากการคำนวณล่าสุด
+        </h2>
         {roundScrapMessage ? (
           <AlertBanner className="mb-4" tone={roundScrapMessage.ok ? "success" : "warning"}>
             {roundScrapMessage.text}

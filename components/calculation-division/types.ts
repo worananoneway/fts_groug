@@ -3,6 +3,7 @@ import type { Dispatch, ReactNode, SetStateAction } from "react";
 export type ModuleKey = "po" | "plate" | "roundbar";
 export type SubTabKey = "settings" | "layout" | "scrap";
 export type PurchaseOrderStatus = "PENDING" | "IN_PROGRESS" | "DONE";
+export type OrderDetailStatus = "DRAFT" | "REVISED" | "PENDING" | "IN_PROCESS" | "COMPLETED" | "REJECTED" | "CANCELLED";
 export type OrderShape = "ROUND" | "PLATE";
 
 export interface TabDefinition<T extends string> {
@@ -29,6 +30,7 @@ export interface OrderDetail {
   thickness?: number;
   qty: number;
   remaining: number;
+  status: OrderDetailStatus;
 }
 
 export interface PlateStock {
@@ -137,6 +139,8 @@ export interface SavedPlateScrap {
   width: number;
   thickness: number;
   remark: string;
+  orderId?: string;
+  orderDetailId?: string;
 }
 
 export interface SavedRoundScrap {
@@ -146,6 +150,8 @@ export interface SavedRoundScrap {
   length: number;
   quantity: number;
   remark: string;
+  orderId?: string;
+  orderDetailId?: string;
 }
 
 export interface FormState {
@@ -195,6 +201,9 @@ export interface CalculationDivisionContextValue {
   selectedRoundRows: OrderDetail[];
   selectedPlateRows: OrderDetail[];
   pushOrderDetailToCutting: (orderDetailId: string) => void;
+  addOrderDetailLocal: (detail: OrderDetail) => Notice;
+  cancelOrderDetail: (orderDetailId: string) => Promise<Notice>;
+  updateOrderDetailLocal: (detail: OrderDetail) => Notice;
   pushRoundFromPo: (poId: string | null) => void;
   pushPlateFromPo: (poId: string | null) => void;
 
@@ -218,9 +227,12 @@ export interface CalculationDivisionContextValue {
   plateLoadedFromPo: string | null;
   clearPlatePoLoad: () => void;
   addPlateItem: () => void;
+  beginNewPlateItem: () => void;
   editPlateItem: (id: number) => void;
   removePlateItem: (id: number) => void;
-  calculatePlate: () => void;
+  calculatePlate: () => Promise<void>;
+  confirmPlatePlan: () => Promise<Notice>;
+  cancelPlatePlan: () => Promise<Notice>;
   plateResult: PlateResult | null;
   plateTotalPieces: number;
   plateAverageUtilization: string;
@@ -251,9 +263,12 @@ export interface CalculationDivisionContextValue {
   roundLoadedFromPo: string | null;
   clearRoundPoLoad: () => void;
   addRoundItem: () => void;
+  beginNewRoundItem: () => void;
   editRoundItem: (id: number) => void;
   removeRoundItem: (id: number) => void;
-  calculateRound: () => void;
+  calculateRound: () => Promise<void>;
+  confirmRoundPlan: () => Promise<Notice>;
+  cancelRoundPlan: () => Promise<Notice>;
   roundResult: RoundResult | null;
   roundTotalPieces: number;
   roundMatchedCount: number;

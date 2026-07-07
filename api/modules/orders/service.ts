@@ -70,7 +70,77 @@ async function get_order_details(conditions: Condition = { sql: "", params: [] }
     }
 }
 
-export default {
+async function update_order_status(id: string, status: string): Promise<Response> {
+    const sql = `
+        UPDATE public.orders
+        SET
+            ord_status = $1::public."order_status_enum",
+            ord_updated_at = NOW()
+        WHERE ord_id = $2
+        RETURNING ord_id;
+    `;
+    try {
+        const result = await sql_query(sql, [status, id]);
+        if (result.length === 0) {
+            return {
+                statuscode: HttpStatusCode.NOT_FOUND,
+                error: "Order not found.",
+                data: null
+            };
+        }
+        return {
+            statuscode: HttpStatusCode.NO_CONTENT,
+            error: null,
+            data: null
+        };
+    } catch (error) {
+        console.error("[Service] An error occurred during updating order status:", error);
+        return {
+            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
+            error,
+            data: null
+        };
+    }
+}
+
+async function update_order_detail_status(id: string, status: string): Promise<Response> {
+    const sql = `
+        UPDATE public.order_details
+        SET
+            odd_status = $1::public."order_detail_status_enum",
+            odd_updated_at = NOW()
+        WHERE odd_id = $2
+        RETURNING odd_id;
+    `;
+    try {
+        const result = await sql_query(sql, [status, id]);
+        if (result.length === 0) {
+            return {
+                statuscode: HttpStatusCode.NOT_FOUND,
+                error: "Order detail not found.",
+                data: null
+            };
+        }
+        return {
+            statuscode: HttpStatusCode.NO_CONTENT,
+            error: null,
+            data: null
+        };
+    } catch (error) {
+        console.error("[Service] An error occurred during updating order detail status:", error);
+        return {
+            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
+            error,
+            data: null
+        };
+    }
+}
+
+const ordersService = {
     get_orders,
-    get_order_details
+    get_order_details,
+    update_order_status,
+    update_order_detail_status
 };
+
+export default ordersService;
