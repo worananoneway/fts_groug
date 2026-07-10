@@ -1,6 +1,7 @@
 # สรุป ENUM ของระบบโรงงานเหล็ก
 
 > แหล่งข้อมูล: `steel_factory_enum_review_1(1).xlsx`
+> PO/PO detail table references updated from `merged_order_po_schema (version 1.1).xlsx`.
 
 หลักการอ่าน:
 
@@ -19,38 +20,28 @@
   - `Round_bar`
   - `Ms_plate`
 
-## `orders`
+## `purchase_orders`
 
-### `ord_status`
+### `po_status`
 
-- ENUM: `order_status_enum`
+- ENUM: `purchase_order_enum`
 - Nullable: `NO`
-- Default: `Draft`
+- Default: `Post Sent`
 - ค่าใน ENUM:
-  - `Draft`
-  - `Revised`
-  - `Pending`
-  - `In Process`
-  - `Completed`
-  - `Rejected`
+  - `Paid`
+  - `Waiting Delivery`
+  - `Goods Received`
+  - `Wait Payment`
+  - `Post Sent`
   - `Cancelled`
 
-## `order_details`
+## `purchase_orders_details`
 
-### `odd_shape_type`
+### `podetail_status`
 
-- ENUM: `shape_type_enum`
+- ENUM: `purchase_order_detail_status_enum`
 - Nullable: `NO`
-- Default: ไม่มี
-- ค่าใน ENUM:
-  - `Round_bar`
-  - `Ms_plate`
-
-### `odd_status`
-
-- ENUM: `order_detail_status_enum`
-- Nullable: `NO`
-- Default: `Draft`
+- Default: `Pending`
 - ค่าใน ENUM:
   - `Draft`
   - `Revised`
@@ -293,17 +284,16 @@
 - `Round_bar`
 - `Ms_plate`
 
-## `order_status_enum`
+## `purchase_order_enum`
 
-- `Draft`
-- `Revised`
-- `Pending`
-- `In Process`
-- `Completed`
-- `Rejected`
+- `Paid`
+- `Waiting Delivery`
+- `Goods Received`
+- `Wait Payment`
+- `Post Sent`
 - `Cancelled`
 
-## `order_detail_status_enum`
+## `purchase_order_detail_status_enum`
 
 - `Draft`
 - `Revised`
