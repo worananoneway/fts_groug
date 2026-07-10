@@ -69,6 +69,10 @@ app.prepare().then(async () => {
         prefix: "/api/:version/stock-reservations"
     });
 
+    server.register(import("./api/modules/purchase_orders/router"), {
+        prefix: "/api/:version/purchase-orders"
+    });
+
     server.all("/*", async (request: FastifyRequest, reply: FastifyReply) => {
         try {
             await handle(request.raw, reply.raw);

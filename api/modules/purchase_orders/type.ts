@@ -1,5 +1,39 @@
 import { POStatus } from "@/api/utils/shared_types";
 
+export const created_reply_options = {
+    fieldPrefix: 'po_',
+    createdFields: [
+        'po_id',
+        'po_number',
+        'po_cus_id',
+        'po_due_date',
+        'po_remark',
+        'po_issue_date',
+        'po_ship_via',
+        'po_qt_on',
+        'po_shipping_terms',
+        'po_tax_rate',
+        'po_recipient_id',
+        'po_comment',
+        'po_status_sent_date',
+        'po_status_goods_received_',
+        'po_status_paid_date',
+        'po_status_note',
+        'po_emp_id',
+        'po_created_at',
+        'po_updated_at',
+        'po_status',
+        'po_project_id',
+        'po_condition_paid',
+        'po_delivery_province_id',
+        'po_delivery_district_id',
+        'po_delivery_subdistrict_id',
+        'po_approved_by_emp_id',
+        'po_purchasing_fname',
+        'po_purchasing_lname'
+    ]
+}
+
 export enum ErrorField {
     ID = "id",
     NUMBER = "number",
@@ -52,7 +86,7 @@ export enum ErrorMessage {
 
 export interface Payload {
     number?: string;
-    customer_id: string;
+    cus_id: string;
     due_date: string | null;
     remark: string | null;
     issue_date: string | null;

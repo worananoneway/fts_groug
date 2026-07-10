@@ -1,19 +1,4 @@
-import {
-    PurchaseOrder,
-    Contact,
-    Address,
-    Subdistrict,
-    District,
-    Province,
-    Recipient,
-    Department,
-    Position,
-    StatusDate,
-    PriceSummary,
-    Detail,
-    Emp,
-    Project
-} from './model';
+import { created_reply_options } from './model';
 import service from './service';
 import {
     ErrorField,
@@ -43,6 +28,7 @@ const po_status_enum = get_enum_keys(POStatus);
 
 const module_name = 'Purchase Orders';
 
+
 async function create(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
@@ -50,7 +36,7 @@ async function create(request: any, reply: any) {
 
         emp_authentication(module_name, user, reply);
 
-        const emp_id = user.id;
+        const emp_id = user?.id;
         const requiredKeys = [
             'cus_id',
             'due_date',
@@ -78,7 +64,7 @@ async function create(request: any, reply: any) {
         const missing_fields: string[] = field_validator(request.body, requiredKeys);
         if (missing_fields.length > 0) {
             return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>
-                reply_result(module_name, HttpStatusCode.BAD_REQUEST, null, missing_fields, null)
+                reply_result(module_name, HttpStatusCode.BAD_REQUEST, missing_fields)
             );
         }
 
@@ -117,13 +103,16 @@ async function create(request: any, reply: any) {
         if (invalid_fields.length > 0) {
             console.error(`[Controller] Validation errors found in ${module_name} creation payload:`, invalid_fields);
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
-                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, null, [], invalid_fields)
+                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
         }
 
         const result = await service.create(payload, emp_id);
         return reply.code(result.statuscode).send(<Reply>
-            reply_result(module_name, result.statuscode, result.data, [], null)
+            reply_result(module_name, result.statuscode, null, result.data, {
+                ...created_reply_options,
+                language: lang
+            })
         );
 
     } catch (error) {
@@ -138,9 +127,9 @@ async function get(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
         const user = request.user;
-        const fields: string = request.reply_fields; 
+        const fields: string = request.reply_fields || '*';
         emp_authentication(module_name, user, reply);
-        const emp_id = user.id;
+        const emp_id = user?.id;
         const conditions: Condition = { sql: '', params: [] };
         const invalid_fields: ValidationError[] = [];
         if (request.params.po_id) {
@@ -185,7 +174,10 @@ async function get(request: any, reply: any) {
 
         const results = await service.get(conditions, fields);
         return reply.code(results.statuscode).send(<Reply>
-            reply_result(module_name, results.statuscode, results.data, [], null)
+            reply_result(module_name, results.statuscode, null, results.data, {
+                ...created_reply_options,
+                language: lang
+            })
         );
 
     } catch (error) {
@@ -209,7 +201,7 @@ async function soft_delete(request: any, reply: any) {
                 reply_result(module_name, HttpStatusCode.UNAUTHORIZED, null, [], null)
             );
         }
-        const emp_id = user.id;
+        const emp_id = user?.id;
         const missing_fields: string[] = [];
         if (!request.params.po_id) {
             missing_fields.push('po_id');
@@ -258,7 +250,7 @@ async function update(request: any, reply: any) {
 
         emp_authentication(module_name, user, reply);
         
-        const emp_id = user.id;
+        const emp_id = user?.id;
         const missing_fields: string[] = field_validator(request.body, [
             'issue_date',
             'supplier_id',
@@ -337,7 +329,7 @@ async function update_status(request: any, reply: any) {
         
         emp_authentication(module_name, user, reply);
         
-        const emp_id = user.id;
+        const emp_id = user?.id;
         const missing_fields: string[] = field_validator(request.body, [
             'status'
         ]);

@@ -37,7 +37,7 @@ async function create(payload: Payload, emp_id: string): Promise<Response> {
     `;
     try {
         const result = await sql_query(sql, [
-            payload.customer_id,
+            payload.cus_id,
             payload.due_date,
             payload.remark,
             payload.issue_date,
@@ -273,7 +273,7 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
             WHERE pod.podetail_po_id = po.po_id
         ) det ON TRUE
         WHERE 1=1 ${conditions.sql}
-        ORDER BY po.po_created_at DESC;
+        ORDER BY po.po_created_at DESC
         )
         SELECT ${filter} FROM ${module_name}_cte;
     `;
@@ -354,7 +354,7 @@ async function update(id: string, payload: Payload, emp_id: string): Promise<Res
     `;
     try {
         const result = await sql_query(sql, [
-            payload.customer_id,
+            payload.cus_id,
             payload.due_date,
             payload.remark,
             payload.issue_date,
