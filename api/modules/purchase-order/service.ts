@@ -1,7 +1,7 @@
 import sql_query from "@/api/utils/sql_query";
 import { Payload, StatusPayload } from "./type";
 import { Condition, Response, HttpStatusCode } from "@/api/utils/shared_types";
-const module_name = 'Purchase Orders';
+const module_name = 'purchase_orders';
 
 async function create(payload: Payload, emp_id: string): Promise<Response> {
     const sql = `
@@ -84,8 +84,9 @@ async function create(payload: Payload, emp_id: string): Promise<Response> {
         };
     }
 }
-async function get(conditions: Condition = { sql: ``, params: [] }): Promise<Response> {
+async function get(conditions: Condition = { sql: ``, params: [] }, filter: string = "*"): Promise<Response> {
     const sql = `
+    WITH ${module_name}_cte AS (
         SELECT
             po.po_id,
             po.po_number,
@@ -273,6 +274,8 @@ async function get(conditions: Condition = { sql: ``, params: [] }): Promise<Res
         ) det ON TRUE
         WHERE 1=1 ${conditions.sql}
         ORDER BY po.po_created_at DESC;
+        )
+        SELECT ${filter} FROM ${module_name}_cte;
     `;
 
 
