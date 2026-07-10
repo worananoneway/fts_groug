@@ -109,7 +109,8 @@ export enum POStatus {
     GOODS_RECEIVED = 'Goods Received',
     WAIT_PAYMENT = 'Wait Payment',
     POST_SENT = 'Post Sent',
-    CANCELLED = 'Cancelled'
+    CANCELLED = 'Cancelled',
+    DELETED = 'Deleted'
 }
 export enum WTStatus {
     PENDING = "Pending",
@@ -289,4 +290,9 @@ export interface Response {
     statuscode: HttpStatusCode;
     error: unknown | null;
     data: any[] | null;
+}
+
+export interface ValidationError {
+    field: ReplyErrorField;
+    message: ReplyErrorMessage;
 }

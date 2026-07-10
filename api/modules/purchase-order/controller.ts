@@ -1,6 +1,5 @@
 import {
     PurchaseOrder,
-    Supplier,
     Contact,
     Address,
     Subdistrict,
@@ -21,6 +20,7 @@ import {
     ErrorMessage,
     Payload,
     PVPayload,
+    StatusPayload,
     ValidationError
 } from './type';
 import { get_enum_keys, is_enum_key } from '@/api/utils/enum_checker';
@@ -38,6 +38,7 @@ import {
     Status
 } from '@/api/utils/shared_types';
 import field_validator from '@/api/utils/field_validator';
+import { reply_result } from '@/api/utils/controller_replys';
 
 const po_status_enum = get_enum_keys(POStatus);
 
@@ -48,15 +49,10 @@ async function create(request: any, reply: any) {
         const lang = request.headers['accept-language'] || 'en-US';
         const user = request.user;
         if (!user || !user.id) {
-            console.error("[Controller] Missing user ID from authenticated request.");
-            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
-                status: HttpStatus.UNAUTHORIZED,
-                statuscode: HttpStatusCode.UNAUTHORIZED,
-                details: {
-                    error: ReplyErrorField.UNAUTHORIZED,
-                    message: ReplyErrorMessage.UNAUTHORIZED
-                }
-            });
+            console.error(`[Controller] Missing user ID from authenticated request for ${module_name}.`);
+            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>
+                reply_result(module_name, HttpStatusCode.UNAUTHORIZED, null, [], null)
+            );
         }
         const emp_id = user.id;
         const requiredKeys = [
@@ -85,23 +81,11 @@ async function create(request: any, reply: any) {
         ];
         const missing_fields: string[] = field_validator(request.body, requiredKeys);
         if (missing_fields.length > 0) {
-            console.error("[Controller] Missing required fields for purchaseorder creation:", missing_fields);
-            return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>{
-                status: HttpStatus.BAD_REQUEST,
-                statuscode: HttpStatusCode.BAD_REQUEST,
-                details: {
-                    error: ReplyErrorField.VALIDATION_ERROR,
-                    message: ReplyErrorMessage.VALIDATION_ERROR,
-                    errors: missing_fields.map(field => {
-                        let message = ErrorMessage[field.toUpperCase() + '_REQUIRED' as keyof typeof ErrorMessage];
-                        return {
-                            field: field.toUpperCase() as ValidationError['field'],
-                            message: message as ValidationError['message']
-                        };
-                    })
-                }
-            });
+            return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>
+                reply_result(module_name, HttpStatusCode.BAD_REQUEST, null, missing_fields, null)
+            );
         }
+
         const payload: Payload = request.body;
         const invalid_fields: ValidationError[] = [];
         if (payload.ship_via && payload.ship_via.length > 150) {
@@ -135,7 +119,7 @@ async function create(request: any, reply: any) {
             });
         }
         if (invalid_fields.length > 0) {
-            console.error("[Controller] Validation errors found in purchaseorder creation payload:", invalid_fields);
+            console.error(`[Controller] Validation errors found in ${module_name} creation payload:`, invalid_fields);
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>{
                 status: HttpStatus.UNPROCESSABLE_CONTENT,
                 statuscode: HttpStatusCode.UNPROCESSABLE_CONTENT,
@@ -146,11 +130,12 @@ async function create(request: any, reply: any) {
                 }
             });
         }
+
         const result = await service.create(payload, emp_id);
         switch (result.statuscode) {
             case HttpStatusCode.CREATED:
                 const data = result.data![0];
-                console.log("[Controller] PurchaseOrders created successfully with ID:", data.po_id);
+                console.log(`[Controller] ${module_name} created successfully with ID:`, data.po_id);
                 return reply.code(HttpStatusCode.CREATED).send(<Reply>{
                     status: HttpStatus.CREATED,
                     statuscode: HttpStatusCode.CREATED,
@@ -182,7 +167,7 @@ async function create(request: any, reply: any) {
                     }
                 });
             default:
-                console.error("[Controller] An unrecognized status code was returned from creating purchaseorder:", result.statuscode);
+                console.error(`[Controller] An unrecognized status code was returned from creating ${module_name}:`, result.statuscode);
                 return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
                     status: HttpStatus.INTERNAL_SERVER_ERROR,
                     statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
@@ -193,7 +178,7 @@ async function create(request: any, reply: any) {
                 });
         }
     } catch (error) {
-        console.error("[Controller] An error occurred during creating purchaseorder:", error);
+        console.error(`[Controller] An error occurred during creating ${module_name}:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
             status: HttpStatus.INTERNAL_SERVER_ERROR,
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
@@ -816,7 +801,7 @@ async function update_status(request: any, reply: any) {
         //     });
         // }
         const invalid_fields: ValidationError[] = [];
-        const payload: Payload = sanitize_payload(request.body);
+        const payload: StatusPayload = sanitize_payload(request.body);
         if (!is_enum_key(po_status_enum, payload.status?.trim().replace(/\s+/g, '_').toUpperCase())) {
             invalid_fields.push({
                 field: ErrorField.STATUS,

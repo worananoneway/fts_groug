@@ -49,3 +49,8 @@ bun.lockb
 
 #dist
 /dist
+
+#bin
+/doc manual/api/utils/CONTROLLER_UTILS_MANUAL.md
+/doc manual/DATABASE_SEEDING.md
+/scripts
