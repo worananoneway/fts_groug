@@ -38,7 +38,7 @@ import {
 } from '@/api/utils/shared_types';
 import field_validator from '@/api/utils/field_validator';
 import { reply_result } from '@/api/utils/controller_replys';
-
+import { emp_authentication } from '@/api/utils/controller_auth';
 const po_status_enum = get_enum_keys(POStatus);
 
 const module_name = 'Purchase Orders';
@@ -47,12 +47,9 @@ async function create(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
         const user = request.user;
-        if (!user || !user.id) {
-            console.error(`[Controller] Missing user ID from authenticated request for ${module_name}.`);
-            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>
-                reply_result(module_name, HttpStatusCode.UNAUTHORIZED, null, [], null)
-            );
-        }
+
+        emp_authentication(module_name, user, reply);
+
         const emp_id = user.id;
         const requiredKeys = [
             'cus_id',
@@ -141,17 +138,8 @@ async function get(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
         const user = request.user;
-        if (!user || !user.id) {
-            console.error(`[Controller] Missing user ID from authenticated request.`);
-            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
-                status: HttpStatus.UNAUTHORIZED,
-                statuscode: HttpStatusCode.UNAUTHORIZED,
-                details: {
-                    error: ReplyErrorField.UNAUTHORIZED,
-                    message: ReplyErrorMessage.UNAUTHORIZED
-                }
-            });
-        }
+        const fields: string = request.reply_fields; 
+        emp_authentication(module_name, user, reply);
         const emp_id = user.id;
         const conditions: Condition = { sql: '', params: [] };
         const invalid_fields: ValidationError[] = [];
@@ -195,7 +183,7 @@ async function get(request: any, reply: any) {
             );
         }
 
-        const results = await service.get(conditions);
+        const results = await service.get(conditions, fields);
         return reply.code(results.statuscode).send(<Reply>
             reply_result(module_name, results.statuscode, results.data, [], null)
         );
@@ -212,6 +200,9 @@ async function soft_delete(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
         const user = request.user;
+
+        emp_authentication(module_name, user, reply);
+
         if (!user || !user.id) {
             console.error(`[Controller] Missing user ID from authenticated request.`);
             return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>
@@ -264,12 +255,9 @@ async function update(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
         const user = request.user;
-        if (!user || !user.id) {
-            console.error(`[Controller] Missing user ID from authenticated request.`);
-            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>
-                reply_result(module_name, HttpStatusCode.UNAUTHORIZED, null, [], null)
-            );
-        }
+
+        emp_authentication(module_name, user, reply);
+        
         const emp_id = user.id;
         const missing_fields: string[] = field_validator(request.body, [
             'issue_date',
@@ -346,17 +334,9 @@ async function update_status(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
         const user = request.user;
-        if (!user || !user.id) {
-            console.error(`[Controller] Missing user ID from authenticated request.`);
-            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
-                status: HttpStatus.UNAUTHORIZED,
-                statuscode: HttpStatusCode.UNAUTHORIZED,
-                details: {
-                    error: ReplyErrorField.UNAUTHORIZED,
-                    message: ReplyErrorMessage.UNAUTHORIZED
-                }
-            });
-        }
+        
+        emp_authentication(module_name, user, reply);
+        
         const emp_id = user.id;
         const missing_fields: string[] = field_validator(request.body, [
             'status'
