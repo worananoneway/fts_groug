@@ -221,9 +221,7 @@ export function map_fields(
 export function reply_result(
     module_name: string,
     statuscode: HttpStatusCode,
-    missing_fields: ValidationErrorInput[] | string[] | null,
-    // Keep the existing broad data contract for untouched reply branches.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    missing_fields: ValidationErrorInput[] | string[] | null = null,
     data: any = {},
     format: unknown = null
 ){

@@ -110,15 +110,14 @@ async function create(request: any, reply: any) {
         const result = await service.create(payload, emp_id);
         return reply.code(result.statuscode).send(<Reply>
             reply_result(module_name, result.statuscode, null, result.data, {
-                ...created_reply_options,
-                language: lang
+                ...created_reply_options
             })
         );
 
     } catch (error) {
         console.error(`[Controller] An error occurred during creating ${module_name}:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
-            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR, null, [], null)
+            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
         );
     }
 }
@@ -168,22 +167,21 @@ async function get(request: any, reply: any) {
         }
         if (invalid_fields.length > 0) {
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
-                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, null, [], invalid_fields)
+                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
         }
 
         const results = await service.get(conditions, fields);
         return reply.code(results.statuscode).send(<Reply>
             reply_result(module_name, results.statuscode, null, results.data, {
-                ...created_reply_options,
-                language: lang
+                ...created_reply_options
             })
         );
 
     } catch (error) {
         console.error(`[Controller] An error occurred during deleting ${module_name}:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
-            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR, null, [], null)
+            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
         );
     }
 }
@@ -198,7 +196,7 @@ async function soft_delete(request: any, reply: any) {
         if (!user || !user.id) {
             console.error(`[Controller] Missing user ID from authenticated request.`);
             return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>
-                reply_result(module_name, HttpStatusCode.UNAUTHORIZED, null, [], null)
+                reply_result(module_name, HttpStatusCode.UNAUTHORIZED)
             );
         }
         const emp_id = user?.id;
@@ -209,7 +207,7 @@ async function soft_delete(request: any, reply: any) {
         if (missing_fields.length > 0) {
             console.error(`[Controller] Missing required fields for deleting ${module_name}:`, missing_fields);
             return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>
-                reply_result(module_name, HttpStatusCode.BAD_REQUEST, null, missing_fields, null)
+                reply_result(module_name, HttpStatusCode.BAD_REQUEST, missing_fields)
             );
         }
 
@@ -226,19 +224,19 @@ async function soft_delete(request: any, reply: any) {
         if (invalid_fields.length > 0) {
             console.error(`[Controller] Validation errors found in ${module_name} creation payload:`, invalid_fields);
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
-                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, null, [], invalid_fields)
+                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
         }
 
         const id: string = request.params.po_id;
         const result = await service.soft_delete(id, emp_id);
         return reply.code(result.statuscode).send(<Reply>
-            reply_result(module_name, result.statuscode, result.data, [], null)
+            reply_result(module_name, result.statuscode, null, result.data)
         );
     } catch (error) {
         console.error(`[Controller] An error occurred during deleting ${module_name}:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
-            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR, null, [], null)
+            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
         );
     }
 }
@@ -253,7 +251,6 @@ async function update(request: any, reply: any) {
         const emp_id = user?.id;
         const missing_fields: string[] = field_validator(request.body, [
             'issue_date',
-            'supplier_id',
             'ship_via',
             'qt_on',
             'shipping_terms',
@@ -267,7 +264,7 @@ async function update(request: any, reply: any) {
         if (missing_fields.length > 0) {
             console.error(`[Controller] Missing required fields for updating ${module_name}:`, missing_fields);
             return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>
-                reply_result(module_name, HttpStatusCode.BAD_REQUEST, null, missing_fields, null)
+                reply_result(module_name, HttpStatusCode.BAD_REQUEST, missing_fields)
             );
         }
         const payload: Payload = sanitize_payload(request.body);
@@ -306,19 +303,19 @@ async function update(request: any, reply: any) {
         if (invalid_fields.length > 0) {
             console.error(`[Controller] Validation errors found in ${module_name} creation payload:`, invalid_fields);
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
-                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, null, [], invalid_fields)
+                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
         }
 
         const result = await service.update(id, payload, emp_id);
         return reply.code(result.statuscode).send(<Reply>
-            reply_result(module_name, result.statuscode, result.data, [], null)
+            reply_result(module_name, result.statuscode, null, result.data)
         );
 
     } catch (error) {
         console.error(`[Controller] An error occurred during updating ${module_name}:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
-            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR, null, [], null)
+            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
         );
     }
 }
@@ -339,7 +336,7 @@ async function update_status(request: any, reply: any) {
         if (missing_fields.length > 0) {
             console.error(`[Controller] Missing required fields for updating ${module_name} status:`, missing_fields);
             return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>
-                reply_result(module_name, HttpStatusCode.BAD_REQUEST, null, missing_fields, null)
+                reply_result(module_name, HttpStatusCode.BAD_REQUEST, missing_fields)
             );
         }
         const invalid_fields: ValidationError[] = [];
@@ -355,19 +352,19 @@ async function update_status(request: any, reply: any) {
         if (invalid_fields.length > 0) {
             console.error(`[Controller] Validation errors found in ${module_name} creation payload:`, invalid_fields);
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
-                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, null, [], invalid_fields)
+                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
         }
 
         const id: string = request.params.po_id;
         const result = await service.update_status(id, payload, emp_id);
         return reply.code(result.statuscode).send(<Reply>
-            reply_result(module_name, result.statuscode, result.data, [], null)
+            reply_result(module_name, result.statuscode, null, result.data)
         );
     } catch (error) {
         console.error(`[Controller] An error occurred during updating ${module_name} status:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
-            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR, null, [], null)
+            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
         );
     }
 }
