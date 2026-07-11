@@ -117,11 +117,46 @@ async function create(request: any, reply: any) {
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
         }
-        // switch (payload.event_type) {
-        //     case TimelineEventType.ADD:
-        //     case TimelineEventType.EDIT:
-        //     case TimelineEventType.USED:
         const result = await service.create(payload);
+        if (result.statuscode !== HttpStatusCode.CREATED) {
+            console.error(`[Controller] Failed to create ${module_name}:`, result.error);
+            return reply.code(result.statuscode).send(<Reply>
+                reply_result(module_name, result.statuscode)
+            );
+        }
+        const msps = await service.get_msps(payload.msp_id);
+        if (msps.statuscode !== HttpStatusCode.OK) {
+            console.error(`[Controller] Failed to get MSP:`, msps.error);
+            return reply.code(msps.statuscode).send(<Reply>
+                reply_result(module_name, msps.statuscode)
+            );
+        }
+        const msps_data = msps?.data;
+        const update_msps = {
+            total_quantity: msps_data?.msp_quantity,
+            total_available_quantity: msps_data?.msp_available_quantity
+        };
+        switch (payload.event_type) {
+            case TimelineEventType.ADD:
+                update_msps.total_quantity = msps_data?.msp_quantity + payload.quantity_change;
+                update_msps.total_available_quantity = msps_data?.msp_available_quantity + payload.quantity_change;
+                break;
+            case TimelineEventType.USED:
+                update_msps.total_quantity = msps_data?.msp_quantity - payload.quantity_change;
+                update_msps.total_available_quantity = msps_data?.msp_available_quantity - payload.quantity_change;
+                break;
+            case TimelineEventType.EDIT:
+                update_msps.total_quantity = msps_data?.msp_quantity + (msps_data?.msp_quantity - payload.quantity_change);
+                update_msps.total_available_quantity = msps_data?.msp_available_quantity + (msps_data?.msp_quantity - payload.quantity_change);
+                break;
+        }
+        const update_msps_result = await service.update_msps(payload.msp_id, update_msps);
+        if (update_msps_result.statuscode !== HttpStatusCode.OK) {
+            console.error(`[Controller] Failed to update MSP:`, update_msps_result.error);
+            return reply.code(update_msps_result.statuscode).send(<Reply>
+                reply_result(module_name, update_msps_result.statuscode)
+            );
+        }
         return reply.code(result.statuscode).send(<Reply>
             reply_result(module_name, result.statuscode, null, result?.data, reply_options)
         );
