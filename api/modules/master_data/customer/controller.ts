@@ -49,12 +49,6 @@ async function create(request: any, reply: any) {
                 message: ErrorMessage.NAME_TH_REQUIRED
             });
         }
-        if (!payload.tax_id) {
-            invalid_fields.push({
-                field: ErrorField.TAX_ID,
-                message: ErrorMessage.TAX_ID_REQUIRED
-            });
-        }
         if (!payload.subdistrict_id) {
             invalid_fields.push({
                 field: ErrorField.SUBDISTRICT_ID,
@@ -103,7 +97,7 @@ async function create(request: any, reply: any) {
                 message: ErrorMessage.NAME_EN_MIN_LENGTH
             });
         }
-        if (!/^[0-9]{13}$/.test(payload.tax_id)) {
+        if (payload.tax_id && !/^[0-9]{13}$/.test(payload.tax_id)) {
             invalid_fields.push({
                 field: ErrorField.TAX_ID,
                 message: ErrorMessage.TAX_ID_INVALID
@@ -191,7 +185,7 @@ async function create(request: any, reply: any) {
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields, `Validation errors found in ${module_name} creation payload.`)
             );
         }
-        const conditions: Condition = { sql: '', params: [payload.tax_id, payload.name_th, payload.name_en] };
+        const conditions: Condition = { sql: '', params: [payload.tax_id] };
         const duplicate_check = await service.count_duplicate(conditions);
         if (duplicate_check.statuscode !== HttpStatusCode.OK) {
             return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
@@ -361,12 +355,6 @@ async function update(request: any, reply: any) {
                 message: ErrorMessage.NAME_TH_REQUIRED
             });
         }
-        if (!payload.tax_id) {
-            invalid_fields.push({
-                field: ErrorField.TAX_ID,
-                message: ErrorMessage.TAX_ID_REQUIRED
-            });
-        }
         if (!payload.subdistrict_id) {
             invalid_fields.push({
                 field: ErrorField.SUBDISTRICT_ID,
@@ -415,7 +403,7 @@ async function update(request: any, reply: any) {
                 message: ErrorMessage.NAME_EN_MAX_LENGTH
             });
         }
-        if (!/^[0-9]{13}$/.test(payload.tax_id)) {
+        if (payload.tax_id && !/^[0-9]{13}$/.test(payload.tax_id)) {
             invalid_fields.push({
                 field: ErrorField.TAX_ID,
                 message: ErrorMessage.TAX_ID_INVALID
@@ -510,7 +498,7 @@ async function update(request: any, reply: any) {
                 }
             });
         }
-        const conditions: Condition = { sql: ' AND customer_id != $4', params: [payload.tax_id, payload.name_th, payload.name_en, customer_id] };
+        const conditions: Condition = { sql: ' AND customer_id != $2', params: [payload.tax_id, customer_id] };
         const duplicate_check = await service.count_duplicate(conditions);
         if (duplicate_check.statuscode !== HttpStatusCode.OK) {
             return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{

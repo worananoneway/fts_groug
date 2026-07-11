@@ -42,24 +42,12 @@ async function create(request: any, reply: any) {
         const payload: Payload = sanitize_payload(request.body);
         console.log(`[Controller] Creating ${module_name} with payload:`, payload);
         const invalid_fields: ValidationError[] = [];
-        if (!payload.mm_id) {
-            invalid_fields.push({
-                field: ErrorField.MM_ID,
-                message: ErrorMessage.MM_ID_REQUIRED
-            });
-        }
-        if (!payload.code) {
-            invalid_fields.push({
-                field: ErrorField.CODE,
-                message: ErrorMessage.CODE_REQUIRED
-            });
-        }
-        if (!payload.code) {
-            invalid_fields.push({
-                field: ErrorField.CODE,
-                message: ErrorMessage.CODE_REQUIRED
-            });
-        }
+        // if (!payload.mm_id) {
+        //     invalid_fields.push({
+        //         field: ErrorField.MM_ID,
+        //         message: ErrorMessage.MM_ID_REQUIRED
+        //     });
+        // }
         if (!payload.length) {
             invalid_fields.push({
                 field: ErrorField.LENGTH,
@@ -88,12 +76,6 @@ async function create(request: any, reply: any) {
             invalid_fields.push({
                 field: ErrorField.AVAILABLE_QUANTITY,
                 message: ErrorMessage.AVAILABLE_QUANTITY_REQUIRED
-            });
-        }
-        if (!payload.status) {
-            invalid_fields.push({
-                field: ErrorField.STATUS,
-                message: ErrorMessage.STATUS_REQUIRED
             });
         }
         if (!payload.received_date) {
@@ -195,24 +177,12 @@ async function update(request: any, reply: any) {
             );
         }
         const invalid_fields: ValidationError[] = [];
-        if (!payload.mm_id) {
-            invalid_fields.push({
-                field: ErrorField.MM_ID,
-                message: ErrorMessage.MM_ID_REQUIRED
-            });
-        }
-        if (!payload.code) {
-            invalid_fields.push({
-                field: ErrorField.CODE,
-                message: ErrorMessage.CODE_REQUIRED
-            });
-        }
-        if (!payload.code) {
-            invalid_fields.push({
-                field: ErrorField.CODE,
-                message: ErrorMessage.CODE_REQUIRED
-            });
-        }
+        // if (!payload.mm_id) {
+        //     invalid_fields.push({
+        //         field: ErrorField.MM_ID,
+        //         message: ErrorMessage.MM_ID_REQUIRED
+        //     });
+        // }
         if (!payload.length) {
             invalid_fields.push({
                 field: ErrorField.LENGTH,
@@ -241,30 +211,6 @@ async function update(request: any, reply: any) {
             invalid_fields.push({
                 field: ErrorField.AVAILABLE_QUANTITY,
                 message: ErrorMessage.AVAILABLE_QUANTITY_REQUIRED
-            });
-        }
-        if (!payload.loc_id) {
-            invalid_fields.push({
-                field: ErrorField.LOC_ID,
-                message: ErrorMessage.LOC_ID_REQUIRED
-            });
-        }
-        if (!payload.location_type) {
-            invalid_fields.push({
-                field: ErrorField.LOCATION_TYPE,
-                message: ErrorMessage.LOCATION_TYPE_REQUIRED
-            });
-        }
-        if (!payload.location) {
-            invalid_fields.push({
-                field: ErrorField.LOCATION,
-                message: ErrorMessage.LOCATION_REQUIRED
-            });
-        }
-        if (!payload.status) {
-            invalid_fields.push({
-                field: ErrorField.STATUS,
-                message: ErrorMessage.STATUS_REQUIRED
             });
         }
         if (!payload.received_date) {
