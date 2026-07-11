@@ -13,15 +13,12 @@ async function create(payload: Payload, emp_id: string | null): Promise<Response
             msp_thickness,
             msp_quantity,
             msp_available_quantity,
-            msp_loc_id,
             msp_received_date,
             msp_remark,
-            msp_created_at,
-            msp_updated_at,
             msp_emp_id,
             msp_status
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,'AVAILABLE'
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,'Active'
         ) RETURNING *;
     `;
     try {
@@ -33,11 +30,8 @@ async function create(payload: Payload, emp_id: string | null): Promise<Response
             payload.thickness,
             payload.quantity,
             payload.available_quantity,
-            payload.loc_id,
             payload.received_date,
             payload.remark,
-            payload.created_at,
-            payload.updated_at,
             emp_id,
         ]);
         if (result.length === 0) {
@@ -74,9 +68,6 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
                 msp_thickness,
                 msp_quantity,
                 msp_available_quantity,
-                msp_loc_id,
-                msp_location_type,
-                msp_location,
                 msp_status,
                 msp_received_date,
                 msp_remark,
@@ -117,7 +108,6 @@ async function soft_delete(id: string, emp_id: string | null): Promise<Response>
     const sql = `
         UPDATE public.ms_plates
         SET msp_status = 'RESERVED',
-            msp_updated_at = NOW(),
             msp_emp_id = $2
         WHERE msp_id = $1
         RETURNING *;
@@ -157,12 +147,10 @@ async function update(id: string, payload: Payload, emp_id: string | null): Prom
             msp_thickness = $5,
             msp_quantity = $6,
             msp_available_quantity = $7,
-            msp_loc_id = $8,
-            msp_status = $9,
-            msp_received_date = $10,
-            msp_remark = $11,
-            msp_updated_at = NOW(),
-            msp_emp_id = $12
+            msp_status = $8,
+            msp_received_date = $9,
+            msp_remark = $10,
+            msp_emp_id = $11
         WHERE msp_id = $1
         RETURNING *;
     `;
@@ -175,8 +163,6 @@ async function update(id: string, payload: Payload, emp_id: string | null): Prom
             payload.thickness,
             payload.quantity,
             payload.available_quantity,
-            payload.loc_id,
-            payload.status,
             payload.received_date,
             payload.remark,
             emp_id
@@ -207,9 +193,8 @@ async function update_status(id: string, status: string, emp_id: string | null):
     const sql = `
         UPDATE public.ms_plates
         SET
-            msp_status = "RESERVED",
-            msp_updated_at = NOW(),
-            msp_emp_id = $3
+            msp_status = 'RESERVED',
+            msp_emp_id = $2
         WHERE msp_id = $1
         RETURNING *;
     `;

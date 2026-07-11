@@ -14,7 +14,7 @@ app.prepare().then(async () => {
 
     //register routes
     server.register(import("./api/modules/master_data/customer/router"), {
-        prefix: "/api/:version/accounting/customers"
+        prefix: "/api/:version/customers"
     });
 
     server.register(import("./api/modules/master_data/steel_round_bars/router"), {
@@ -30,23 +30,23 @@ app.prepare().then(async () => {
     });
 
     server.register(import("./api/modules/master_data/ms_plates/router"), {
-        prefix: "/api/:version/accounting/ms-plates"
+        prefix: "/api/:version/ms-plates"
     });
 
     server.register(import("./api/modules/timeline_msps/router"), {
-        prefix: "/api/:version/accounting/timeline-msps"
+        prefix: "/api/:version/timeline-msps"
     });
 
     server.register(import("./api/modules/timeline_srbs/router"), {
-        prefix: "/api/:version/accounting/timeline-srbs"
+        prefix: "/api/:version/timeline-srbs"
     });
 
     server.register(import("./api/modules/timeline_wsrbs/router"), {
-        prefix: "/api/:version/accounting/timeline-wsrbs"
+        prefix: "/api/:version/timeline-wsrbs"
     });
 
     server.register(import("./api/modules/projects/router"), {
-        prefix: "/api/:version/accounting/projects"
+        prefix: "/api/:version/projects"
     });
 
     // server.register(import("./api/modules/master_data/employees/router"), {

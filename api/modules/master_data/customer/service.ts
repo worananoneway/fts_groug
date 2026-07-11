@@ -5,9 +5,7 @@ const module_name = 'customers';
 async function count_duplicate(conditions: Condition): Promise<Response> {
     const sql = `
         SELECT 
-            (SELECT COUNT(customer_id) FROM public.customers WHERE customer_tax_id = $1${conditions.sql}) AS duplicate_tax_id,
-            (SELECT COUNT(customer_id) FROM public.customers WHERE customer_name_th = $2${conditions.sql}) AS duplicate_name_th,
-            (SELECT COUNT(customer_id) FROM public.customers WHERE customer_name_en = $3${conditions.sql}) AS duplicate_name_en
+            (SELECT COUNT(customer_id) FROM public.customers WHERE customer_tax_id = $1${conditions.sql}) AS duplicate_tax_id
     `;
     try {
         const result = await sql_query(sql, [
@@ -135,7 +133,7 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
             JOIN public.districts ON customers.customer_district_id = districts.district_id
             JOIN public.provinces ON customers.customer_province_id = provinces.province_id
             LEFT JOIN public.employees ON customers.customer_emp_id = employees.emp_id
-            WHERE 1=1${conditions.sql}
+            WHERE 1=1 AND customer_status != 'Deleted' AND customer_status != 'Inactive' ${conditions.sql}
             ORDER BY customer_created_at DESC
         )
         SELECT ${filter} FROM customer_cte;

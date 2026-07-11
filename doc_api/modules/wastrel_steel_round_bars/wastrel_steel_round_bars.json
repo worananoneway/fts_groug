@@ -1,0 +1,76 @@
+[
+  {
+    "method": "GET",
+    "name": "Get Wastrel Steel Round Bars",
+    "url": "/api/v1/wastrel-steel-round-bars",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {
+      "mm_id": null,
+      "srb_id": null,
+      "po_id": null,
+      "podetail_id": null,
+      "code": "WSRB-0001",
+      "status": "Active"
+    },
+    "body": null
+  },
+  {
+    "method": "GET",
+    "name": "Get Wastrel Steel Round Bar By ID",
+    "url": "/api/v1/wastrel-steel-round-bars/<wsrb_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "wsrb_id": null },
+    "body": null
+  },
+  {
+    "method": "POST",
+    "name": "Create Wastrel Steel Round Bar",
+    "url": "/api/v1/wastrel-steel-round-bars",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {},
+    "body": {
+      "mm_id": null,
+      "srb_id": null,
+      "code": "WSRB-0001",
+      "diameter": 25,
+      "length": 1200,
+      "quantity": 2,
+      "available_quantity": 2,
+      "po_id": null,
+      "podetail_id": null,
+      "remark": "Wastrel steel round bar example"
+    }
+  },
+  {
+    "method": "PUT",
+    "name": "Update Wastrel Steel Round Bar",
+    "url": "/api/v1/wastrel-steel-round-bars/<wsrb_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "wsrb_id": null },
+    "body": {
+      "mm_id": null,
+      "srb_id": null,
+      "code": "WSRB-0001",
+      "diameter": 25,
+      "length": 1200,
+      "quantity": 2,
+      "available_quantity": 1,
+      "po_id": null,
+      "podetail_id": null,
+      "remark": "Updated wastrel steel round bar"
+    }
+  },
+  {
+    "method": "PATCH",
+    "name": "Update Wastrel Steel Round Bar Status",
+    "url": "/api/v1/wastrel-steel-round-bars/status/<wsrb_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "wsrb_id": null },
+    "body": { "status": "Active" }
+  }
+]
