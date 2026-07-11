@@ -31,9 +31,6 @@
       "length": 6000,
       "quantity": 10,
       "available_quantity": 8,
-      "loc_id": null,
-      "location_type": "WAREHOUSE",
-      "location": "A-01",
       "received_date": "2026-07-11",
       "remark": "Steel round bar example"
     }
