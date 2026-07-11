@@ -2,12 +2,10 @@ import { reply_options } from './model';
 import { reply_result } from '@/api/utils/controller_replys';
 import { emp_authentication } from '@/api/utils/controller_auth';
 import field_validator from '@/api/utils/field_validator';
-import { FastifyReply, FastifyRequest } from 'fastify';
 import service from './service';
 import {
     ErrorField,
     ErrorMessage,
-    LocationType,
     Payload,
     StockStatus,
     ValidationError
@@ -17,15 +15,10 @@ import { get_enum_keys, is_enum_key } from '@/api/utils/enum_checker';
 import { sanitize_input, sanitize_payload, sanitize_string } from '@/api/utils/input_sanitizer';
 import {
     Condition,
-    HttpStatus,
     HttpStatusCode,
     Reply,
-    ReplyErrorField,
-    ReplyErrorMessage,
-    ReplySuccessMessage,
 } from '@/api/utils/shared_types';
 
-const location_type_enum = get_enum_keys(LocationType);
 const status_enum = get_enum_keys(StockStatus);
 const module_name = 'WastrelSteelRoundBar';
 
@@ -36,14 +29,14 @@ async function create(request: any, reply: any) {
         emp_authentication(module_name, emp_id, reply);
 
         const payload: Payload = sanitize_payload(request.body);
-        console.log(`[Controller] Creating wastrel MS plate with payload:`, payload);
+        console.log(`[Controller] Creating wastrel steel round bar with payload:`, payload);
 
         const requiredKeys = [
             'mm_id',
-            'msp_id',
+            'srb_id',
+            'code',
+            'diameter',
             'length',
-            'width',
-            'thickness',
             'quantity',
             'available_quantity',
             'po_id',
@@ -65,28 +58,28 @@ async function create(request: any, reply: any) {
                 message: ErrorMessage.MM_ID_MAX_LENGTH
             });
         }
-        if (payload.msp_id && payload.msp_id.length > 20) {
+        if (payload.srb_id && payload.srb_id.length > 20) {
             invalid_fields.push({
-                field: ErrorField.MSP_ID,
-                message: ErrorMessage.MSP_ID_MAX_LENGTH
+                field: ErrorField.SRB_ID,
+                message: ErrorMessage.SRB_ID_MAX_LENGTH
+            });
+        }
+        if (payload.code && payload.code.length > 50) {
+            invalid_fields.push({
+                field: ErrorField.CODE,
+                message: ErrorMessage.CODE_MAX_LENGTH
+            });
+        }
+        if (typeof payload.diameter !== 'number' || payload.diameter <= 0) {
+            invalid_fields.push({
+                field: ErrorField.DIAMETER,
+                message: ErrorMessage.DIAMETER_INVALID
             });
         }
         if (typeof payload.length !== 'number' || payload.length <= 0) {
             invalid_fields.push({
                 field: ErrorField.LENGTH,
                 message: ErrorMessage.LENGTH_INVALID
-            });
-        }
-        if (typeof payload.width !== 'number' || payload.width <= 0) {
-            invalid_fields.push({
-                field: ErrorField.WIDTH,
-                message: ErrorMessage.WIDTH_INVALID
-            });
-        }
-        if (typeof payload.thickness !== 'number' || payload.thickness <= 0) {
-            invalid_fields.push({
-                field: ErrorField.THICKNESS,
-                message: ErrorMessage.THICKNESS_INVALID
             });
         }
         if (!Number.isInteger(payload.quantity) || payload.quantity <= 0) {
@@ -115,7 +108,7 @@ async function create(request: any, reply: any) {
         }
 
         if (invalid_fields.length > 0) {
-            console.error(`[Controller] Validation errors found in wastrel MS plate creation payload:`, invalid_fields);
+            console.error(`[Controller] Validation errors found in wastrel steel round bar creation payload:`, invalid_fields);
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
@@ -126,7 +119,7 @@ async function create(request: any, reply: any) {
             reply_result(module_name, result.statuscode, null, result?.data, reply_options)
         );
     } catch (error) {
-        console.error(`[Controller] An error occurred during creating wastrel MS plate:`, error);
+        console.error(`[Controller] An error occurred during creating wastrel steel round bar:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
             reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
         );
@@ -142,33 +135,33 @@ async function get(request: any, reply: any) {
         const conditions: Condition = { sql: ``, params: [] };
         const invalid_fields: ValidationError[] = [];
 
-        if (request.params.wmsp_id) {
-            conditions.params.push(sanitize_string(request.params.wmsp_id));
-            conditions.sql += ` AND wmsp_id = $${conditions.params.length} `;
+        if (request.params.wsrb_id) {
+            conditions.params.push(sanitize_string(request.params.wsrb_id));
+            conditions.sql += ` AND wsrb_id = $${conditions.params.length} `;
         }
         if (request.query.mm_id) {
             conditions.params.push(sanitize_input(request.query.mm_id));
-            conditions.sql += ` AND wmsp_mm_id = $${conditions.params.length} `;
+            conditions.sql += ` AND wsrb_mm_id = $${conditions.params.length} `;
         }
-        if (request.query.msp_id) {
-            conditions.params.push(sanitize_input(request.query.msp_id));
-            conditions.sql += ` AND wmsp_msp_id = $${conditions.params.length} `;
+        if (request.query.srb_id) {
+            conditions.params.push(sanitize_input(request.query.srb_id));
+            conditions.sql += ` AND wsrb_srb_id = $${conditions.params.length} `;
         }
         if (request.query.po_id) {
             conditions.params.push(sanitize_input(request.query.po_id));
-            conditions.sql += ` AND wmsp_po_id = $${conditions.params.length} `;
+            conditions.sql += ` AND wsrb_po_id = $${conditions.params.length} `;
         }
         if (request.query.podetail_id) {
             conditions.params.push(sanitize_input(request.query.podetail_id));
-            conditions.sql += ` AND wmsp_podetail_id = $${conditions.params.length} `;
+            conditions.sql += ` AND wsrb_podetail_id = $${conditions.params.length} `;
         }
-        if (request.query.display_id) {
-            conditions.params.push(sanitize_input(request.query.display_id));
-            conditions.sql += ` AND wmsp_display_id = $${conditions.params.length} `;
+        if (request.query.code) {
+            conditions.params.push(sanitize_input(request.query.code));
+            conditions.sql += ` AND wsrb_code = $${conditions.params.length} `;
         }
         if (request.query.status && is_enum_key(status_enum, request.query.status)) {
             conditions.params.push(StockStatus[request.query.status.trim().replace(/\s+/g, '_').toUpperCase() as keyof typeof StockStatus]);
-            conditions.sql += ` AND wmsp_status = $${conditions.params.length} `;
+            conditions.sql += ` AND wsrb_status = $${conditions.params.length} `;
         } else if (request.query.status) {
             invalid_fields.push({
                 field: ErrorField.STATUS,
@@ -187,7 +180,7 @@ async function get(request: any, reply: any) {
             reply_result(module_name, results.statuscode, null, results?.data, reply_options)
         );
     } catch (error) {
-        console.error(`[Controller] An error occurred during getting wastrel MS plates:`, error);
+        console.error(`[Controller] An error occurred during getting wastrel steel round bars:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
             reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR, null)
         );
@@ -199,7 +192,7 @@ async function update(request: any, reply: any) {
         const emp_id: string = request?.user?.id;
         emp_authentication(module_name, emp_id, reply);
 
-        const id = sanitize_string(request?.params.wmsp_id);
+        const id = sanitize_string(request?.params.wsrb_id);
         if (!id) {
             return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>
                 reply_result(module_name, HttpStatusCode.BAD_REQUEST, [{
@@ -211,10 +204,10 @@ async function update(request: any, reply: any) {
 
         const requiredKeys = [
             'mm_id',
-            'msp_id',
+            'srb_id',
+            'code',
+            'diameter',
             'length',
-            'width',
-            'thickness',
             'quantity',
             'available_quantity',
             'po_id',
@@ -237,28 +230,28 @@ async function update(request: any, reply: any) {
                 message: ErrorMessage.MM_ID_MAX_LENGTH
             });
         }
-        if (payload.msp_id && payload.msp_id.length > 20) {
+        if (payload.srb_id && payload.srb_id.length > 20) {
             invalid_fields.push({
-                field: ErrorField.MSP_ID,
-                message: ErrorMessage.MSP_ID_MAX_LENGTH
+                field: ErrorField.SRB_ID,
+                message: ErrorMessage.SRB_ID_MAX_LENGTH
+            });
+        }
+        if (payload.code && payload.code.length > 50) {
+            invalid_fields.push({
+                field: ErrorField.CODE,
+                message: ErrorMessage.CODE_MAX_LENGTH
+            });
+        }
+        if (typeof payload.diameter !== 'number' || payload.diameter <= 0) {
+            invalid_fields.push({
+                field: ErrorField.DIAMETER,
+                message: ErrorMessage.DIAMETER_INVALID
             });
         }
         if (typeof payload.length !== 'number' || payload.length <= 0) {
             invalid_fields.push({
                 field: ErrorField.LENGTH,
                 message: ErrorMessage.LENGTH_INVALID
-            });
-        }
-        if (typeof payload.width !== 'number' || payload.width <= 0) {
-            invalid_fields.push({
-                field: ErrorField.WIDTH,
-                message: ErrorMessage.WIDTH_INVALID
-            });
-        }
-        if (typeof payload.thickness !== 'number' || payload.thickness <= 0) {
-            invalid_fields.push({
-                field: ErrorField.THICKNESS,
-                message: ErrorMessage.THICKNESS_INVALID
             });
         }
         if (!Number.isInteger(payload.quantity) || payload.quantity <= 0) {
@@ -287,7 +280,7 @@ async function update(request: any, reply: any) {
         }
 
         if (invalid_fields.length > 0) {
-            console.error(`[Controller] Validation errors found in wastrel MS plate creation payload:`, invalid_fields);
+            console.error(`[Controller] Validation errors found in wastrel steel round bar creation payload:`, invalid_fields);
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
@@ -298,7 +291,7 @@ async function update(request: any, reply: any) {
             reply_result(module_name, result.statuscode)
         );
     } catch (error) {
-        console.error(`[Controller] An error occurred during updating wastrel MS plate:`, error);
+        console.error(`[Controller] An error occurred during updating wastrel steel round bar:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
             reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
         );
@@ -312,7 +305,7 @@ async function update_status(request: any, reply: any) {
         emp_authentication(module_name, emp_id, reply);
 
         const invalid_fields: ValidationError[] = [];
-        const id = sanitize_string(request.params.wmsp_id);
+        const id = sanitize_string(request.params.wsrb_id);
 
         const payload = sanitize_payload(request.body);
         if (!is_enum_key(status_enum, payload.status?.trim().replace(/\s+/g, '_').toUpperCase())) {
@@ -335,7 +328,7 @@ async function update_status(request: any, reply: any) {
             reply_result(module_name, result.statuscode)
         );
     } catch (error) {
-        console.error(`[Controller] An error occurred during updating wastrel MS plate status:`, error);
+        console.error(`[Controller] An error occurred during updating wastrel steel round bar status:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
             reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
         );

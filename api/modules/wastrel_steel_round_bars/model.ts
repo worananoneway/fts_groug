@@ -22,34 +22,37 @@ export const reply_options = {
         length: 'wsrb_length',
         quantity: 'wsrb_quantity',
         available_quantity: 'wsrb_available_quantity',
-        location: {
-            $nullableBy: 'wsrb_loc_id',
-            $fields: {
-                id: 'wsrb_loc_id',
-                code: 'wsrb_loc_code',
-                name: 'wsrb_loc_name',
-                type: 'wsrb_loc_type'
-            }
-        },
-        location_type: 'wsrb_location_type',
-        location_detail: 'wsrb_location',
         status: 'wsrb_status',
         order: {
-            $nullableBy: 'wsrb_ord_id',
+            $nullableBy: 'wsrb_po_id',
             $fields: {
-                id: 'wsrb_ord_id',
-                no: 'wsrb_ord_no'
+                id: 'wsrb_po_id',
+                no: 'wsrb_po_number'
             }
         },
         order_detail: {
-            $nullableBy: 'wsrb_odd_id',
+            $nullableBy: 'wsrb_podetail_id',
             $fields: {
-                id: 'wsrb_odd_id',
-                order_id: 'wsrb_odd_ord_id'
+                id: 'wsrb_podetail_id',
+                order_id: 'wsrb_podetail_po_id'
             }
         },
         remark: 'wsrb_remark',
         created_at: 'wsrb_created_at',
-        updated_at: 'wsrb_updated_at'
+        updated_at: 'wsrb_updated_at',
+        emp: {
+            $nullableBy: 'wsrb_emp_id',
+            $fields: {
+                id: 'wsrb_emp_id',
+                display_id: 'wsrb_emp_display_id',
+                prefix: 'wsrb_emp_prefix',
+                name: {
+                    $locale: {
+                        th: { $join: ['wsrb_emp_fname_th', 'wsrb_emp_lname_th'] },
+                        en: { $join: ['wsrb_emp_fname_en', 'wsrb_emp_lname_en'] }
+                    }
+                }
+            }
+        }
     }
 };

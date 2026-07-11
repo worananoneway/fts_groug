@@ -81,17 +81,25 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
                 wsrb_available_quantity,
                 wsrb_status::text AS wsrb_status,
                 wsrb_po_id,
-                po_no AS wsrb_po_no,
+                po_number AS wsrb_po_number,
                 wsrb_podetail_id,
-                podetail_ord_id AS wsrb_podetail_ord_id,
+                podetail_po_id AS wsrb_podetail_po_id,
                 wsrb_remark,
                 wsrb_created_at,
-                wsrb_updated_at
+                wsrb_updated_at,
+                wsrb_emp_id,
+                emp_display_id AS wsrb_emp_display_id,
+                emp_prefix::text AS wsrb_emp_prefix,
+                emp_firstname_th AS wsrb_emp_fname_th,
+                emp_lastname_th AS wsrb_emp_lname_th,
+                emp_firstname_en AS wsrb_emp_fname_en,
+                emp_lastname_en AS wsrb_emp_lname_en
             FROM public.wastrel_steel_round_bars
             LEFT JOIN public.material_masters ON wastrel_steel_round_bars.wsrb_mm_id = material_masters.mm_id
             LEFT JOIN public.steel_round_bars ON wastrel_steel_round_bars.wsrb_srb_id = steel_round_bars.srb_id
             LEFT JOIN public.purchase_orders ON wastrel_steel_round_bars.wsrb_po_id = purchase_orders.po_id
-            LEFT JOIN public.purchase_order_details ON wastrel_steel_round_bars.wsrb_podetail_id = purchase_order_details.podetail_id
+            LEFT JOIN public.purchase_orders_details ON wastrel_steel_round_bars.wsrb_podetail_id = purchase_orders_details.podetail_id
+            LEFT JOIN public.employees ON wastrel_steel_round_bars.wsrb_emp_id = employees.emp_id
             WHERE 1=1${conditions.sql}
             ORDER BY wsrb_created_at DESC
         )

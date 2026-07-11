@@ -1,11 +1,3 @@
-export enum LocationType {
-    WAREHOUSE = 'WAREHOUSE',
-    ZONE = 'ZONE',
-    RACK = 'RACK',
-    SHELF = 'SHELF',
-    OTHER = 'OTHER',
-}
-
 export enum StockStatus {
     ACTIVE = 'Active',
     INACTIVE = 'Inactive',
@@ -25,12 +17,9 @@ export enum ErrorField {
     LENGTH = 'length',
     QUANTITY = 'quantity',
     AVAILABLE_QUANTITY = 'available_quantity',
-    LOC_ID = 'loc_id',
-    LOCATION_TYPE = 'location_type',
-    LOCATION = 'location',
     STATUS = 'status',
-    ORD_ID = 'ord_id',
-    ODD_ID = 'odd_id',
+    PO_ID = 'po_id',
+    PODETAIL_ID = 'podetail_id',
     REMARK = 'remark',
 }
 
@@ -51,26 +40,24 @@ export enum ErrorMessage {
     QUANTITY_INVALID = 'Quantity must be a positive integer.',
     AVAILABLE_QUANTITY_REQUIRED = 'Available quantity is required.',
     AVAILABLE_QUANTITY_INVALID = 'Available quantity must be a non-negative integer no greater than quantity.',
-    LOC_ID_MAX_LENGTH = 'Location ID must be at most 20 characters long.',
-    LOCATION_TYPE_INVALID = 'Location type is invalid.',
     STATUS_REQUIRED = 'Status is required.',
     STATUS_INVALID = 'Status is invalid.',
     STATUS_CONFLICT = 'Status update conflicts with current wastrel steel round bar status.',
-    ORD_ID_MAX_LENGTH = 'Order ID must be at most 20 characters long.',
-    ODD_ID_MAX_LENGTH = 'Order detail ID must be at most 20 characters long.',
+    PO_ID_MAX_LENGTH = 'Purchase order ID must be at most 20 characters long.',
+    PODETAIL_ID_MAX_LENGTH = 'Purchase order detail ID must be at most 20 characters long.',
 }
 
 export interface Payload {
     mm_id: string;
-    srb_id?: string | null;
+    srb_id: string | null;
     code: string;
     diameter: number;
     length: number;
-    quantity?: number;
-    available_quantity?: number;
-    po_id?: string | null;
-    podetail_id?: string | null;
-    remark?: string | null;
+    quantity: number;
+    available_quantity: number;
+    po_id: string | null;
+    podetail_id: string | null;
+    remark: string | null;
 }
 
 export interface ValidationError {
