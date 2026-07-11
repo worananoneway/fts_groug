@@ -168,6 +168,13 @@ export enum CashAdvanceStatus {
     AUTHORIZED = "Authorized",
     UNAUTHORIZED = "Unauthorized",
 }
+
+export enum TimelineEventType {
+    ADD = 'Add',
+    EDIT = 'Edit',
+    USED = 'Used',
+}
+
 export enum ReplyErrorField {
     DUPLICATE_ENTRY = 'DUPLICATE_ENTRY',
     DUPLICATE_REQUEST_FIELDS = 'DUPLICATE_REQUEST_FIELDS',
@@ -241,6 +248,15 @@ export enum Status {
     WAITING = 'Waiting',
     RESERVED = 'Reserved'
 }
+
+export enum StockStatus {
+    ACTIVE = 'Active',
+    INACTIVE = 'Inactive',
+    DELETED = 'Deleted',
+    RESERVED = 'Reserved',
+    USED = 'Used',
+}
+
 export enum BillingNoteStatus {
     PENDING = 'Pending',
     REJECTED = 'Rejected',

@@ -24,7 +24,7 @@ async function get_provinces(request: any, reply: any) {
 
         const results = await service.get_provinces(conditions);
         return reply.code(HttpStatusCode.OK).send(<Reply>
-            reply_result(module_name, results.statuscode, null, results?.data)
+            reply_result(module_name, results.statuscode, null, results?.data, reply_options.province)
         );
     } catch (error) {
         console.error("[Controller] An error occurred during getting Province:", error);
@@ -44,7 +44,7 @@ async function get_districts(request: any, reply: any) {
 
         const results = await service.get_districts(conditions);
         return reply.code(HttpStatusCode.OK).send(<Reply>
-            reply_result(module_name, results.statuscode, null, results?.data, reply_options)
+            reply_result(module_name, results.statuscode, null, results?.data, reply_options.district)
         );
     } catch (error) {
         console.error("[Controller] An error occurred during getting District:", error);
@@ -64,7 +64,7 @@ async function get_subdistricts(request: any, reply: any) {
 
         const results = await service.get_subdistricts(conditions);
         return reply.code(results.statuscode).send(<Reply>
-            reply_result(module_name, results.statuscode, null, results?.data, reply_options)
+            reply_result(module_name, results.statuscode, null, results?.data, reply_options.subdistrict)
         );
     } catch (error) {
         console.error("[Controller] An error occurred during getting subdistricts:", error);
