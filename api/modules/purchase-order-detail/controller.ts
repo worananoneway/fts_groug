@@ -21,11 +21,12 @@ import {
     PodetailType,
 } from '@/api/utils/shared_types';
 import field_validator from '@/api/utils/field_validator';
+import { reply_result } from '@/api/utils/controller_replys';
 
 const podetail_department = get_enum_keys(PodetailDepartment);
 const podetail_type = get_enum_keys(PodetailType);
 
-const module_name = 'PurchaseOrderDetail';
+const module_name = 'Purchase Order Detail';
 
 async function create(request: any, reply: any) {
     try {
@@ -49,44 +50,27 @@ async function create(request: any, reply: any) {
         const user = request.user;
         if (!user || !user.id) {
             console.error("[Controller] Missing user ID from authenticated request.");
-            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
-                status: HttpStatus.UNAUTHORIZED,
-                statuscode: HttpStatusCode.UNAUTHORIZED,
-                details: {
-                    error: ReplyErrorField.UNAUTHORIZED,
-                    message: ReplyErrorMessage.UNAUTHORIZED
-                }
-            });
+            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>
+                reply_result(module_name, HttpStatusCode.UNAUTHORIZED)
+            );
         }
         const emp_id = user.id;
-        // const requiredKeys = [
-        //     'po_id',
-        //     'department',
-        //     'type',
-        //     'description',
-        //     'qty',
-        //     'discount',
-        //     'unit_price'
-        // ];
-        // const missing_fields: string[] = field_validator(request.body, requiredKeys);
-        // if (missing_fields.length > 0) {
-        //     console.error("[Controller] Missing required fields for purchaseorder creation:", missing_fields);
-        //     return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>{
-        //         status: HttpStatus.BAD_REQUEST,
-        //         statuscode: HttpStatusCode.BAD_REQUEST,
-        //         details: {
-        //             error: ReplyErrorField.VALIDATION_ERROR,
-        //             message: ReplyErrorMessage.VALIDATION_ERROR,
-        //             errors: missing_fields.map(field => {
-        //                 let message = ErrorMessage[field.toUpperCase() + '_REQUIRED' as keyof typeof ErrorMessage];
-        //                 return {
-        //                     field: field.toUpperCase() as ValidationError['field'],
-        //                     message: message as ValidationError['message']
-        //                 };
-        //             })
-        //         }
-        //     });
-        // }
+        const requiredKeys = [
+            'po_id',
+            'department',
+            'type',
+            'description',
+            'qty',
+            'discount',
+            'unit_price'
+        ];
+        const missing_fields: string[] = field_validator(request.body, requiredKeys);
+        if (missing_fields.length > 0) {
+            console.error("[Controller] Missing required fields for purchaseorder creation:", missing_fields);
+            return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>
+                reply_result(module_name, HttpStatusCode.BAD_REQUEST, missing_fields)
+            );
+        }
         console.log("[Controller] Incoming request body:", request.body);
         const payload = Array.isArray(request.body) ? request.body : request.body.items || [];
         const invalid_fields: ValidationError[] = [];
@@ -152,15 +136,9 @@ async function create(request: any, reply: any) {
         }
         if (invalid_fields.length > 0) {
             console.error("[Controller] Validation errors found in purchaseorder creation payload:", invalid_fields);
-            return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>{
-                status: HttpStatus.UNPROCESSABLE_CONTENT,
-                statuscode: HttpStatusCode.UNPROCESSABLE_CONTENT,
-                details: {
-                    error: ReplyErrorField.VALIDATION_ERROR,
-                    message: ReplyErrorMessage.VALIDATION_ERROR,
-                    errors: invalid_fields
-                }
-            });
+            return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
+                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
+            );
         }
         const po_ids = new Set(payload.map((item: Payload, index: number)=> item.po_id));
         if (po_ids.size > 1) {
@@ -169,7 +147,7 @@ async function create(request: any, reply: any) {
                 status: HttpStatus.UNPROCESSABLE_CONTENT,
                 statuscode: HttpStatusCode.UNPROCESSABLE_CONTENT,
                 details: {
-                    error: ErrorField.PO_ID,
+                    field: ErrorField.PO_ID,
                     message: ErrorMessage.MULTIPLE_PO_IDS
                 }
             });
@@ -202,53 +180,15 @@ async function create(request: any, reply: any) {
             conditions.sql = sql_mainpart.join(', ');
         }
         const result = await service.create(conditions);
-        switch (result.statuscode) {
-            case HttpStatusCode.CREATED:
-                const data = result.data![0];
-                return reply.code(HttpStatusCode.CREATED).send(<Reply>{
-                    status: HttpStatus.CREATED,
-                    statuscode: HttpStatusCode.CREATED,
-                    details: {
-                        message: ReplySuccessMessage.CREATED,
-                        po_id: data.podetail_po_id,
-                        department: data.podetail_department,
-                        type: data.podetail_type,
-                        description: data.podetail_description,
-                        qty: data.podetail_qty,
-                        discount: data.podetail_discount,
-                        unit_price: data.podetail_unit_price
-                    }
-                });
-            case HttpStatusCode.INTERNAL_SERVER_ERROR:
-                return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-                    status: HttpStatus.INTERNAL_SERVER_ERROR,
-                    statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                    details: {
-                        error: ReplyErrorField.INTERNAL_SERVER_ERROR,
-                        message: ReplyErrorMessage.INTERNAL_SERVER_ERROR
-                    }
-                });
-            default:
-                console.error("[Controller] An unrecognized status code was returned from creating purchaseorder:", result.statuscode);
-                return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-                    status: HttpStatus.INTERNAL_SERVER_ERROR,
-                    statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                    details: {
-                        error: ReplyErrorField.UNRECOGNIZED_STATUSCODE,
-                        message: ReplyErrorMessage.UNRECOGNIZED_STATUSCODE
-                    }
-                });
-        }
+        reply.code(result.statuscode).send(<Reply>
+            reply_result(module_name, result.statuscode, null, result.data)
+        );
+
     } catch (error) {
         console.error("[Controller] An error occurred during creating purchaseorder:", error);
-        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-            details: {
-                error: ReplyErrorField.INTERNAL_SERVER_ERROR,
-                message: ReplyErrorMessage.INTERNAL_SERVER_ERROR
-            }
-        });
+        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
+            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
+        );
     }
 }
 async function soft_delete(request: any, reply: any) {
@@ -257,82 +197,27 @@ async function soft_delete(request: any, reply: any) {
                 const user = request.user;
                 if (!user || !user.id) {
                     console.error("[Controller] Missing user ID from authenticated request.");
-                    return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
-                        status: HttpStatus.UNAUTHORIZED,
-                        statuscode: HttpStatusCode.UNAUTHORIZED,
-                        details: {
-                            error: ReplyErrorField.UNAUTHORIZED,
-                            message: ReplyErrorMessage.UNAUTHORIZED
-                        }
-                    });
+                    return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>
+                        reply_result(module_name, HttpStatusCode.UNAUTHORIZED)
+                    );
                 }
         
                 if (!request.params.podetail_id) {
                     console.error("[Controller] Missing purchase order detail ID for deletion.");
-                    return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>{
-                        status: HttpStatus.BAD_REQUEST,
-                        statuscode: HttpStatusCode.BAD_REQUEST,
-                        details: {
-                            error: ReplyErrorField.VALIDATION_ERROR,
-                            message: ReplyErrorMessage.VALIDATION_ERROR,
-                            errors: [{
-                                field: ErrorField.ID,
-                                message: ErrorMessage.ID_REQUIRED
-                            }]
-                        }
-                    });
+                    return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>
+                        reply_result(module_name, HttpStatusCode.BAD_REQUEST)
+                    );
                 }
                 const id: string = sanitize_string(request.params.podetail_id);
                 const result = await service.soft_delete(id);
-                switch (result.statuscode) {
-                    case HttpStatusCode.NO_CONTENT:
-                        console.error(`[Controller] Purchase order detail with ID ${id} successfully deleted`);
-                        return reply.code(HttpStatusCode.NO_CONTENT).send(<Reply>{
-                            status: HttpStatus.NO_CONTENT,
-                            statuscode: HttpStatusCode.NO_CONTENT,
-                            details: {
-                                message: module_name.concat(' ', ReplySuccessMessage.DELETED)
-                            }
-                        });
-                    case HttpStatusCode.NOT_FOUND:
-                        return reply.code(HttpStatusCode.NOT_FOUND).send(<Reply>{
-                            status: HttpStatus.NOT_FOUND,
-                            statuscode: HttpStatusCode.NOT_FOUND,
-                            details: {
-                                error: ReplyErrorField.NOT_FOUND,
-                                message: ReplyErrorMessage.NOT_FOUND
-                            }
-                        });
-                    case HttpStatusCode.INTERNAL_SERVER_ERROR:
-                        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-                            status: HttpStatus.INTERNAL_SERVER_ERROR,
-                            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                            details: {
-                                error: ReplyErrorField.INTERNAL_SERVER_ERROR,
-                                message: ReplyErrorMessage.INTERNAL_SERVER_ERROR
-                            }
-                        });
-                    default:
-                        console.error("[Controller] An unrecognized status code was returned from deleting purchase order detail:", result.statuscode);
-                        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-                            status: HttpStatus.INTERNAL_SERVER_ERROR,
-                            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                            details: {
-                                error: ReplyErrorField.UNRECOGNIZED_STATUSCODE,
-                                message: ReplyErrorMessage.UNRECOGNIZED_STATUSCODE
-                            }
-                        });
-                }
+                reply.code(result.statuscode).send(<Reply>
+                    reply_result(module_name, result.statuscode, null, result.data)
+                );
     } catch (error) {
         console.error("[Controller] An error occurred during deleting purchase order detail:", error);
-        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-            details: {
-                error: ReplyErrorField.INTERNAL_SERVER_ERROR,
-                message: ReplyErrorMessage.INTERNAL_SERVER_ERROR
-            }
-        });
+        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
+            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
+        );
     }
 }
 async function update(request: any, reply: any) {
@@ -341,14 +226,9 @@ async function update(request: any, reply: any) {
         const user = request.user;
         if (!user || !user.id) {
             console.error("[Controller] Missing user ID from authenticated request.");
-            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
-                status: HttpStatus.UNAUTHORIZED,
-                statuscode: HttpStatusCode.UNAUTHORIZED,
-                details: {
-                    error: ReplyErrorField.UNAUTHORIZED,
-                    message: ReplyErrorMessage.UNAUTHORIZED
-                }
-            });
+            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>
+                reply_result(module_name, HttpStatusCode.UNAUTHORIZED)
+            );
         }
         console.log("[Controller] Incoming request body:", request.body);
         const emp_id = user.id;
@@ -416,15 +296,9 @@ async function update(request: any, reply: any) {
         });
         if (invalid_fields.length > 0) {
             console.error("[Controller] Validation errors found in purchaseorder creation payload:", invalid_fields);
-            return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>{
-                status: HttpStatus.UNPROCESSABLE_CONTENT,
-                statuscode: HttpStatusCode.UNPROCESSABLE_CONTENT,
-                details: {
-                    error: ReplyErrorField.VALIDATION_ERROR,
-                    message: ReplyErrorMessage.VALIDATION_ERROR,
-                    errors: invalid_fields
-                }
-            });
+            return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
+                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
+            );
         }
         const conditions: Condition = {
             sql: '', 
@@ -455,54 +329,14 @@ async function update(request: any, reply: any) {
             conditions.sql = sql_mainpart.join(', ');
         }        
         const result = await service.update(conditions);
-        switch (result.statuscode) {
-            case HttpStatusCode.NO_CONTENT:
-                return reply.code(HttpStatusCode.NO_CONTENT).send(<Reply>{
-                    status: HttpStatus.NO_CONTENT,
-                    statuscode: HttpStatusCode.NO_CONTENT,
-                    details: {
-                        message: ReplySuccessMessage.UPDATED
-                    }
-                })
-            case HttpStatusCode.NOT_FOUND:
-                return reply.code(HttpStatusCode.NOT_FOUND).send(<Reply>{
-                    status: HttpStatus.NOT_FOUND,
-                    statuscode: HttpStatusCode.NOT_FOUND,
-                    details: {
-                        error: ReplyErrorField.NOT_FOUND,
-                        message: ReplyErrorMessage.NOT_FOUND,
-                    }
-                })
-            case HttpStatusCode.INTERNAL_SERVER_ERROR:
-                return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-                    status: HttpStatus.INTERNAL_SERVER_ERROR,
-                    statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                    details: {
-                        error: ReplyErrorField.INTERNAL_SERVER_ERROR,
-                        message: ReplyErrorMessage.INTERNAL_SERVER_ERROR
-                    }
-                })
-            default:
-                console.error("[Controller] An unrecognized status code was returned from updating purchaseorder:", result.statuscode)
-                return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-                    status: HttpStatus.INTERNAL_SERVER_ERROR,
-                    statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                    details: {
-                        error: ReplyErrorField.UNRECOGNIZED_STATUSCODE,
-                        message: ReplyErrorMessage.UNRECOGNIZED_STATUSCODE
-                    }
-                })
-        }
+        reply.code(result.statuscode).send(<Reply>
+            reply_result(module_name, result.statuscode, null, result.data)
+        );
     } catch (error) {
         console.error("[Controller] An error occurred during updating purchaseorder:", error);
-        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-            details: {
-                error: ReplyErrorField.INTERNAL_SERVER_ERROR,
-                message: ReplyErrorMessage.INTERNAL_SERVER_ERROR
-            }
-        });
+        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
+            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
+        );
     }
 }
 

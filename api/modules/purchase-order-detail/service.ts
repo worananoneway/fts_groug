@@ -2,6 +2,8 @@ import sql_query from "@/api/utils/sql_query";
 import { Payload } from "./type";
 import { Condition, Response, HttpStatusCode } from "@/api/utils/shared_types";
 
+const module_name = 'purchase_order_details';
+
 async function create(condition: Condition): Promise<Response> {
     const sql = `
         INSERT INTO public.purchase_orders_details (
@@ -23,11 +25,11 @@ async function create(condition: Condition): Promise<Response> {
     try {
         result.push(await sql_query(sql, condition.params));
         if (result.length === 0) {
-            console.error("[Service] Failed to create purchase orders detail: No rows returned.");
+            console.error(`[Service] Failed to create ${module_name}: No rows returned.`);
             return {
                 
                 statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                error: "Failed to create purchase orders detail.",
+                error: `Failed to create ${module_name}.`,
                 data: null
             };
         }
@@ -37,10 +39,10 @@ async function create(condition: Condition): Promise<Response> {
             data: result
         };
     } catch (error) {
-        console.error("[Service] An error occurred during creating purchase orders detail:", error);
+        console.error(`[Service] An error occurred during creating ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-            error: error,
+            error: `Failed to create ${module_name}.`,
             data: null
         };
     }
@@ -58,10 +60,10 @@ async function get(conditions: Condition = { sql: "", params: [] }): Promise<Res
     try {
         const results = await sql_query(sql, conditions.params);
         if (results.length === 0) {
-            console.error("[Service] Failed to update purchase orders: purchase orders detail not found.");
+            console.error(`[Service] Failed to update ${module_name}: ${module_name} not found.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "purchase orders detail not found.",
+                error: `${module_name} not found.`,
                 data: null
             };
         }        
@@ -71,10 +73,10 @@ async function get(conditions: Condition = { sql: "", params: [] }): Promise<Res
             data: results
         };
     } catch (error) {
-        console.error("[Service] An error occurred during getting purchase order details:", error);
+        console.error(`[Service] An error occurred during getting ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-            error: error,
+            error: `Failed to get ${module_name}.`,
             data: null
         };
     }
@@ -88,10 +90,10 @@ async function soft_delete(id: string): Promise<Response> {
     try {
         const result = await sql_query(sql, [id]);
         if (result.length === 0) {
-            console.error("[Service] Failed to delete purchase order detail: No row was deleted.");
+            console.error(`[Service] Failed to delete ${module_name}: No row was deleted.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "No row was deleted.",
+                error: `${module_name} not found.`,
                 data: null
             };
         }
@@ -101,10 +103,10 @@ async function soft_delete(id: string): Promise<Response> {
             data: null
         };
     } catch (error) {
-        console.error("[Service] An error occurred during deleting purchase order detail:", error);
+        console.error(`[Service] An error occurred during deleting ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-            error: error,
+            error: `Failed to delete ${module_name}.`,
             data: null
         };
     }
@@ -141,10 +143,10 @@ async function update( conditions: Condition ): Promise<Response> {
             ...conditions.params,
         ]);
         if (result.length === 0) {
-            console.error("[Service] Failed to update purchase orders detail: purchase orders detail not found.");
+            console.error(`[Service] Failed to update ${module_name}: ${module_name} not found.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "purchase orders detail not found.",
+                error: `${module_name} not found.`,
                 data: null
             };
         }
@@ -154,10 +156,10 @@ async function update( conditions: Condition ): Promise<Response> {
             data: null
         };
     } catch (error) {
-        console.error("[Service] An error occurred during updating purchase orders detail:", error);
+        console.error(`[Service] An error occurred during updating ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-            error: error,
+            error: `Failed to update ${module_name}.`,
             data: null
         };
     }
