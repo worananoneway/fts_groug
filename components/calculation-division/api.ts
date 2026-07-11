@@ -4,6 +4,7 @@ import type {
   OrderDetailStatus,
   PlateStock,
   PurchaseOrder,
+  PurchaseOrderStatus,
   RoundBarStock,
   SavedPlateScrap,
   SavedRoundScrap,
@@ -54,13 +55,31 @@ export async function loadOrders(): Promise<{
   orderDetails: Record<string, OrderDetail[]>;
   materialMasters: MaterialMaster[];
 }> {
-  const payload = await requestJson(`/api/${API_VERSION}/orders`);
-  const purchaseOrders = readArray(payload, "orders")
+  const payload = await requestJson(`/api/${API_VERSION}/purchase-orders`);
+  const poRows = readRows(payload).filter((row) => stringValue(row.status) !== "Deleted");
+  const detailRows = poRows.flatMap((row) => (Array.isArray(row.details) ? row.details.filter(isRecord) : []));
+  const orderDetails = mapOrderDetails(detailRows);
+  const purchaseOrders = poRows
     .map((row) => mapPurchaseOrder(row))
-    .filter((row): row is PurchaseOrder => Boolean(row));
-  const orderDetails = mapOrderDetails(readArray(payload, "order_details"));
-  const materialMasters = mapMaterialMasters(readArray(payload, "material_masters"));
+    .filter((row): row is PurchaseOrder => Boolean(row))
+    .map((po) => ({ ...po, status: poStatusFromDetails(orderDetails[po.id] ?? []) }));
+  const materialMasters = dedupeById(
+    mapMaterialMasters(detailRows.map((row) => row.material).filter(isRecord)),
+  );
   return { purchaseOrders, orderDetails, materialMasters };
+}
+
+// po_status ในตาราง purchase_orders เป็นสถานะจัดซื้อ (Paid, Waiting Delivery, ...)
+// สถานะงานตัดของหน้านี้จึงสรุปจากสถานะของรายการตัดแทน
+function poStatusFromDetails(details: OrderDetail[]): PurchaseOrderStatus {
+  const active = details.filter((row) => row.status !== "CANCELLED" && row.status !== "REJECTED");
+  if (active.some((row) => row.status === "IN_PROCESS")) return "IN_PROGRESS";
+  if (active.length > 0 && active.every((row) => row.status === "COMPLETED")) return "DONE";
+  return "PENDING";
+}
+
+function dedupeById(rows: MaterialMaster[]): MaterialMaster[] {
+  return Array.from(new Map(rows.map((row) => [row.id, row])).values());
 }
 
 export async function loadMsPlates(): Promise<PlateStock[]> {
@@ -179,50 +198,56 @@ export async function calculateDivision(body: unknown): Promise<unknown> {
     body: JSON.stringify(body),
   });
 
-  return payload?.details?.calculation_plan ?? null;
+  return isRecord(payload?.details) ? payload.details.calculation_plan ?? null : null;
 }
 
-export async function updateOrderStatus(orderId: string, status: OrderDetailStatus): Promise<void> {
-  await requestJson(`/api/${API_VERSION}/orders/${orderId}/status`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: orderDetailApiStatus(status) }),
-  });
-}
-
-export async function updateOrderDetailStatus(orderDetailId: string, status: OrderDetailStatus): Promise<void> {
-  await requestJson(`/api/${API_VERSION}/orders/details/${orderDetailId}/status`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: orderDetailApiStatus(status) }),
-  });
+export async function updateOrderDetailStatus(
+  orderId: string,
+  detail: OrderDetail,
+  status: OrderDetailStatus,
+): Promise<void> {
+  await putOrderDetail(orderId, { ...detail, status });
 }
 
 export async function createOrderDetail(orderId: string, detail: OrderDetail): Promise<void> {
-  await requestJson(`/api/${API_VERSION}/orders/${orderId}/details`, {
+  const item = orderDetailPayload(orderId, detail);
+  // controller ของ purchase-order-details validate ฟิลด์จาก body ชั้นนอก แต่บันทึกจาก items
+  await requestJson(`/api/${API_VERSION}/purchase-order-details`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(orderDetailPayload(detail)),
+    body: JSON.stringify({ ...item, items: [item] }),
   });
 }
 
-export async function updateOrderDetail(detail: OrderDetail): Promise<void> {
-  await requestJson(`/api/${API_VERSION}/orders/details/${detail.id}`, {
+export async function updateOrderDetail(orderId: string, detail: OrderDetail): Promise<void> {
+  await putOrderDetail(orderId, detail);
+}
+
+async function putOrderDetail(orderId: string, detail: OrderDetail): Promise<void> {
+  const item = { id: detail.id, ...orderDetailPayload(orderId, detail) };
+  await requestJson(`/api/${API_VERSION}/purchase-order-details`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(orderDetailPayload(detail)),
+    body: JSON.stringify({ ...item, items: [item] }),
   });
 }
 
 function readArray(payload: unknown, key: string): Array<Record<string, unknown>> {
   if (!payload || typeof payload !== "object") return [];
-  const details = (payload as { details?: Record<string, unknown> }).details;
-  const rows = details?.[key];
+  const details = (payload as { details?: unknown }).details;
+  if (!isRecord(details)) return [];
+  const rows = details[key];
   return Array.isArray(rows) ? rows.filter(isRecord) : [];
 }
 
+function readRows(payload: unknown): Array<Record<string, unknown>> {
+  if (!payload || typeof payload !== "object") return [];
+  const details = (payload as { details?: unknown }).details;
+  return Array.isArray(details) ? details.filter(isRecord) : [];
+}
+
 async function requestJson(url: string, init?: RequestInit): Promise<{
-  details?: Record<string, unknown>;
+  details?: unknown;
 }> {
   const response = await fetch(url, init);
   if (!response.ok) throw new Error(`Request failed: ${response.status}`);
@@ -260,15 +285,33 @@ function flatString(row: Record<string, unknown>, ...keys: string[]): string | u
   return undefined;
 }
 
-function orderDetailPayload(detail: OrderDetail) {
+// สร้าง payload ของ purchase_orders_details โดยดึงฟิลด์ฝั่งบัญชี (ราคา, ส่วนลด, หน่วย ฯลฯ)
+// กลับมาจาก raw เดิม เพื่อไม่ให้การอัปเดตจากหน้างานตัดไปล้างข้อมูลเหล่านั้น
+function orderDetailPayload(orderId: string, detail: OrderDetail) {
+  const raw = detail.raw ?? {};
   return {
-    diameter: detail.shape === "ROUND" ? detail.diameter : undefined,
-    length: detail.length,
-    mm_id: detail.materialId,
-    quantity: detail.qty,
+    po_id: orderId,
+    mm_id: detail.materialId || null,
+    required_length_mm: detail.length,
+    required_width_mm: detail.shape === "PLATE" ? detail.width ?? null : null,
+    required_thickness_mm: detail.shape === "PLATE" ? detail.thickness ?? null : null,
+    required_diameter_mm: detail.shape === "ROUND" ? detail.diameter ?? null : null,
+    cut_quantity: detail.qty,
     remaining_quantity: detail.remaining,
-    shape: detail.shape,
-    thickness: detail.shape === "PLATE" ? detail.thickness : undefined,
-    width: detail.shape === "PLATE" ? detail.width : undefined,
+    allow_wastrel: typeof raw.allow_wastrel === "boolean" ? raw.allow_wastrel : true,
+    allow_rotation: typeof raw.allow_rotation === "boolean" ? raw.allow_rotation : true,
+    status: orderDetailApiStatus(detail.status),
+    remark: raw.remark ?? null,
+    on: raw.on ?? null,
+    unit: raw.unit ?? null,
+    description: raw.description ?? null,
+    qty: raw.qty ?? null,
+    discount: raw.discount ?? null,
+    unit_price: raw.unit_price ?? null,
   };
+}
+
+function stringValue(value: unknown): string {
+  if (value === null || value === undefined || typeof value === "object") return "";
+  return String(value);
 }

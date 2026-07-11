@@ -20,7 +20,6 @@ import {
   loadWastrelPlates,
   updateOrderDetail,
   updateOrderDetailStatus,
-  updateOrderStatus,
 } from "./api";
 import { ITEM_COLORS, MODULE_SUBTITLES } from "./constants";
 import { nextCode, packGuillotine, packRoundBars } from "./mappers";
@@ -301,10 +300,11 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
   async function setSelectedOrderDetailsStatus(detailIds: string[], status: OrderDetailStatus) {
     if (!selectedPoId || detailIds.length === 0) return;
 
-    const remoteDetailIds = detailIds.filter((detailId) => !isLocalOrderDetailId(detailId));
-    await Promise.all(remoteDetailIds.map((detailId) => updateOrderDetailStatus(detailId, status)));
+    const currentRows = orderDetails[selectedPoId] ?? [];
+    const remoteRows = currentRows.filter((row) => detailIds.includes(row.id) && !isLocalOrderDetailId(row.id));
+    await Promise.all(remoteRows.map((row) => updateOrderDetailStatus(selectedPoId, row, status)));
 
-    const nextRows = (orderDetails[selectedPoId] ?? []).map((row) =>
+    const nextRows = currentRows.map((row) =>
       detailIds.includes(row.id) ? { ...row, status } : row,
     );
     setOrderDetails((current) => ({ ...current, [selectedPoId]: nextRows }));
@@ -317,7 +317,6 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
           : null;
 
     if (!nextOrderStatus) return;
-    await updateOrderStatus(selectedPoId, nextOrderStatus);
     setPurchaseOrders((orders) =>
       orders.map((order) =>
         order.id === selectedPoId
@@ -325,7 +324,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
           : order,
       ),
     );
-    if (remoteDetailIds.length > 0) {
+    if (remoteRows.length > 0) {
       await refreshFactoryData();
     }
   }
@@ -358,7 +357,7 @@ export function CalculationDivisionProvider({ children }: { children: ReactNode 
       if (isLocalOrderDetailId(detail.id)) {
         await createOrderDetail(selectedPoId, detail);
       } else {
-        await updateOrderDetail(detail);
+        await updateOrderDetail(selectedPoId, detail);
       }
       await refreshFactoryData();
       return { ok: true, text: "แก้ไขรายละเอียดสำเร็จ" };

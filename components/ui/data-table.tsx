@@ -21,9 +21,9 @@ export function DataTable<T>({ className, columns, empty, onRowClick, rowKey, ro
     <div className={cn("overflow-x-auto", className)}>
       <table className="w-full text-left text-sm">
         <thead>
-          <tr className="border-b border-slate-200 text-slate-500">
+          <tr className="border-b border-slate-200 bg-slate-50/80 text-xs text-slate-500">
             {columns.map((column) => (
-              <th key={column.key} className={cn("px-4 py-3 font-semibold", column.className)}>
+              <th key={column.key} className={cn("whitespace-nowrap px-4 py-3 font-semibold", column.className)}>
                 {column.header}
               </th>
             ))}
@@ -34,7 +34,8 @@ export function DataTable<T>({ className, columns, empty, onRowClick, rowKey, ro
             <tr
               key={rowKey(row, index)}
               className={cn(
-                "border-b border-slate-100",
+                "border-b border-slate-100 last:border-b-0",
+                index % 2 === 1 ? "bg-slate-50/50" : "bg-white",
                 onRowClick ? "cursor-pointer transition hover:bg-blue-50/60" : null,
               )}
               onClick={onRowClick ? () => onRowClick(row, index) : undefined}

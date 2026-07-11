@@ -13,12 +13,12 @@ export function PurchaseOrderList() {
   const { poSearch, purchaseOrders, selectPo, selectedPoId, setPoSearch } = usePurchaseOrders();
 
   return (
-    <section className="rounded-lg bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
       <div className="mb-5 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-slate-800">ใบสั่งซื้อ</h2>
-          <p className="text-sm text-slate-400">{fmt(purchaseOrders.length)} รายการ</p>
-        </div>
+        <h2 className="text-lg font-bold text-slate-800">ใบสั่งซื้อ</h2>
+        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+          {fmt(purchaseOrders.length)} รายการ
+        </span>
       </div>
 
       <div className="relative mb-4">
@@ -32,7 +32,7 @@ export function PurchaseOrderList() {
         />
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-100">
+      <div className="space-y-2">
         {purchaseOrders.length === 0 ? (
           <EmptyState>ไม่พบใบสั่งซื้อที่ตรงกับคำค้นหา</EmptyState>
         ) : (
@@ -43,10 +43,17 @@ export function PurchaseOrderList() {
                 key={po.id}
                 type="button"
                 onClick={() => selectPo(po.id)}
-                className={`flex w-full items-center justify-between gap-4 border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 ${
-                  active ? "bg-blue-50" : "bg-white hover:bg-slate-50"
+                className={`group relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-xl border px-4 py-3 pl-5 text-left transition ${
+                  active
+                    ? "border-blue-500/50 bg-blue-50/80 shadow-sm"
+                    : "border-slate-200/80 bg-white hover:border-blue-300/70 hover:bg-blue-50/40 hover:shadow-sm"
                 }`}
               >
+                <span
+                  className={`absolute inset-y-0 left-0 w-1 transition ${
+                    active ? "bg-blue-600" : "bg-transparent group-hover:bg-blue-200"
+                  }`}
+                />
                 <div className="min-w-0">
                   <p className="font-mono text-sm font-bold text-slate-800">{po.no}</p>
                   <p className="truncate text-sm text-slate-500">{po.customer}</p>
