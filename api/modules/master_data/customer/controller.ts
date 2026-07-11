@@ -31,6 +31,8 @@ import {
     TaxType,
 } from '@/api/utils/shared_types';
 import field_validator from '@/api/utils/field_validator';
+import { reply_result } from '@/api/utils/controller_replys';
+import { emp_authentication } from '@/api/utils/controller_auth';
 
 const branch_type_enum = get_enum_keys(BranchType);
 const status_enum = get_enum_keys(Status);
@@ -41,20 +43,11 @@ const module_name = 'Customer';
 async function create(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
-        // const user = request.user;
-        // if (!user || !user.id) {
-        //     console.error("[Controller] Missing user ID from authenticated request.");
-        //     return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
-        //         status: HttpStatus.UNAUTHORIZED,
-        //         statuscode: HttpStatusCode.UNAUTHORIZED,
-        //         details: {
-        //             error: ReplyErrorField.UNAUTHORIZED,
-        //             message: ReplyErrorMessage.UNAUTHORIZED
-        //         }
-        //     });
-        // }
-        // const emp_id: string = user.id;
-        const emp_id = null;
+        const user = request.user;
+
+        emp_authentication(module_name, user, reply);
+
+        const emp_id: string = user.id;
         const payload: Payload = sanitize_payload(request.body);
         console.log("[Controller] Creating customer with payload:", payload);
         const invalid_fields: ValidationError[] = [];
@@ -202,27 +195,16 @@ async function create(request: any, reply: any) {
         }
         if (invalid_fields.length > 0) {
             console.error("[Controller] Validation errors found in customer creation payload:", invalid_fields);
-            return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>{
-                status: HttpStatus.UNPROCESSABLE_CONTENT,
-                statuscode: HttpStatusCode.UNPROCESSABLE_CONTENT,
-                details: {
-                    error: ReplyErrorField.VALIDATION_ERROR,
-                    message: ReplyErrorMessage.VALIDATION_ERROR,
-                    errors: invalid_fields
-                }
-            });
+            return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
+                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields, "Validation errors found in customer creation payload.")
+            );
         }
         const conditions: Condition = { sql: '', params: [payload.tax_id, payload.name_th, payload.name_en] };
         const duplicate_check = await service.count_duplicate(conditions);
         if (duplicate_check.statuscode !== HttpStatusCode.OK) {
-            return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-                status: HttpStatus.INTERNAL_SERVER_ERROR,
-                statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                details: {
-                    error: ReplyErrorField.INTERNAL_SERVER_ERROR,
-                    message: ReplyErrorMessage.INTERNAL_SERVER_ERROR
-                }
-            });
+            return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
+                reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
+            );
         }
         const duplicates = duplicate_check.data![0];
         const duplicate_errors: ValidationError[] = [];
@@ -246,15 +228,9 @@ async function create(request: any, reply: any) {
         }
         if (duplicate_errors.length > 0) {
             console.error("[Controller] Duplicate errors found in customer creation:", duplicate_errors);
-            return reply.code(HttpStatusCode.CONFLICT).send(<Reply>{
-                status: HttpStatus.CONFLICT,
-                statuscode: HttpStatusCode.CONFLICT,
-                details: {
-                    error: ReplyErrorField.DUPLICATE_ENTRY,
-                    message: ReplyErrorMessage.DUPLICATE_ENTRY,
-                    duplicates: duplicate_errors
-                }
-            })
+            return reply.code(HttpStatusCode.CONFLICT).send(<Reply>
+                reply_result(module_name, HttpStatusCode.CONFLICT, duplicate_errors)
+            )
         }
         const result = await service.create(payload, emp_id);
         switch (result.statuscode) {

@@ -68,8 +68,7 @@
     "headers": { "Accept-Language": "th-TH" },
     "params": {},
     "body": {
-      "supplier_id": null,
-      "customer_id": "SEED_CUS_000000001",
+      "cus_id": null,
       "due_date": "2026-08-15",
       "remark": "Updated purchase order",
       "issue_date": "2026-07-10",

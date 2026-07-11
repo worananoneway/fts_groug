@@ -7,17 +7,25 @@ const module_name = 'purchase_order_details';
 async function create(condition: Condition): Promise<Response> {
     const sql = `
         INSERT INTO public.purchase_orders_details (
-            podetail_po_id,
-            podetail_emp_id,
+            podetail_mm_id,
+            podetail_required_length_mm,
+            podetail_required_width_mm,
+            podetail_required_thickness_mm,
+            podetail_required_diameter_mm,
+            podetail_cut_quantity,
+            podetail_remaining_quantity,
+            podetail_allow_wastrel,
+            podetail_allow_rotation,
+            podetail_status,
+            podetail_remark,
             podetail_on,
-            podetail_department,
-            podetail_type,
+            podetail_unit,
             podetail_description,
             podetail_qty,
             podetail_discount,
-            podetail_unit_price
-            
-            
+            podetail_unit_price,
+            podetail_emp_id,
+            podetail_po_id
         ) VALUES ${condition.sql}
         RETURNING *;
     `;
@@ -81,7 +89,7 @@ async function get(conditions: Condition = { sql: "", params: [] }): Promise<Res
         };
     }
 }
-async function soft_delete(id: string): Promise<Response> {
+async function hard_delete(id: string): Promise<Response> {
     const sql = `
         DELETE FROM public.purchase_orders_details
         WHERE podetail_id = $1
@@ -115,25 +123,49 @@ async function update( conditions: Condition ): Promise<Response> {
     const sql = `
         UPDATE public.purchase_orders_details AS podetail
         SET 
-            podetail_emp_id      = values.podetail_emp_id,
-            podetail_department  = values.podetail_department::purchase_order_detail_department_enum,
-            podetail_type        = values.podetail_type::expense_type_enum,
-            podetail_description = values.podetail_description,
-            podetail_qty         = values.podetail_qty :: int4,
-            podetail_discount    = values.podetail_discount ::numeric(15, 2),
-            podetail_unit_price  = values.podetail_unit_price :: numeric(15, 2)
-            
+            podetail_mm_id                  = values.podetail_mm_id::varchar(20),
+            podetail_required_length_mm     = values.podetail_required_length_mm::numeric(12, 3),
+            podetail_required_width_mm      = values.podetail_required_width_mm::numeric(12, 3),
+            podetail_required_thickness_mm  = values.podetail_required_thickness_mm::numeric(12, 3),
+            podetail_required_diameter_mm   = values.podetail_required_diameter_mm::numeric(12, 3),
+            podetail_cut_quantity           = values.podetail_cut_quantity::int4,
+            podetail_remaining_quantity     = values.podetail_remaining_quantity::int4,
+            podetail_allow_wastrel          = values.podetail_allow_wastrel::bool,
+            podetail_allow_rotation         = values.podetail_allow_rotation::bool,
+            podetail_status                 = values.podetail_status::purchase_order_detail_status_enum,
+            podetail_remark                 = values.podetail_remark::text,
+            podetail_on                     = values.podetail_on::int4,
+            podetail_unit                   = values.podetail_unit::varchar(80),
+            podetail_description            = values.podetail_description::varchar(1000),
+            podetail_qty                    = values.podetail_qty::int4,
+            podetail_discount               = values.podetail_discount::numeric(15, 2),
+            podetail_unit_price             = values.podetail_unit_price::numeric(15, 2),
+            podetail_emp_id                 = values.podetail_emp_id::varchar(20),
+            podetail_po_id                  = values.podetail_po_id::varchar(20),
+            podetail_updated_at             = CURRENT_TIMESTAMP
         FROM (
             VALUES ${conditions.sql}
             ) AS values(
-            podetail_id, 
-            podetail_emp_id,
-            podetail_department,
-            podetail_type,
-            podetail_description,
-            podetail_qty,
-            podetail_discount,
-            podetail_unit_price
+                podetail_id,
+                podetail_mm_id,
+                podetail_required_length_mm,
+                podetail_required_width_mm,
+                podetail_required_thickness_mm,
+                podetail_required_diameter_mm,
+                podetail_cut_quantity,
+                podetail_remaining_quantity,
+                podetail_allow_wastrel,
+                podetail_allow_rotation,
+                podetail_status,
+                podetail_remark,
+                podetail_on,
+                podetail_unit,
+                podetail_description,
+                podetail_qty,
+                podetail_discount,
+                podetail_unit_price,
+                podetail_emp_id,
+                podetail_po_id
             )
         WHERE podetail.podetail_id = values.podetail_id
         RETURNING podetail.podetail_id;
@@ -168,6 +200,6 @@ async function update( conditions: Condition ): Promise<Response> {
 export default {
     create,
     get,
-    soft_delete,
+    hard_delete,
     update
 };
