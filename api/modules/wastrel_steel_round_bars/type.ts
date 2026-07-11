@@ -16,6 +16,7 @@ export enum StockStatus {
 }
 
 export enum ErrorField {
+    PARAM_ID = 'wsrb_id',
     ID = 'id',
     MM_ID = 'mm_id',
     SRB_ID = 'srb_id',
@@ -35,6 +36,7 @@ export enum ErrorField {
 
 export enum ErrorMessage {
     ID_REQUIRED = 'Wastrel steel round bar ID is required.',
+    PARAM_ID_REQUIRED = 'Wastrel steel round bar parameter ID is required.',
     MM_ID_REQUIRED = 'Material master ID is required.',
     MM_ID_MAX_LENGTH = 'Material master ID must be at most 20 characters long.',
     SRB_ID_MAX_LENGTH = 'Steel round bar ID must be at most 20 characters long.',
@@ -66,11 +68,8 @@ export interface Payload {
     length: number;
     quantity?: number;
     available_quantity?: number;
-    loc_id?: string | null;
-    location_type?: LocationType | null;
-    location?: string | null;
-    ord_id?: string | null;
-    odd_id?: string | null;
+    po_id?: string | null;
+    podetail_id?: string | null;
     remark?: string | null;
 }
 

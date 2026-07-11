@@ -29,7 +29,7 @@ async function create(request: any, reply: any) {
         emp_authentication(module_name, emp_id, reply);
 
         const payload: Payload = sanitize_payload(request.body);
-        console.log("[Controller] Creating wastrel MS plate with payload:", payload);
+        console.log(`[Controller] Creating wastrel MS plate with payload:`, payload);
 
         const requiredKeys = [
             'mm_id',
@@ -108,7 +108,7 @@ async function create(request: any, reply: any) {
         }
 
         if (invalid_fields.length > 0) {
-            console.error("[Controller] Validation errors found in wastrel MS plate creation payload:", invalid_fields);
+            console.error(`[Controller] Validation errors found in wastrel MS plate creation payload:`, invalid_fields);
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
@@ -119,7 +119,7 @@ async function create(request: any, reply: any) {
             reply_result(module_name, result.statuscode, null, result?.data, reply_options)
         );
     } catch (error) {
-        console.error("[Controller] An error occurred during creating wastrel MS plate:", error);
+        console.error(`[Controller] An error occurred during creating wastrel MS plate:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
             reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
         );
@@ -131,8 +131,8 @@ async function get(request: any, reply: any) {
 
         emp_authentication(module_name, request?.user?.id, reply);
 
-        const fields: string = request.reply_fields || "*";
-        const conditions: Condition = { sql: "", params: [] };
+        const fields: string = request.reply_fields || `*`;
+        const conditions: Condition = { sql: ``, params: [] };
         const invalid_fields: ValidationError[] = [];
 
         if (request.params.wmsp_id) {
@@ -180,7 +180,7 @@ async function get(request: any, reply: any) {
             reply_result(module_name, results.statuscode, null, results?.data, reply_options)
         );
     } catch (error) {
-        console.error("[Controller] An error occurred during getting wastrel MS plates:", error);
+        console.error(`[Controller] An error occurred during getting wastrel MS plates:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
             reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR, null)
         );
@@ -280,7 +280,7 @@ async function update(request: any, reply: any) {
         }
 
         if (invalid_fields.length > 0) {
-            console.error("[Controller] Validation errors found in wastrel MS plate creation payload:", invalid_fields);
+            console.error(`[Controller] Validation errors found in wastrel MS plate creation payload:`, invalid_fields);
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
@@ -291,7 +291,7 @@ async function update(request: any, reply: any) {
             reply_result(module_name, result.statuscode)
         );
     } catch (error) {
-        console.error("[Controller] An error occurred during updating wastrel MS plate:", error);
+        console.error(`[Controller] An error occurred during updating wastrel MS plate:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
             reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
         );
@@ -328,7 +328,7 @@ async function update_status(request: any, reply: any) {
             reply_result(module_name, result.statuscode)
         );
     } catch (error) {
-        console.error("[Controller] An error occurred during updating wastrel MS plate status:", error);
+        console.error(`[Controller] An error occurred during updating wastrel MS plate status:`, error);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
             reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
         );
