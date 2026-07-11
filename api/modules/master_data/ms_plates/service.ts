@@ -2,6 +2,7 @@ import sql_query from "@/api/utils/sql_query";
 import { Payload } from "./type";
 import { Condition, Response, HttpStatusCode } from "@/api/utils/shared_types";
 
+const module_name = 'ms_plates';
 async function create(payload: Payload, emp_id: string | null): Promise<Response> {
     const sql = `
         INSERT INTO public.ms_plates(
@@ -40,10 +41,10 @@ async function create(payload: Payload, emp_id: string | null): Promise<Response
             emp_id,
         ]);
         if (result.length === 0) {
-            console.error("[Service] Failed to create customer: No row was created.");
+            console.error(`[Service] Failed to create ${module_name}: No row was created.`);
             return {
                 statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                error: "No row was created.",
+                error: `No row was created.`,
                 data: null
             };
         }
@@ -53,7 +54,7 @@ async function create(payload: Payload, emp_id: string | null): Promise<Response
             data: result
         };
     } catch (error) {
-        console.error("[Service] An error occurred during creating customer:", error);
+        console.error(`[Service] An error occurred during creating ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -61,9 +62,9 @@ async function create(payload: Payload, emp_id: string | null): Promise<Response
         };
     }
 }
-async function get(conditions: Condition = { sql: "", params: [] }, filter: string = "*"): Promise<Response> {
+async function get(conditions: Condition = { sql: ``, params: [] }, filter: string = `*`): Promise<Response> {
     const sql = `
-        WITH ms_plates_cte AS (
+        WITH ${module_name}_cte AS (
             SELECT 
                 msp_id,
                 msp_mm_id,
@@ -86,15 +87,15 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
             WHERE 1=1${conditions.sql}
             ORDER BY msp_created_at DESC
         )
-        SELECT ${filter} FROM ms_plates_cte;
+        SELECT ${filter} FROM ${module_name}_cte;
     `;
     try {
         const results = await sql_query(sql, conditions.params);
         if (results.length === 0) {
-            console.error("[Service] Failed to update ms_plates: ms_plates not found.");
+            console.error(`[Service] Failed to update ${module_name}: ${module_name} not found.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "ms_plates not found.",
+                error: `${module_name} not found.`,
                 data: null
             };
         }
@@ -104,7 +105,7 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
             data: results
         };
     } catch (error) {
-        console.error("[Service] An error occurred during getting ms_plates:", error);
+        console.error(`[Service] An error occurred during getting ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -124,10 +125,10 @@ async function soft_delete(id: string, emp_id: string | null): Promise<Response>
     try {
         const result = await sql_query(sql, [id, emp_id]);
         if (result.length === 0) {
-            console.error("[Service] Failed to soft delete ms_plates: ms_plates not found.");
+            console.error(`[Service] Failed to soft delete ${module_name}: ${module_name} not found.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "ms_plates not found.",
+                error: `${module_name} not found.`,
                 data: null
             };
         }
@@ -137,7 +138,7 @@ async function soft_delete(id: string, emp_id: string | null): Promise<Response>
             data: result
         };
     } catch (error) {
-        console.error("[Service] An error occurred during soft deleting ms_plates:", error);
+        console.error(`[Service] An error occurred during soft deleting ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -181,10 +182,10 @@ async function update(id: string, payload: Payload, emp_id: string | null): Prom
             emp_id
         ]);
         if (result.length === 0) {
-            console.error("[Service] Failed to update ms_plates: ms_plates not found.");
+            console.error(`[Service] Failed to update ${module_name}: ${module_name} not found.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "ms_plates not found.",
+                error: `${module_name} not found.`,
                 data: null
             };
         }
@@ -194,7 +195,7 @@ async function update(id: string, payload: Payload, emp_id: string | null): Prom
             data: result
         };
     } catch (error) {
-        console.error("[Service] An error occurred during updating ms_plates:", error);
+        console.error(`[Service] An error occurred during updating ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -208,17 +209,17 @@ async function update_status(id: string, status: string, emp_id: string | null):
         SET
             msp_status = "RESERVED",
             msp_updated_at = NOW(),
-            msp_emp_id = $3,
+            msp_emp_id = $3
         WHERE msp_id = $1
         RETURNING *;
     `;
     try {
         const result = await sql_query(sql, [id, status, emp_id]);
         if (result.length === 0) {
-            console.error("[Service] Failed to update ms_plates status: ms_plates not found.");
+            console.error(`[Service] Failed to update ${module_name} status: ${module_name} not found.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "ms_plates not found.",
+                error: `${module_name} not found.`,
                 data: null
             };
         }
@@ -228,7 +229,7 @@ async function update_status(id: string, status: string, emp_id: string | null):
             data: result
         };
     } catch (error) {
-        console.error("[Service] An error occurred during updating ms_plates status:", error);
+        console.error(`[Service] An error occurred during updating ${module_name} status:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,

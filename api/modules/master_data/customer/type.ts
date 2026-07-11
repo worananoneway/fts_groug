@@ -21,6 +21,7 @@ export enum ErrorField {
 }
 export enum ErrorMessage {
     ID_REQUIRED = 'Customer ID is required.',
+    PARAM_ID_REQUIRED = 'Customer parameter ID is required.',
     NAME_TH_REQUIRED = 'Customer name (TH) is required.',
     NAME_TH_MIN_LENGTH = 'Customer name (TH) must be at least 5 characters long.',
     NAME_TH_MAX_LENGTH = 'Customer name (TH) must be at most 100 characters long.',

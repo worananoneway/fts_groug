@@ -1,0 +1,88 @@
+{
+    "status": "Created",
+    "statuscode": 201,
+    "details": {
+        "id": "9d82be5e41e049d7666d",
+        "number": "PO-20260710006",
+        "customer": {
+            "id": null,
+            "display_id": null,
+            "name_th": null,
+            "name_en": null,
+            "tax_id": null,
+            "tax_type": null,
+            "contact": null,
+            "address": null,
+            "branch_type": null,
+            "branch_number": null
+        },
+        "due_date": "2026-08-08T17:00:00.000Z",
+        "remark": "Purchase order example",
+        "issue_date": "2026-07-09T17:00:00.000Z",
+        "ship_via": "Truck",
+        "qt_on": "QT-2026-001",
+        "shipping_terms": "ส่งภายใน 30 วัน",
+        "tax_rate": 7,
+        "recipient": {
+            "id": "SEED_EMP_000000001",
+            "display_id": null,
+            "prefix": null,
+            "firstname_th": null,
+            "lastname_th": null,
+            "firstname_en": null,
+            "lastname_en": null,
+            "number_id": null,
+            "department": null,
+            "position": null,
+            "email": null,
+            "phone": null
+        },
+        "comment": "กรุณาติดต่อก่อนจัดส่ง",
+        "status_date": {
+            "sent_date": null,
+            "goods_received_date": null,
+            "paid_date": null
+        },
+        "status_note": null,
+        "details": [],
+        "price_summary": {
+            "subtotal": 0,
+            "tax_rate": 7,
+            "tax": 0,
+            "total": 0
+        },
+        "created_at": "2026-07-10T21:43:41.158Z",
+        "updated_at": "2026-07-10T21:43:41.158Z",
+        "emp": null,
+        "status": "Post Sent",
+        "project": {
+            "id": "SEED_PRJ_000000001",
+            "display_id": null,
+            "name_en": null,
+            "name_th": null
+        },
+        "condition_paid": 30,
+        "delivery_address": {
+            "subdistrict": {
+                "id": 100101,
+                "name": null
+            },
+            "district": {
+                "id": 1001,
+                "name": null
+            },
+            "province": {
+                "id": 10,
+                "name": null
+            }
+        },
+        "approved_by": {
+            "id": "SEED_EMP_000000001",
+            "prefix": null,
+            "name": null
+        },
+        "purchasing_fname": "สมชาย",
+        "purchasing_lname": "ใจดี",
+        "message": "Purchase Orders created successfully."
+    }
+}

@@ -1,41 +1,39 @@
-class _Base {
-    constructor(
-        public id: number,
-        public name: string
-    ) {
-        this.id = id;
-        this.name = name;
+export const reply_options = {
+    province: {
+        fields: {
+            id: 'province_id',
+            name: {
+                $locale: {
+                    th: 'province_name_th',
+                    en: 'province_name_en'
+                }
+            },
+            geography: 'province_geography_id'
+        }
+    },
+    district: {
+        fields: {
+            id: 'district_id',
+            name: {
+                $locale: {
+                    th: 'district_name_th',
+                    en: 'district_name_en'
+                }
+            },
+            province_id: 'district_province_id'
+        }
+    },
+    subdistrict: {
+        fields: {
+            id: 'subdistrict_id',
+            name: {
+                $locale: {
+                    th: 'subdistrict_name_th',
+                    en: 'subdistrict_name_en'
+                }
+            },
+            district_id: 'subdistrict_district_id',
+            zip_code: 'subdistrict_zip_code'
+        }
     }
-}
-export class District extends _Base {
-    constructor(
-        public id: number,
-        public name: string,
-        public province_id: number
-    ) {
-        super(id, name);
-        this.province_id = province_id;
-    }
-}
-export class Province extends _Base {
-    constructor(
-        public id: number,
-        public name: string,
-        public geography: string
-    ) {
-        super(id, name);
-        this.geography = geography;
-    }
-}
-export class Subdistrict extends _Base {
-    constructor(
-        public id: number,
-        public name: string,
-        public district_id: number,
-        public zip_code: string
-    ) {
-        super(id, name);
-        this.district_id = district_id;
-        this.zip_code = zip_code;
-    }
-}
+};

@@ -1,29 +1,17 @@
-import {
-    CalculationPlan,
-    PlateSourcePlan,
-    RoundSourcePlan
-} from './type';
-
-export class CalculationDivisionResult {
-    constructor(
-        public plan: CalculationPlan
-    ) {
-        this.plan = plan;
+export const reply_options = {
+    result: {
+        fields: {
+            plan: 'plan'
+        }
+    },
+    round_bar_plan_group: {
+        fields: {
+            source_plans: 'source_plans'
+        }
+    },
+    ms_plate_plan_group: {
+        fields: {
+            source_plans: 'source_plans'
+        }
     }
-}
-
-export class RoundBarPlanGroup {
-    constructor(
-        public source_plans: RoundSourcePlan[]
-    ) {
-        this.source_plans = source_plans;
-    }
-}
-
-export class MsPlatePlanGroup {
-    constructor(
-        public source_plans: PlateSourcePlan[]
-    ) {
-        this.source_plans = source_plans;
-    }
-}
+};

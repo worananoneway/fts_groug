@@ -1,93 +1,61 @@
-class _Base {
-    constructor(
-        public id: number,
-        public name: string
-    ) {
-        this.id = id;
-        this.name = name;
+export const reply_options = {
+    fields: {
+        id: 'project_id',
+        display_id: 'project_display_id',
+        name_th: 'project_name_th',
+        name_en: 'project_name_en',
+        notifications: { $from: 'project_notifications', $default: [] },
+        contact: {
+            $fields: {
+                name: 'project_contact_name',
+                phone: 'project_contact_phone',
+                fax: 'project_contact_fax',
+                email: 'project_contact_email'
+            }
+        },
+        customer: {
+            $fields: {
+                id: 'project_customer_id',
+                display_id: 'customer_display_id',
+                name: {
+                    $locale: {
+                        th: 'project_customer_name_th',
+                        en: 'project_customer_name_en'
+                    }
+                }
+            }
+        },
+        manager: {
+            $fields: {
+                id: 'project_manager_id',
+                display_id: 'project_manager_display_id',
+                prefix: 'project_manager_prefix',
+                name: {
+                    $locale: {
+                        th: { $join: ['project_manager_fname_th', 'project_manager_lname_th'] },
+                        en: { $join: ['project_manager_fname_en', 'project_manager_lname_en'] }
+                    }
+                }
+            }
+        },
+        budget: 'project_budget',
+        closing_date: 'project_closing_date',
+        note: 'project_note',
+        po_file: 'project_po_file',
+        created_at: 'project_created_at',
+        updated_at: 'project_updated_at',
+        emp: {
+            $fields: {
+                id: 'project_emp_id',
+                prefix: 'project_emp_prefix',
+                name: {
+                    $locale: {
+                        th: { $join: ['project_emp_fname_th', 'project_emp_lname_th'] },
+                        en: { $join: ['project_emp_fname_en', 'project_emp_lname_en'] }
+                    }
+                }
+            }
+        },
+        status: 'project_status'
     }
-}
-export class Contact {
-    constructor(
-        public name: string,
-        public phone: string,
-        public fax: string,
-        public email: string
-    ) {
-        this.name = name;
-        this.phone = phone;
-        this.fax = fax;
-        this.email = email;
-    }
-}
-export class Customer extends _Base {
-    constructor(
-        public id: number,
-        public display_id: string,
-        public name: string
-    ) {
-        super(id, name);
-        this.display_id = display_id;
-    }
-}
-export class Emp {
-    constructor(
-        public id: string,
-        public prefix: string,
-        public name: string
-    ) {
-        this.id = id;
-        this.prefix = prefix;
-        this.name = name;
-    }
-}
-export class Manager extends _Base {
-    constructor(
-        public id: number,
-        public display_id: string,
-        public prefix: string,
-        public name: string
-    ) {
-        super(id, name);
-        this.display_id = display_id;
-        this.prefix = prefix;
-    }
-}
-export class Project {
-    constructor(
-        public id: string,
-        public display_id: string,
-        public name_th: string,
-        public name_en: string,
-        public notifications: string[],
-        public contact: Contact,
-        public customer: Customer,
-        public manager: Manager,
-        public budget: string,
-        public closing_date: string | null,
-        public note: string,
-        public po_file: string,
-        public created_at: Date,
-        public updated_at: Date,
-        public emp: Emp,
-        public status: string
-    ) {
-        this.id = id;
-        this.display_id = display_id;
-        this.name_th = name_th;
-        this.name_en = name_en;
-        this.notifications = notifications;
-        this.contact = contact;
-        this.customer = customer;
-        this.manager = manager;
-        this.budget = budget;
-        this.closing_date = closing_date;
-        this.note = note;
-        this.po_file = po_file;
-        this.created_at = created_at;
-        this.updated_at = updated_at;
-        this.emp = emp;
-        this.status = status;
-    }
-}
-
+};

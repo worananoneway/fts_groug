@@ -1,0 +1,117 @@
+[
+  {
+    "method": "GET",
+    "name": "Get Purchase Orders",
+    "url": "/api/v1/purchase-orders",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {
+      "project_id": "SEED_PRJ_000000001",
+      "qt_on": "QT-2026-001",
+      "recipient_id": "SEED_EMP_000000001",
+      "startdate": "2026-07-01",
+      "enddate": "2026-07-31",
+      "status": "Post Sent"
+    },
+    "body": null
+  },
+  {
+    "method": "GET",
+    "name": "Get Purchase Order By ID",
+    "url": "/api/v1/purchase-orders/<po_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {},
+    "body": null
+  },
+  {
+    "method": "POST",
+    "name": "Create Purchase Order",
+    "url": "/api/v1/purchase-orders",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {},
+    "body": {
+      "cus_id": null,
+      "customer_id": null,
+      "due_date": "2026-08-09",
+      "issue_date": "2026-07-10",
+      "ship_via": "Truck",
+      "qt_on": "QT-2026-001",
+      "shipping_terms": "ส่งภายใน 30 วัน",
+      "tax_rate": 7,
+      "recipient_id": "SEED_EMP_000000001",
+      "comment": "กรุณาติดต่อก่อนจัดส่ง",
+      "status_sent_date": null,
+      "sent_date": null,
+      "status_goods_received_": null,
+      "goods_received_date": null,
+      "status_paid_date": null,
+      "paid_date": null,
+      "status_note": null,
+      "remark": "Purchase order example",
+      "project_id": "SEED_PRJ_000000001",
+      "condition_paid": 30,
+      "delivery_province_id": 10,
+      "delivery_district_id": 1001,
+      "delivery_subdistrict_id": 100101,
+      "approved_by_emp_id": "SEED_EMP_000000001",
+      "purchasing_fname": "สมชาย",
+      "purchasing_lname": "ใจดี"
+    }
+  },
+  {
+    "method": "PUT",
+    "name": "Update Purchase Order",
+    "url": "/api/v1/purchase-orders/<po_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {},
+    "body": {
+      "cus_id": null,
+      "due_date": "2026-08-15",
+      "remark": "Updated purchase order",
+      "issue_date": "2026-07-10",
+      "ship_via": "Truck",
+      "qt_on": "QT-2026-001",
+      "shipping_terms": "ส่งภายใน 30 วัน",
+      "tax_rate": 7,
+      "recipient_id": "SEED_EMP_000000001",
+      "comment": "แก้ไขข้อมูลการจัดส่ง",
+      "project_id": "SEED_PRJ_000000001",
+      "condition_paid": 30,
+      "delivery_province_id": 10,
+      "delivery_district_id": 1001,
+      "delivery_subdistrict_id": 100101,
+      "approved_by_emp_id": "SEED_EMP_000000001",
+      "purchasing_fname": "สมชาย",
+      "purchasing_lname": "ใจดี"
+    }
+  },
+  {
+    "method": "PATCH",
+    "name": "Update Purchase Order Status",
+    "url": "/api/v1/purchase-orders/status/<po_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {},
+    "body": {
+      "sent_date": "2026-07-11",
+      "goods_received_date": null,
+      "paid_date": null,
+      "status_note": "ส่งใบสั่งซื้อแล้ว",
+      "status": "Post Sent"
+    }
+  },
+  {
+    "method": "DELETE",
+    "name": "Delete Purchase Order",
+    "url": "/api/v1/purchase-orders/<po_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {},
+    "body": {
+      "status": "Deleted"
+    }
+  }
+]
