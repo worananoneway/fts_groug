@@ -1,8 +1,38 @@
 import sql_query from "@/api/utils/sql_query";
-import { Payload } from "./type";
+import { ErrorField, ErrorMessage, Payload } from "./type";
 import { Condition, Response, HttpStatusCode } from "@/api/utils/shared_types";
 
 const module_name = 'ms_plates';
+async function count_duplicate(conditions: Condition): Promise<Response> {
+    const sql = `
+        SELECT 
+            (SELECT COUNT(msp_id) FROM public.ms_plates WHERE msp_code = $1${conditions.sql}) AS duplicate_code
+    `;
+    try {
+        const result = await sql_query(sql, [
+            ...conditions.params
+        ]);
+        if (result[0]?.duplicate_code > 0) {
+            return {
+                statuscode: HttpStatusCode.CONFLICT,
+                error: [{ field: ErrorField.CODE, message: ErrorMessage.CODE_DUPLICATE }],
+                data: result
+            }
+        }
+        return {
+            statuscode: HttpStatusCode.OK,
+            error: null,
+            data: result
+        };
+    } catch (error) {
+        console.error(`[Service] An error occurred during counting duplicates for ${module_name}:`, error);
+        return {
+            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
+            error: error,
+            data: null
+        };
+    }
+}
 async function create(payload: Payload, emp_id: string | null): Promise<Response> {
     const sql = `
         INSERT INTO public.ms_plates(
@@ -75,7 +105,7 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
                 msp_updated_at,
                 msp_emp_id
             FROM public.ms_plates
-            WHERE 1=1${conditions.sql}
+            WHERE 1=1 AND msp_status != 'Deleted' ${conditions.sql}
             ORDER BY msp_created_at DESC
         )
         SELECT ${filter} FROM ${module_name}_cte;
@@ -107,7 +137,7 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
 async function soft_delete(id: string, emp_id: string | null): Promise<Response> {
     const sql = `
         UPDATE public.ms_plates
-        SET msp_status = 'RESERVED',
+        SET msp_status = 'Deleted',
             msp_emp_id = $2
         WHERE msp_id = $1
         RETURNING *;
@@ -147,10 +177,9 @@ async function update(id: string, payload: Payload, emp_id: string | null): Prom
             msp_thickness = $5,
             msp_quantity = $6,
             msp_available_quantity = $7,
-            msp_status = $8,
-            msp_received_date = $9,
-            msp_remark = $10,
-            msp_emp_id = $11
+            msp_received_date = $8,
+            msp_remark = $9,
+            msp_emp_id = $10
         WHERE msp_id = $1
         RETURNING *;
     `;
@@ -193,10 +222,10 @@ async function update_status(id: string, status: string, emp_id: string | null):
     const sql = `
         UPDATE public.ms_plates
         SET
-            msp_status = 'RESERVED',
-            msp_emp_id = $2
+            msp_status = $2,
+            msp_emp_id = $3
         WHERE msp_id = $1
-        RETURNING *;
+        RETURNING msp_id, msp_status;
     `;
     try {
         const result = await sql_query(sql, [id, status, emp_id]);
@@ -209,7 +238,7 @@ async function update_status(id: string, status: string, emp_id: string | null):
             };
         }
         return {
-            statuscode: HttpStatusCode.OK,
+            statuscode: HttpStatusCode.NO_CONTENT,
             error: null,
             data: result
         };
@@ -226,6 +255,7 @@ async function update_status(id: string, status: string, emp_id: string | null):
 
 export default {
     create,
+    count_duplicate,
     get,
     soft_delete,
     update,
