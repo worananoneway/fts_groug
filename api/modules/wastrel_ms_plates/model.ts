@@ -17,7 +17,7 @@ export const reply_options = {
                 code: 'wmsp_msp_code'
             }
         },
-        stock_code: 'wmsp_stock_code',
+        display_id: 'wmsp_display_id',
         length: 'wmsp_length',
         width: 'wmsp_width',
         thickness: 'wmsp_thickness',
@@ -25,21 +25,35 @@ export const reply_options = {
         available_quantity: 'wmsp_available_quantity',
         status: 'wmsp_status',
         order: {
-            $nullableBy: 'wmsp_ord_id',
+            $nullableBy: 'wmsp_po_id',
             $fields: {
-                id: 'wmsp_ord_id',
-                no: 'wmsp_ord_no'
+                id: 'wmsp_po_id',
+                no: 'wmsp_po_number'
             }
         },
         order_detail: {
-            $nullableBy: 'wmsp_odd_id',
+            $nullableBy: 'wmsp_podetail_id',
             $fields: {
-                id: 'wmsp_odd_id',
-                order_id: 'wmsp_odd_ord_id'
+                id: 'wmsp_podetail_id',
+                order_id: 'wmsp_podetail_po_id'
             }
         },
         remark: 'wmsp_remark',
         created_at: 'wmsp_created_at',
-        updated_at: 'wmsp_updated_at'
+        updated_at: 'wmsp_updated_at',
+        emp: {
+            $nullableBy: 'wmsp_emp_id',
+            $fields: {
+                id: 'wmsp_emp_id',
+                display_id: 'wmsp_emp_display_id',
+                prefix: 'wmsp_emp_prefix',
+                name: {
+                    $locale: {
+                        th: { $join: ['wmsp_emp_fname_th', 'wmsp_emp_lname_th'] },
+                        en: { $join: ['wmsp_emp_fname_en', 'wmsp_emp_lname_en'] }
+                    }
+                }
+            }
+        }
     }
 };

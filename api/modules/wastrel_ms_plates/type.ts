@@ -1,11 +1,3 @@
-export enum LocationType {
-    WAREHOUSE = 'WAREHOUSE',
-    ZONE = 'ZONE',
-    RACK = 'RACK',
-    SHELF = 'SHELF',
-    OTHER = 'OTHER',
-}
-
 export enum StockStatus {
     ACTIVE = 'Active',
     INACTIVE = 'Inactive',
@@ -20,18 +12,14 @@ export enum ErrorField {
     ID = 'id',
     MM_ID = 'mm_id',
     MSP_ID = 'msp_id',
-    STOCK_CODE = 'stock_code',
     LENGTH = 'length',
     WIDTH = 'width',
     THICKNESS = 'thickness',
     QUANTITY = 'quantity',
     AVAILABLE_QUANTITY = 'available_quantity',
-    LOC_ID = 'loc_id',
-    LOCATION_TYPE = 'location_type',
-    LOCATION = 'location',
     STATUS = 'status',
-    ORD_ID = 'ord_id',
-    ODD_ID = 'odd_id',
+    PO_ID = 'po_id',
+    PODETAIL_ID = 'podetail_id',
     REMARK = 'remark',
 }
 
@@ -41,9 +29,6 @@ export enum ErrorMessage {
     MM_ID_REQUIRED = 'Material master ID is required.',
     MM_ID_MAX_LENGTH = 'Material master ID must be at most 20 characters long.',
     MSP_ID_MAX_LENGTH = 'MS plate ID must be at most 20 characters long.',
-    STOCK_CODE_REQUIRED = 'Wastrel MS plate stock code is required.',
-    STOCK_CODE_MAX_LENGTH = 'Wastrel MS plate stock code must be at most 50 characters long.',
-    STOCK_CODE_DUPLICATE = 'Wastrel MS plate with this stock code already exists.',
     LENGTH_REQUIRED = 'Length is required.',
     LENGTH_INVALID = 'Length must be a positive number.',
     WIDTH_REQUIRED = 'Width is required.',
@@ -54,27 +39,24 @@ export enum ErrorMessage {
     QUANTITY_INVALID = 'Quantity must be a positive integer.',
     AVAILABLE_QUANTITY_REQUIRED = 'Available quantity is required.',
     AVAILABLE_QUANTITY_INVALID = 'Available quantity must be a non-negative integer no greater than quantity.',
-    LOC_ID_MAX_LENGTH = 'Location ID must be at most 20 characters long.',
-    LOCATION_TYPE_INVALID = 'Location type is invalid.',
     STATUS_REQUIRED = 'Status is required.',
     STATUS_INVALID = 'Status is invalid in ENUM.',
     STATUS_CONFLICT = 'Status update conflicts with current wastrel MS plate status.',
-    ORD_ID_MAX_LENGTH = 'Order ID must be at most 20 characters long.',
-    ODD_ID_MAX_LENGTH = 'Order detail ID must be at most 20 characters long.',
+    PO_ID_MAX_LENGTH = 'Purchase order ID must be at most 20 characters long.',
+    PODETAIL_ID_MAX_LENGTH = 'Purchase order detail ID must be at most 20 characters long.',
 }
 
 export interface Payload {
     mm_id: string;
-    msp_id?: string | null;
-    stock_code: string;
+    msp_id: string | null;
     length: number;
     width: number;
     thickness: number;
-    quantity?: number;
-    available_quantity?: number;
-    po_id?: string | null;
-    podetail_id?: string | null;
-    remark?: string | null;
+    quantity: number;
+    available_quantity: number;
+    po_id: string | null;
+    podetail_id: string | null;
+    remark: string | null;
 }
 
 export interface ValidationError {

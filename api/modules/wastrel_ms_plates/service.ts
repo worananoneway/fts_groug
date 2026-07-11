@@ -2,34 +2,11 @@ import sql_query from "@/api/utils/sql_query";
 import { Condition, HttpStatusCode, Response } from "@/api/utils/shared_types";
 import { Payload, StockStatus } from "./type";
 const module_name = 'wastrel_ms_plates';
-async function count_duplicate(conditions: Condition): Promise<Response> {
-    const sql = `
-        SELECT
-            (SELECT COUNT(wmsp_id) FROM public.wastrel_ms_plates WHERE wmsp_stock_code = $1${conditions.sql}) AS duplicate_stock_code
-    `;
-    try {
-        const result = await sql_query(sql, conditions.params);
-        return {
-            statuscode: HttpStatusCode.OK,
-            error: null,
-            data: result
-        };
-    } catch (error) {
-        console.error(`[Service] An error occurred during counting ${module_name} duplicates:`, error);
-        return {
-            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-            error,
-            data: null
-        };
-    }
-}
-
 async function create(payload: Payload, emp_id: string): Promise<Response> {
     const sql = `
         INSERT INTO public.wastrel_ms_plates (
             wmsp_mm_id,
             wmsp_msp_id,
-            wmsp_stock_code,
             wmsp_length,
             wmsp_width,
             wmsp_thickness,
@@ -38,10 +15,9 @@ async function create(payload: Payload, emp_id: string): Promise<Response> {
             wmsp_po_id,
             wmsp_podetail_id,
             wmsp_remark,
-            wmsp_emp_id,
-            wmsp_status
+            wmsp_emp_id
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'Reserved' 
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
         ) RETURNING *;
     `;
     try {
@@ -49,17 +25,16 @@ async function create(payload: Payload, emp_id: string): Promise<Response> {
         const available_quantity = payload.available_quantity ?? quantity;
         const result = await sql_query(sql, [
             payload.mm_id,
-            payload.msp_id,
-            payload.stock_code,
+            payload.msp_id ?? null,
             payload.length,
             payload.width,
             payload.thickness,
             quantity,
             available_quantity,
-            payload.po_id,
-            payload.podetail_id,
-            payload.remark,
-            emp_id,
+            payload.po_id ?? null,
+            payload.podetail_id ?? null,
+            payload.remark ?? null,
+            emp_id
         ]);
         if (result.length === 0) {
             console.error(`[Service] Failed to create ${module_name}: No row was created.`);
@@ -96,25 +71,32 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
                 mm_grade AS wmsp_mm_grade,
                 wmsp_msp_id,
                 msp_code AS wmsp_msp_code,
-                wmsp_stock_code,
+                wmsp_display_id,
                 wmsp_length,
                 wmsp_width,
                 wmsp_thickness,
                 wmsp_quantity,
                 wmsp_available_quantity,
-                wmsp_status,
+                wmsp_status::text AS wmsp_status,
                 wmsp_po_id,
-                po_no AS wmsp_po_no,
+                po_number AS wmsp_po_number,
                 wmsp_podetail_id,
                 podetail_po_id AS wmsp_podetail_po_id,
                 wmsp_remark,
                 wmsp_created_at,
-                wmsp_updated_at
+                wmsp_updated_at,
+                wmsp_emp_id,
+                emp_display_id AS wmsp_emp_display_id,
+                emp_prefix::text AS wmsp_emp_prefix,
+                emp_firstname_th AS wmsp_emp_fname_th,
+                emp_lastname_th AS wmsp_emp_lname_th,
+                emp_firstname_en AS wmsp_emp_fname_en,
+                emp_lastname_en AS wmsp_emp_lname_en
             FROM public.wastrel_ms_plates
             LEFT JOIN public.material_masters ON wastrel_ms_plates.wmsp_mm_id = material_masters.mm_id
             LEFT JOIN public.ms_plates ON wastrel_ms_plates.wmsp_msp_id = ms_plates.msp_id
             LEFT JOIN public.purchase_orders ON wastrel_ms_plates.wmsp_po_id = purchase_orders.po_id
-            LEFT JOIN public.purchase_order_details ON wastrel_ms_plates.wmsp_podetail_id = purchase_order_details.podetail_id
+            LEFT JOIN public.purchase_orders_details ON wastrel_ms_plates.wmsp_podetail_id = purchase_orders_details.podetail_id
             LEFT JOIN public.employees ON wastrel_ms_plates.wmsp_emp_id = employees.emp_id
             WHERE 1=1${conditions.sql}
             ORDER BY wmsp_created_at DESC
@@ -152,16 +134,16 @@ async function update(id: string, payload: Payload, emp_id: string): Promise<Res
         SET
             wmsp_mm_id = $2,
             wmsp_msp_id = $3,
-            wmsp_stock_code = $4,
-            wmsp_length = $5,
-            wmsp_width = $6,
-            wmsp_thickness = $7,
-            wmsp_quantity = $8,
-            wmsp_available_quantity = $9,
-            wmsp_po_id = $10,
-            wmsp_podetail_id = $11,
-            wmsp_remark = $12,
-            wmsp_emp_id = $13
+            wmsp_length = $4,
+            wmsp_width = $5,
+            wmsp_thickness = $6,
+            wmsp_quantity = $7,
+            wmsp_available_quantity = $8,
+            wmsp_po_id = $9,
+            wmsp_podetail_id = $10,
+            wmsp_remark = $11,
+            wmsp_emp_id = $12,
+            wmsp_updated_at = NOW()
         WHERE wmsp_id = $1
         RETURNING wmsp_id;
     `;
@@ -169,17 +151,16 @@ async function update(id: string, payload: Payload, emp_id: string): Promise<Res
         const result = await sql_query(sql, [
             id,
             payload.mm_id,
-            payload.msp_id,
-            payload.stock_code,
+            payload.msp_id ?? null,
             payload.length,
             payload.width,
             payload.thickness,
             payload.quantity ?? 1,
             payload.available_quantity ?? (payload.quantity ?? 1),
-            payload.po_id,
-            payload.podetail_id,
-            payload.remark,
-            emp_id,
+            payload.po_id ?? null,
+            payload.podetail_id ?? null,
+            payload.remark ?? null,
+            emp_id
         ]);
         if (result.length === 0) {
             console.error(`[Service] Failed to update ${module_name}: No row was updated.`);
@@ -239,7 +220,6 @@ async function update_status(id: string, status: StockStatus, emp_id: string): P
 }
 
 const service = {
-    count_duplicate,
     create,
     get,
     update,

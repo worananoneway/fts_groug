@@ -6,7 +6,6 @@ import service from "./service";
 import {
     ErrorField,
     ErrorMessage,
-    LocationType,
     Payload,
     StockStatus,
     ValidationError
@@ -16,15 +15,10 @@ import { get_enum_keys, is_enum_key } from "@/api/utils/enum_checker";
 import { sanitize_input, sanitize_payload, sanitize_string } from "@/api/utils/input_sanitizer";
 import {
     Condition,
-    HttpStatus,
     HttpStatusCode,
     Reply,
-    ReplyErrorField,
-    ReplyErrorMessage,
-    ReplySuccessMessage,
 } from "@/api/utils/shared_types";
 
-const location_type_enum = get_enum_keys(LocationType);
 const status_enum = get_enum_keys(StockStatus);
 const module_name = "Wastrel MS Plate";
 
@@ -34,33 +28,20 @@ async function create(request: any, reply: any) {
 
         emp_authentication(module_name, emp_id, reply);
 
-        const sanitized_body = sanitize_payload(request.body);
-        const payload: Payload = request.body;
+        const payload: Payload = sanitize_payload(request.body);
         console.log("[Controller] Creating wastrel MS plate with payload:", payload);
 
         const requiredKeys = [
-            'cus_id',
-            'due_date',
-            'issue_date',
-            'ship_via',
-            'qt_on',
-            'shipping_terms',
-            'tax_rate',
-            'recipient_id',
-            'comment',
-            'status_sent_date',
-            'status_goods_received_',
-            'status_paid_date',
-            'status_note',
-            'remark',
-            'project_id',
-            'condition_paid',
-            'delivery_province_id',
-            'delivery_district_id',
-            'delivery_subdistrict_id',
-            'approved_by_emp_id',
-            'purchasing_fname',
-            'purchasing_lname'
+            'mm_id',
+            'msp_id',
+            'length',
+            'width',
+            'thickness',
+            'quantity',
+            'available_quantity',
+            'po_id',
+            'podetail_id',
+            'remark'
         ];
         const missing_fields: string[] = field_validator(request.body, requiredKeys);
         if (missing_fields.length > 0) {
@@ -71,58 +52,58 @@ async function create(request: any, reply: any) {
 
         const invalid_fields: ValidationError[] = [];
 
-        if ( ) {
+        if (payload.mm_id && payload.mm_id.length > 20) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.MM_ID,
+                message: ErrorMessage.MM_ID_MAX_LENGTH
             });
         }
-        if () {
+        if (payload.msp_id && payload.msp_id.length > 20) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.MSP_ID,
+                message: ErrorMessage.MSP_ID_MAX_LENGTH
             });
         }
-        if () {
+        if (typeof payload.length !== 'number' || payload.length <= 0) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.LENGTH,
+                message: ErrorMessage.LENGTH_INVALID
             });
         }
-        if () {
+        if (typeof payload.width !== 'number' || payload.width <= 0) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.WIDTH,
+                message: ErrorMessage.WIDTH_INVALID
             });
         }
-        if () {
+        if (typeof payload.thickness !== 'number' || payload.thickness <= 0) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.THICKNESS,
+                message: ErrorMessage.THICKNESS_INVALID
             });
         }
-        if () {
+        if (!Number.isInteger(payload.quantity) || payload.quantity <= 0) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.QUANTITY,
+                message: ErrorMessage.QUANTITY_INVALID
             });
         }
-        if () {
+        if (!Number.isInteger(payload.available_quantity) || payload.available_quantity < 0 || payload.available_quantity > payload.quantity) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.AVAILABLE_QUANTITY,
+                message: ErrorMessage.AVAILABLE_QUANTITY_INVALID
             });
         }
-        if () {
+        if (payload.po_id && payload.po_id.length > 20) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.PO_ID,
+                message: ErrorMessage.PO_ID_MAX_LENGTH
             });
         }
-        if () {
+        if (payload.podetail_id && payload.podetail_id.length > 20) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.PODETAIL_ID,
+                message: ErrorMessage.PODETAIL_ID_MAX_LENGTH
             });
         }
 
@@ -130,13 +111,6 @@ async function create(request: any, reply: any) {
             console.error("[Controller] Validation errors found in wastrel MS plate creation payload:", invalid_fields);
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
-            );
-        }
-
-        const duplicate_check = await service.count_duplicate({ sql: "", params: [payload.stock_code] });
-        if (duplicate_check.statuscode !== HttpStatusCode.OK) {
-            return reply.code(duplicate_check.statuscode).send(<Reply>
-                reply_result(module_name, duplicate_check.statuscode, duplicate_check?.data)
             );
         }
 
@@ -157,7 +131,7 @@ async function get(request: any, reply: any) {
 
         emp_authentication(module_name, request?.user?.id, reply);
 
-        const fields: string = request.reply_fields;
+        const fields: string = request.reply_fields || "*";
         const conditions: Condition = { sql: "", params: [] };
         const invalid_fields: ValidationError[] = [];
 
@@ -181,9 +155,9 @@ async function get(request: any, reply: any) {
             conditions.params.push(sanitize_input(request.query.podetail_id));
             conditions.sql += ` AND wmsp_podetail_id = $${conditions.params.length} `;
         }
-        if (request.query.stock_code) {
-            conditions.params.push(sanitize_input(request.query.stock_code));
-            conditions.sql += ` AND wmsp_stock_code = $${conditions.params.length} `;
+        if (request.query.display_id) {
+            conditions.params.push(sanitize_input(request.query.display_id));
+            conditions.sql += ` AND wmsp_display_id = $${conditions.params.length} `;
         }
         if (request.query.status && is_enum_key(status_enum, request.query.status)) {
             conditions.params.push(StockStatus[request.query.status.trim().replace(/\s+/g, '_').toUpperCase() as keyof typeof StockStatus]);
@@ -229,28 +203,16 @@ async function update(request: any, reply: any) {
         }
 
         const requiredKeys = [
-            'cus_id',
-            'due_date',
-            'issue_date',
-            'ship_via',
-            'qt_on',
-            'shipping_terms',
-            'tax_rate',
-            'recipient_id',
-            'comment',
-            'status_sent_date',
-            'status_goods_received_',
-            'status_paid_date',
-            'status_note',
-            'remark',
-            'project_id',
-            'condition_paid',
-            'delivery_province_id',
-            'delivery_district_id',
-            'delivery_subdistrict_id',
-            'approved_by_emp_id',
-            'purchasing_fname',
-            'purchasing_lname'
+            'mm_id',
+            'msp_id',
+            'length',
+            'width',
+            'thickness',
+            'quantity',
+            'available_quantity',
+            'po_id',
+            'podetail_id',
+            'remark'
         ];
         const missing_fields: string[] = field_validator(request.body, requiredKeys);
         if (missing_fields.length > 0) {
@@ -259,61 +221,61 @@ async function update(request: any, reply: any) {
             );
         }
 
-        const payload: Payload = request.body;
+        const payload: Payload = sanitize_payload(request.body);
         const invalid_fields: ValidationError[] = [];
 
-        if (!payload. ) {
+        if (payload.mm_id && payload.mm_id.length > 20) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.MM_ID,
+                message: ErrorMessage.MM_ID_MAX_LENGTH
             });
         }
-        if () {
+        if (payload.msp_id && payload.msp_id.length > 20) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.MSP_ID,
+                message: ErrorMessage.MSP_ID_MAX_LENGTH
             });
         }
-        if () {
+        if (typeof payload.length !== 'number' || payload.length <= 0) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.LENGTH,
+                message: ErrorMessage.LENGTH_INVALID
             });
         }
-        if () {
+        if (typeof payload.width !== 'number' || payload.width <= 0) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.WIDTH,
+                message: ErrorMessage.WIDTH_INVALID
             });
         }
-        if () {
+        if (typeof payload.thickness !== 'number' || payload.thickness <= 0) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.THICKNESS,
+                message: ErrorMessage.THICKNESS_INVALID
             });
         }
-        if () {
+        if (!Number.isInteger(payload.quantity) || payload.quantity <= 0) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.QUANTITY,
+                message: ErrorMessage.QUANTITY_INVALID
             });
         }
-        if () {
+        if (!Number.isInteger(payload.available_quantity) || payload.available_quantity < 0 || payload.available_quantity > payload.quantity) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.AVAILABLE_QUANTITY,
+                message: ErrorMessage.AVAILABLE_QUANTITY_INVALID
             });
         }
-        if () {
+        if (payload.po_id && payload.po_id.length > 20) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.PO_ID,
+                message: ErrorMessage.PO_ID_MAX_LENGTH
             });
         }
-        if () {
+        if (payload.podetail_id && payload.podetail_id.length > 20) {
             invalid_fields.push({
-                field: ErrorField.,
-                message: ErrorMessage.
+                field: ErrorField.PODETAIL_ID,
+                message: ErrorMessage.PODETAIL_ID_MAX_LENGTH
             });
         }
 
@@ -321,25 +283,6 @@ async function update(request: any, reply: any) {
             console.error("[Controller] Validation errors found in wastrel MS plate creation payload:", invalid_fields);
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
-            );
-        }
-
-        const duplicate_check = await service.count_duplicate({
-            sql: " AND wmsp_id != $2",
-            params: [payload.stock_code, id]
-        });
-        if (duplicate_check.statuscode !== HttpStatusCode.OK) {
-            return reply.code(duplicate_check.statuscode).send(<Reply>
-                reply_result(module_name, duplicate_check.statuscode)
-            );
-        }
-        const dupplicate_count = duplicate_check?.data?.[0]?.duplicate_stock_code;
-        if (dupplicate_count.duplicate_stock_code > 0) {
-            return reply.code(HttpStatusCode.CONFLICT).send(<Reply>
-                reply_result(module_name, HttpStatusCode.CONFLICT, [{
-                    field: ErrorField.STOCK_CODE,
-                    message: ErrorMessage.STOCK_CODE_DUPLICATE
-                }])
             );
         }
 
@@ -363,8 +306,8 @@ async function update_status(request: any, reply: any) {
 
         const invalid_fields: ValidationError[] = [];
         const id = sanitize_string(request.params.wmsp_id);
-        const payload = request.body?.status;
 
+        const payload = sanitize_payload(request.body);
         if (!is_enum_key(status_enum, payload.status?.trim().replace(/\s+/g, '_').toUpperCase())) {
             invalid_fields.push({
                 field: ErrorField.STATUS,
