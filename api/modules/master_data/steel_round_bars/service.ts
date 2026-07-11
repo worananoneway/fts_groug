@@ -1,6 +1,6 @@
 import sql_query from "@/api/utils/sql_query";
-import { Payload } from "./type";
-import { Condition, Response, HttpStatusCode } from "@/api/utils/shared_types";
+import { ErrorField, ErrorMessage, Payload } from "./type";
+import { Condition, Response, HttpStatusCode,  } from "@/api/utils/shared_types";
 const module_name = 'steel_round_bars';
 
 async function count_duplicate(conditions: Condition): Promise<Response> {
@@ -12,6 +12,13 @@ async function count_duplicate(conditions: Condition): Promise<Response> {
         const result = await sql_query(sql, [
             ...conditions.params
         ]);
+        if (result[0]?.duplicate_code > 0) {
+            return {
+                statuscode: HttpStatusCode.CONFLICT,
+                error: [{ field: ErrorField.CODE, message: ErrorMessage.CODE_DUPLICATE }],
+                data: result
+            }
+        }
         return {
             statuscode: HttpStatusCode.OK,
             error: null,
@@ -26,7 +33,7 @@ async function count_duplicate(conditions: Condition): Promise<Response> {
         };
     }
 }
-async function create(payload: Payload): Promise<Response> {
+async function create(payload: Payload, emp_id: string): Promise<Response> {
     const sql = `
         INSERT INTO public.steel_round_bars (
             srb_mm_id,
@@ -35,14 +42,12 @@ async function create(payload: Payload): Promise<Response> {
             srb_length,
             srb_quantity,
             srb_available_quantity,
-            srb_loc_id,
-            srb_location_type,
-            srb_location,
-            srb_status,
             srb_received_date,
-            srb_remark
+            srb_remark,
+            srb_emp_id,
+            srb_status
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, 'AVAILABLE', $10, $11
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active'
         ) RETURNING *;
     `;
     try {
@@ -55,11 +60,9 @@ async function create(payload: Payload): Promise<Response> {
             payload.length,
             quantity,
             available_quantity,
-            payload.loc_id ?? null,
-            payload.location_type ?? null,
-            payload.location ?? null,
-            payload.received_date ?? null,
-            payload.remark ?? null
+            payload.received_date,
+            payload.remark,
+            emp_id
         ]);
         if (result.length === 0) {
             console.error(`[Service] Failed to create ${module_name}: No row was created.`);
@@ -98,12 +101,6 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
                 srb_length,
                 srb_quantity,
                 srb_available_quantity,
-                srb_loc_id,
-                loc_code AS srb_loc_code,
-                loc_name AS srb_loc_name,
-                loc_type AS srb_loc_type,
-                srb_location_type,
-                srb_location,
                 srb_status,
                 srb_received_date,
                 srb_remark,
@@ -111,8 +108,7 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
                 srb_updated_at
             FROM public.steel_round_bars
             LEFT JOIN public.material_masters ON steel_round_bars.srb_mm_id = material_masters.mm_id
-            LEFT JOIN public.locations ON steel_round_bars.srb_loc_id = locations.loc_id
-            WHERE 1=1${conditions.sql}
+            WHERE 1=1 AND srb_status != 'Inactive' ${conditions.sql}
             ORDER BY srb_created_at DESC
         )
         SELECT ${filter} FROM ${module_name}_cte;
@@ -141,17 +137,17 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
         };
     }
 }
-async function soft_delete(id: string, emp_id: string | null): Promise<Response> {
+async function soft_delete(id: string, emp_id: string): Promise<Response> {
     const sql = `
         UPDATE public.steel_round_bars
         SET
-            srb_status = 'SCRAP'
+            srb_status = 'Deleted',
+            srb_emp_id = $2
         WHERE srb_id = $1
-        customer_emp_id = $2
         RETURNING srb_id;
     `;
     try {
-        const result = await sql_query(sql, [id]);
+        const result = await sql_query(sql, [id, emp_id]);
         if (result.length === 0) {
             console.error(`[Service] Failed to delete ${module_name}: No row was deleted.`);
             return {
@@ -174,38 +170,34 @@ async function soft_delete(id: string, emp_id: string | null): Promise<Response>
         };
     }
 }
-async function update(id: string, payload: Payload): Promise<Response> {
+async function update(id: string, payload: Payload, emp_id: string): Promise<Response> {
     const sql = `
         UPDATE public.steel_round_bars
         SET
-            srb_mm_id = $1,
-            srb_code = $2,
-            srb_diameter = $3,
-            srb_length = $4,
-            srb_quantity = $5,
-            srb_available_quantity = $6,
-            srb_loc_id = $7,
-            srb_location_type = $8,
-            srb_location = $9,
-            srb_received_date = $10,
-            srb_remark = $11
-        WHERE srb_id = $12
+            srb_mm_id = $2,
+            srb_code = $3,
+            srb_diameter = $4,
+            srb_length = $5,
+            srb_quantity = $6,
+            srb_available_quantity = $7,
+            srb_received_date = $8,
+            srb_remark = $9,
+            srb_emp_id = $10
+        WHERE srb_id = $1
         RETURNING srb_id;
     `;
     try {
         const result = await sql_query(sql, [
+            id,
             payload.mm_id,
             payload.code,
             payload.diameter,
             payload.length,
             payload.quantity,
             payload.available_quantity,
-            payload.loc_id,
-            payload.location_type,
-            payload.location,
             payload.received_date,
             payload.remark,
-            id
+            emp_id
         ]);
         if (result.length === 0) {
             console.error(`[Service] Failed to update ${module_name}: No row was updated.`);
@@ -229,14 +221,14 @@ async function update(id: string, payload: Payload): Promise<Response> {
         };
     }
 }
-async function update_status(id: string, status: string, emp_id: string | null): Promise<Response> {
+async function update_status(id: string, status: string, emp_id: string): Promise<Response> {
     const sql = `
-        UPDATE public.customers
+        UPDATE public.steel_round_bars
         SET
-            customer_status = $1,
-            customer_emp_id = $2
-        WHERE customer_id = $3
-        RETURNING customer_id;
+            srb_status = $1,
+            srb_emp_id = $2
+        WHERE srb_id = $3
+        RETURNING srb_id;
     `;
     try {
         const result = await sql_query(sql, [
@@ -245,7 +237,7 @@ async function update_status(id: string, status: string, emp_id: string | null):
             id
         ]);
         if (result.length === 0) {
-            console.error(`[Service] Failed to update customer status: No row was updated.`);
+            console.error(`[Service] Failed to update ${module_name} status: No row was updated.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
                 error: `No row was updated.`,
@@ -258,7 +250,7 @@ async function update_status(id: string, status: string, emp_id: string | null):
             data: null
         };
     } catch (error) {
-        console.error(`[Service] An error occurred during updating customer status:`, error);
+        console.error(`[Service] An error occurred during updating ${module_name} status:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
