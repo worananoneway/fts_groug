@@ -133,10 +133,59 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
         };
     }
 }
-
+export async function get_msps(id: string){
+    const sql = `
+    SELECT
+        msp_available_quantity,
+        msp_quantity
+    FROM public.ms_plates
+    WHERE msp_id = $1;
+    `;
+    try {
+        const results = await sql_query(sql, [id]);
+        return {
+            statuscode: HttpStatusCode.OK,
+            error: null,
+            data: results[0]
+        };
+    } catch (error) {
+        console.error(`[Service] An error occurred during getting MSP:`, error);
+        return {
+            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
+            error: error,
+            data: null
+        };
+    }
+}
+export async function update_msps(id: string, payload: any){
+    const sql = `
+        UPDATE public.ms_plates
+        SET
+            msp_available_quantity = $2,
+            msp_quantity = $3
+        WHERE msp_id = $1;
+    `;
+    try {
+        await sql_query(sql, [id, payload.total_available_quantity, payload.total_quantity]);
+        return {
+            statuscode: HttpStatusCode.OK,
+            error: null,
+            data: null
+        };
+    } catch (error) {
+        console.error(`[Service] An error occurred during updating MSP:`, error);
+        return {
+            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
+            error: error,
+            data: null
+        };
+    }
+}
 const service = {
     create,
-    get
+    get,
+    get_msps,
+    update_msps,
 };
 
 export default service;
