@@ -3,6 +3,7 @@ import type {
   MaterialMaster,
   OrderDetail,
   OrderDetailStatus,
+  OrderShape,
   PlateItem,
   PlateResult,
   PlateSheet,
@@ -183,7 +184,10 @@ export function mapPurchaseOrder(raw: Record<string, unknown>): PurchaseOrder | 
     id,
     no: stringValue(raw.no ?? raw.number ?? raw.po_number) || id,
     customer:
-      stringValue(raw.customer ?? raw.supplier_name ?? raw.po_supplier_name ?? nestedString(raw.supplier, "name")) ||
+      stringValue(raw.customer ?? raw.supplier_name ?? raw.po_supplier_name) ||
+      nestedString(raw.customer, "name_th") ||
+      nestedString(raw.customer, "name_en") ||
+      nestedString(raw.supplier, "name") ||
       "ไม่ระบุลูกค้า",
     date: formatDateString(raw.date ?? raw.issue_date ?? raw.po_issue_date),
     due: formatDateString(raw.due ?? raw.due_date ?? raw.po_due_date),
@@ -199,21 +203,25 @@ export function mapOrderDetails(raw: unknown): Record<string, OrderDetail[]> {
     const row = item as Record<string, unknown>;
     const poId = stringValue(row.po_id ?? row.order_id ?? row.ord_id);
     const id = stringValue(row.id ?? row.odd_id ?? row.order_detail_id);
-    const shape = stringValue(row.shape ?? row.shape_type).toUpperCase();
-    if (!poId || !id || (shape !== "ROUND" && shape !== "PLATE")) return acc;
+    const shape = mapShape(stringValue(row.shape ?? row.shape_type) || nestedString(row.material, "shape_type"));
+    if (!poId || !id || !shape) return acc;
 
     const detail: OrderDetail = {
       id,
       shape,
-      materialId: stringValue(row.material_id ?? row.mm_id ?? row.odd_mm_id),
-      material: stringValue(row.material ?? row.material_name ?? row.mm_name) || "ไม่ระบุวัสดุ",
+      materialId: stringValue(row.material_id ?? row.mm_id ?? row.odd_mm_id) || nestedString(row.material, "id"),
+      material:
+        stringValue(row.material ?? row.material_name ?? row.mm_name) ||
+        nestedString(row.material, "name") ||
+        "ไม่ระบุวัสดุ",
       diameter: numberValue(row.diameter ?? row.required_diameter ?? row.required_diameter_mm),
       length: numberValue(row.length ?? row.required_length ?? row.required_length_mm),
       width: numberValue(row.width ?? row.required_width ?? row.required_width_mm),
       thickness: numberValue(row.thickness ?? row.required_thickness ?? row.required_thickness_mm),
-      qty: Math.max(1, Math.floor(numberValue(row.qty ?? row.quantity) || 1)),
-      remaining: Math.max(0, Math.floor(numberValue(row.remaining ?? row.quantity))),
+      qty: Math.max(1, Math.floor(numberValue(row.cut_quantity ?? row.qty ?? row.quantity) || 1)),
+      remaining: Math.max(0, Math.floor(numberValue(row.remaining_quantity ?? row.remaining ?? row.quantity))),
       status: mapOrderDetailStatus(row.status ?? row.odd_status),
+      raw: row,
     };
 
     acc[poId] = [...(acc[poId] ?? []), detail];
@@ -263,10 +271,10 @@ export function mapMaterialMasters(raw: unknown): MaterialMaster[] {
 
   return raw
     .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
-    .map((row) => {
+    .map((row): MaterialMaster | null => {
       const id = stringValue(row.id ?? row.mm_id);
-      const shape = stringValue(row.shape ?? row.mm_shape_type).toUpperCase();
-      if (!id || (shape !== "ROUND" && shape !== "PLATE")) return null;
+      const shape = mapShape(stringValue(row.shape ?? row.shape_type ?? row.mm_shape_type));
+      if (!id || !shape) return null;
       return {
         id,
         name: stringValue(row.name ?? row.mm_name) || id,
@@ -306,6 +314,14 @@ export function orderDetailApiStatus(status: OrderDetailStatus): string {
   if (status === "REVISED") return "Revised";
   if (status === "DRAFT") return "Draft";
   return "Pending";
+}
+
+// material_masters.mm_shape_type ในฐานข้อมูลใช้ค่า Round_bar / Ms_plate
+export function mapShape(value: string): OrderShape | null {
+  const normalized = value.trim().replace(/\s+/g, "_").toUpperCase();
+  if (normalized === "ROUND" || normalized === "ROUND_BAR" || normalized === "ROUNDBAR") return "ROUND";
+  if (normalized === "PLATE" || normalized === "MS_PLATE" || normalized === "MSPLATE") return "PLATE";
+  return null;
 }
 
 function mapPoStatus(value: unknown): PurchaseOrderStatus {

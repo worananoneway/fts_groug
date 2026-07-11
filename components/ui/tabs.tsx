@@ -28,10 +28,10 @@ export function Tabs<T extends string>({ items, onChange, value, variant = "head
             onClick={() => onChange(item.key)}
             className={cn(
               "inline-flex items-center gap-2 border-b font-semibold transition",
-              variant === "header" ? "border-b-[3px] px-4 py-3 text-sm" : "border-b-2 px-3 py-2 text-xs",
+              variant === "header" ? "rounded-t-lg border-b-[3px] px-4 py-3 text-sm" : "rounded-t-md border-b-2 px-3 py-2 text-xs",
               active
-                ? "border-amber-400 text-white"
-                : "border-transparent text-blue-200 hover:text-white",
+                ? "border-amber-400 bg-white/10 text-white"
+                : "border-transparent text-blue-200 hover:bg-white/5 hover:text-white",
             )}
           >
             {Icon ? <Icon className="h-4 w-4" /> : null}

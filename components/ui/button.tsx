@@ -46,7 +46,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-blue-600 text-white shadow-sm hover:bg-blue-700",
+  primary: "bg-gradient-to-b from-blue-600 to-blue-700 text-white shadow-sm shadow-blue-900/20 hover:from-blue-500 hover:to-blue-600",
   secondary: "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
   success: "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700",
   warning: "bg-gradient-to-b from-amber-400 to-orange-500 text-white shadow-lg shadow-orange-200 hover:brightness-105",

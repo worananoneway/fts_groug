@@ -82,25 +82,27 @@ export function PurchaseOrderDetail() {
 
   if (!selectedPo || !selectedPoId) {
     return (
-      <section className="rounded-lg bg-white p-6 shadow-sm lg:sticky lg:top-48 lg:h-[calc(100vh-14rem)] lg:overflow-auto">
+      <section className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm lg:sticky lg:top-48 lg:h-[calc(100vh-14rem)] lg:overflow-auto">
         <EmptyState>เลือกใบสั่งซื้อจากรายการด้านซ้ายเพื่อดูรายการตัด</EmptyState>
       </section>
     );
   }
 
   return (
-    <section className="rounded-lg bg-white p-6 shadow-sm lg:sticky lg:top-48 lg:h-[calc(100vh-14rem)] lg:overflow-auto">
+    <section className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm lg:sticky lg:top-48 lg:h-[calc(100vh-14rem)] lg:overflow-auto">
       <TimedToast notice={notice} onClose={() => setNotice(null)} />
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800">
-            <ClipboardList className="h-5 w-5 text-blue-600" />
-            {selectedPo.no}
-          </h2>
-          <p className="text-sm text-slate-500">{selectedPo.customer}</p>
-          <p className="mt-1 text-xs text-slate-400">
-            ออก {selectedPo.date} | กำหนด {selectedPo.due}
-          </p>
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-100 bg-gradient-to-r from-blue-50/80 to-transparent p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600/10 text-blue-700">
+            <ClipboardList className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="font-mono text-lg font-bold text-slate-800">{selectedPo.no}</h2>
+            <p className="text-sm text-slate-500">{selectedPo.customer}</p>
+            <p className="mt-1 text-xs text-slate-400">
+              ออก {selectedPo.date} | กำหนด {selectedPo.due} | {fmt(selectedOrderRows.length)} รายการ
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Button icon={<Plus className="h-4 w-4" />} onClick={() => setAddDetail(newOrderDetailDraft())}>

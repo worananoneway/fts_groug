@@ -16,7 +16,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold",
+        "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold",
         toneClasses[tone],
         className,
       )}
@@ -27,10 +27,10 @@ export function Badge({
 }
 
 const toneClasses: Record<BadgeTone, string> = {
-  slate: "bg-slate-100 text-slate-600",
-  blue: "bg-blue-50 text-blue-700",
-  amber: "bg-amber-100 text-amber-800",
-  emerald: "bg-emerald-50 text-emerald-700",
-  red: "bg-red-50 text-red-700",
+  slate: "bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200",
+  blue: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200/70",
+  amber: "bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-200/80",
+  emerald: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200/70",
+  red: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200/70",
 };
 

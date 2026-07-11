@@ -81,7 +81,7 @@ export function OrderShapeTable({
   return (
     <div>
       <h3 className="mb-3 text-sm font-bold text-slate-700">{title}</h3>
-      <div className="overflow-hidden rounded-lg border border-slate-100">
+      <div className="overflow-hidden rounded-xl border border-slate-200/80 shadow-sm">
         <DataTable columns={columns} onRowClick={onRowClick} rowKey={(row) => row.id} rows={rows} />
       </div>
     </div>

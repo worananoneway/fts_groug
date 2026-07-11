@@ -39,6 +39,8 @@ export interface OrderDetail {
   qty: number;
   remaining: number;
   status: OrderDetailStatus;
+  /** Raw purchase_orders_details row, kept so updates round-trip pricing fields untouched by this screen. */
+  raw?: Record<string, unknown>;
 }
 
 export interface PlateStock {
