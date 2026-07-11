@@ -16,6 +16,7 @@ export enum StockStatus {
 }
 
 export enum ErrorField {
+    PARAM_ID = 'wmsp_id',
     ID = 'id',
     MM_ID = 'mm_id',
     MSP_ID = 'msp_id',
@@ -36,6 +37,7 @@ export enum ErrorField {
 
 export enum ErrorMessage {
     ID_REQUIRED = 'Wastrel MS plate ID is required.',
+    PARAM_ID_REQUIRED = 'param wmsp_id is required.',
     MM_ID_REQUIRED = 'Material master ID is required.',
     MM_ID_MAX_LENGTH = 'Material master ID must be at most 20 characters long.',
     MSP_ID_MAX_LENGTH = 'MS plate ID must be at most 20 characters long.',
@@ -55,7 +57,7 @@ export enum ErrorMessage {
     LOC_ID_MAX_LENGTH = 'Location ID must be at most 20 characters long.',
     LOCATION_TYPE_INVALID = 'Location type is invalid.',
     STATUS_REQUIRED = 'Status is required.',
-    STATUS_INVALID = 'Status is invalid.',
+    STATUS_INVALID = 'Status is invalid in ENUM.',
     STATUS_CONFLICT = 'Status update conflicts with current wastrel MS plate status.',
     ORD_ID_MAX_LENGTH = 'Order ID must be at most 20 characters long.',
     ODD_ID_MAX_LENGTH = 'Order detail ID must be at most 20 characters long.',
@@ -70,11 +72,8 @@ export interface Payload {
     thickness: number;
     quantity?: number;
     available_quantity?: number;
-    loc_id?: string | null;
-    location_type?: LocationType | null;
-    location?: string | null;
-    ord_id?: string | null;
-    odd_id?: string | null;
+    po_id?: string | null;
+    podetail_id?: string | null;
     remark?: string | null;
 }
 

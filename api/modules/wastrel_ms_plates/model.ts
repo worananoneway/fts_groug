@@ -23,17 +23,6 @@ export const reply_options = {
         thickness: 'wmsp_thickness',
         quantity: 'wmsp_quantity',
         available_quantity: 'wmsp_available_quantity',
-        location: {
-            $nullableBy: 'wmsp_loc_id',
-            $fields: {
-                id: 'wmsp_loc_id',
-                code: 'wmsp_loc_code',
-                name: 'wmsp_loc_name',
-                type: 'wmsp_loc_type'
-            }
-        },
-        location_type: 'wmsp_location_type',
-        location_detail: 'wmsp_location',
         status: 'wmsp_status',
         order: {
             $nullableBy: 'wmsp_ord_id',
