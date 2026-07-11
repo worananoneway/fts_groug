@@ -32,6 +32,7 @@ export enum ErrorMessage {
     RECEIVED_DATE_REQUIRED = 'msp_received_date is required.',
     REMARK_REQUIRED = 'msp_remark is required.',
     CREATED_AT_REQUIRED = 'msp_created_at is required.',
+    CODE_DUPLICATE = 'msp_code already exists.',
     UPDATED_AT_REQUIRED = 'msp_updated_at is required.',
     ID_REQUIRED = 'msp_id is required.',
     NAME_TH_REQUIRED = 'msp_name (TH) is required.',
