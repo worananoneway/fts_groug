@@ -12,6 +12,7 @@ export enum LocationType {
     OTHER = 'OTHER',
 }
 export enum ErrorField {
+    PARAM_ID = 'srb_id',
     ID = 'id',
     MM_ID = 'mm_id',
     CODE = 'code',
@@ -28,6 +29,7 @@ export enum ErrorField {
 }
 export enum ErrorMessage {
     ID_REQUIRED = 'Steel round bar ID is required.',
+    PARAM_ID_REQUIRED = 'Parameter ID is required.',
     MM_ID_REQUIRED = 'Material master ID is required.',
     MM_ID_MAX_LENGTH = 'Material master ID must be at most 20 characters long.',
     CODE_REQUIRED = 'Steel round bar code is required.',

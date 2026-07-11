@@ -1,4 +1,4 @@
-export const created_reply_options = {
+export const reply_options = {
     fields: {
         id: 'po_id',
         number: 'po_number',

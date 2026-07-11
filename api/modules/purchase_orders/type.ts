@@ -1,6 +1,6 @@
 import { POStatus } from "@/api/utils/shared_types";
 
-export const created_reply_options = {
+export const reply_options = {
     fieldPrefix: 'po_',
     createdFields: [
         'po_id',

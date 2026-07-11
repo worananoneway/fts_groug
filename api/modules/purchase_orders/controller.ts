@@ -1,4 +1,4 @@
-import { created_reply_options } from './model';
+import { reply_options } from './model';
 import service from './service';
 import {
     ErrorField,
@@ -109,9 +109,7 @@ async function create(request: any, reply: any) {
 
         const result = await service.create(payload, emp_id);
         return reply.code(result.statuscode).send(<Reply>
-            reply_result(module_name, result.statuscode, null, result.data, {
-                ...created_reply_options
-            })
+            reply_result(module_name, result.statuscode, null, result.data, reply_options)
         );
 
     } catch (error) {
@@ -173,9 +171,7 @@ async function get(request: any, reply: any) {
 
         const results = await service.get(conditions, fields);
         return reply.code(results.statuscode).send(<Reply>
-            reply_result(module_name, results.statuscode, null, results.data, {
-                ...created_reply_options
-            })
+            reply_result(module_name, results.statuscode, null, results.data, reply_options)
         );
 
     } catch (error) {
@@ -247,7 +243,7 @@ async function update(request: any, reply: any) {
         const user = request.user;
 
         emp_authentication(module_name, user, reply);
-        
+
         const emp_id = user?.id;
         const missing_fields: string[] = field_validator(request.body, [
             'issue_date',
@@ -323,9 +319,9 @@ async function update_status(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
         const user = request.user;
-        
+
         emp_authentication(module_name, user, reply);
-        
+
         const emp_id = user?.id;
         const missing_fields: string[] = field_validator(request.body, [
             'status'

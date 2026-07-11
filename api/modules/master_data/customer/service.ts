@@ -1,7 +1,7 @@
 import sql_query from "@/api/utils/sql_query";
 import { Payload } from "./type";
 import { Condition, Response, HttpStatusCode } from "@/api/utils/shared_types";
-
+const module_name = 'customers';
 async function count_duplicate(conditions: Condition): Promise<Response> {
     const sql = `
         SELECT 
@@ -19,7 +19,7 @@ async function count_duplicate(conditions: Condition): Promise<Response> {
             data: result
         };
     } catch (error) {
-        console.error("[Service] An error occurred during counting duplicates:", error);
+        console.error(`[Service] An error occurred during counting duplicates for ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -71,10 +71,10 @@ async function create(payload: Payload, emp_id: string | null): Promise<Response
             emp_id
         ]);
         if (result.length === 0) {
-            console.error("[Service] Failed to create customer: No row was created.");
+            console.error(`[Service] Failed to create ${module_name}: No row was created.`);
             return {
                 statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                error: "No row was created.",
+                error: `No row was created.`,
                 data: null
             };
         }
@@ -84,7 +84,7 @@ async function create(payload: Payload, emp_id: string | null): Promise<Response
             data: result
         };
     } catch (error) {
-        console.error("[Service] An error occurred during creating customer:", error);
+        console.error(`[Service] An error occurred during creating ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -92,7 +92,7 @@ async function create(payload: Payload, emp_id: string | null): Promise<Response
         };
     }
 }
-async function get(conditions: Condition = { sql: "", params: [] }, filter: string = "*"): Promise<Response> {
+async function get(conditions: Condition = { sql: ``, params: [] }, filter: string = `*`): Promise<Response> {
     const sql = `
         WITH customer_cte AS (
             SELECT 
@@ -143,10 +143,10 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
     try {
         const results = await sql_query(sql, conditions.params);
         if (results.length === 0) {
-            console.error("[Service] Failed to update customer: Customer not found.");
+            console.error(`[Service] Failed to update ${module_name}: ${module_name} not found.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "Customer not found.",
+                error: `${module_name} not found.`,
                 data: null
             };
         }
@@ -156,7 +156,7 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
             data: results
         };
     } catch (error) {
-        console.error("[Service] An error occurred during getting customers:", error);
+        console.error(`[Service] An error occurred during getting customers:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -176,10 +176,10 @@ async function soft_delete(id: string, emp_id: string | null): Promise<Response>
     try {
         const result = await sql_query(sql, [id, emp_id]);
         if (result.length === 0) {
-            console.error("[Service] Failed to delete customer: No row was deleted.");
+            console.error(`[Service] Failed to delete ${module_name}: No row was deleted.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "No row was deleted.",
+                error: `No row was deleted.`,
                 data: null
             };
         }
@@ -189,7 +189,7 @@ async function soft_delete(id: string, emp_id: string | null): Promise<Response>
             data: null
         };
     } catch (error) {
-        console.error("[Service] An error occurred during deleting customer:", error);
+        console.error(`[Service] An error occurred during deleting ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -241,10 +241,10 @@ async function update(id: string, payload: Payload, emp_id: string | null): Prom
             id
         ]);
         if (result.length === 0) {
-            console.error("[Service] Failed to update customer: No row was updated.");
+            console.error(`[Service] Failed to update ${module_name}: No row was updated.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "No row was updated.",
+                error: `No row was updated.`,
                 data: null
             };
         }
@@ -254,7 +254,7 @@ async function update(id: string, payload: Payload, emp_id: string | null): Prom
             data: null
         };
     } catch (error) {
-        console.error("[Service] An error occurred during updating customer:", error);
+        console.error(`[Service] An error occurred during updating ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -278,10 +278,10 @@ async function update_status(id: string, status: string, emp_id: string | null):
             id
         ]);
         if (result.length === 0) {
-            console.error("[Service] Failed to update customer status: No row was updated.");
+            console.error(`[Service] Failed to update ${module_name} status: No row was updated.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "No row was updated.",
+                error: `No row was updated.`,
                 data: null
             };
         }
@@ -291,7 +291,7 @@ async function update_status(id: string, status: string, emp_id: string | null):
             data: null
         };
     } catch (error) {
-        console.error("[Service] An error occurred during updating customer status:", error);
+        console.error(`[Service] An error occurred during updating ${module_name} status:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,

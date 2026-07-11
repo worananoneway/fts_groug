@@ -1,64 +1,39 @@
-export class MSPlate {
-    constructor(
-        public id: string,
-        public mm_id: string,
-        public code: string,
-        public length: number,
-        public width: number,
-        public thickness: number,
-        public quantity: number,
-        public available_quantity: number,
-        public loc_id: string,
-        public location_type: string,
-        public location: string,
-        public status: string,
-        public received_date: Date,
-        public remark: string,
-        public created_at: Date,
-        public updated_at: Date,
-        public employee?: Employee,
-        public material?: Material
-    ) {
-        this.id = id;
-        this.mm_id = mm_id;
-        this.code = code;
-        this.length = length;
-        this.width = width;
-        this.thickness = thickness;
-        this.quantity = quantity;
-        this.available_quantity = available_quantity;
-        this.loc_id = loc_id;
-        this.location_type = location_type;
-        this.location = location;
-        this.status = status;
-        this.received_date = received_date;
-        this.remark = remark;
-        this.created_at = created_at;
-        this.updated_at = updated_at;
-        this.employee = employee;
-        this.material = material;
+export const reply_options = {
+    fields: {
+        id: 'msp_id',
+        mm_id: 'msp_mm_id',
+        code: 'msp_code',
+        length: 'msp_length',
+        width: 'msp_width',
+        thickness: 'msp_thickness',
+        quantity: 'msp_quantity',
+        available_quantity: 'msp_available_quantity',
+        loc_id: 'msp_loc_id',
+        location_type: 'msp_location_type',
+        location: 'msp_location',
+        status: 'msp_status',
+        received_date: 'msp_received_date',
+        remark: 'msp_remark',
+        created_at: 'msp_created_at',
+        updated_at: 'msp_updated_at',
+        employee: {
+            $fields: {
+                id: 'msp_emp_id',
+                prefix: 'msp_emp_prefix',
+                name: {
+                    $locale: {
+                        th: { $join: ['msp_emp_firstname_th', 'msp_emp_lastname_th'] },
+                        en: { $join: ['msp_emp_firstname_en', 'msp_emp_lastname_en'] }
+                    }
+                }
+            }
+        },
+        material: {
+            $fields: {
+                id: 'msp_material_id',
+                name: 'msp_material_name',
+                type: 'msp_material_type'
+            }
+        }
     }
-}
-export class Employee {
-    constructor(
-        public id: string,
-        public prefix: string,
-        public name: string
-    ) {
-        this.id = id;
-        this.prefix = prefix;
-        this.name = name;
-    }
-}
-
-export class Material {
-    constructor(
-        public id: string,
-        public name: string,
-        public type: string,
-    ) {
-        this.id = id;
-        this.name = name;
-        this.type = type;
-    }
-}
+};
