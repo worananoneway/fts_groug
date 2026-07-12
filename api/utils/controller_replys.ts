@@ -83,7 +83,6 @@ export function map_fields(
         ? row as Record<string, unknown>
         : {};
     const mapped: Record<string, unknown> = {};
-    const language = format.language?.toLowerCase().startsWith('th') ? 'th' : 'en';
     const fields = format.fields as Record<string, RuntimeReplyFormatRule>;
 
     for (const [reply_field, rule] of Object.entries(fields)) {
@@ -157,16 +156,16 @@ export function map_fields(
                     resolved = true;
                 }
             } else if ('$locale' in rule) {
-                const localized_rule = rule.$locale[language];
-                if (typeof localized_rule === 'string') {
-                    if (
-                        Object.prototype.hasOwnProperty.call(source, localized_rule)
-                        && source[localized_rule] !== undefined
-                    ) {
-                        value = source[localized_rule];
-                        resolved = true;
+                const resolve_locale_rule = (localized_rule: string | ReplyJoinRule): unknown => {
+                    if (typeof localized_rule === 'string') {
+                        if (
+                            Object.prototype.hasOwnProperty.call(source, localized_rule)
+                            && source[localized_rule] !== undefined
+                        ) {
+                            return source[localized_rule];
+                        }
+                        return undefined;
                     }
-                } else {
                     const parts: string[] = [];
                     for (const source_field of localized_rule.$join) {
                         const part = source[source_field];
@@ -175,12 +174,18 @@ export function map_fields(
                         }
                     }
                     if (parts.length > 0) {
-                        value = parts.join(localized_rule.$separator ?? ' ');
-                        resolved = true;
-                    } else if ('$default' in localized_rule) {
-                        value = localized_rule.$default;
-                        resolved = true;
+                        return parts.join(localized_rule.$separator ?? ' ');
                     }
+                    return '$default' in localized_rule ? localized_rule.$default : undefined;
+                };
+                const th_value = resolve_locale_rule(rule.$locale.th);
+                const en_value = resolve_locale_rule(rule.$locale.en);
+                if (th_value !== undefined || en_value !== undefined) {
+                    value = { th: th_value ?? null, en: en_value ?? null };
+                    resolved = true;
+                } else if ('$default' in rule) {
+                    value = rule.$default;
+                    resolved = true;
                 }
             } else if ('$join' in rule) {
                 const parts: string[] = [];
