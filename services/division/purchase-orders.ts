@@ -3,6 +3,7 @@ import type {
   OrderDetail,
   OrderDetailStatus,
   PurchaseOrder,
+  PurchaseOrderCreateFields,
   PurchaseOrderStatus,
   PurchaseOrderUpdateFields,
 } from "@/types/division";
@@ -13,6 +14,59 @@ export interface OrdersData {
   purchaseOrders: PurchaseOrder[];
   orderDetails: Record<string, OrderDetail[]>;
   materialMasters: MaterialMaster[];
+}
+
+// โหลด PO เฉพาะของโปรเจคหนึ่ง ๆ — GET จะตอบ 404 เมื่อโปรเจคยังไม่มี PO เลย ให้ถือเป็นลิสต์ว่าง
+export async function loadProjectOrders(projectId: string): Promise<PurchaseOrder[]> {
+  let payload: { details?: unknown };
+  try {
+    payload = await requestJson(`/api/${API_VERSION}/purchase-orders?project_id=${encodeURIComponent(projectId)}`);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("404")) return [];
+    throw error;
+  }
+  return readRows(payload)
+    .filter((row) => stringValue(row.status) !== "Deleted")
+    .map((row) => mapPurchaseOrder(row))
+    .filter((row): row is PurchaseOrder => Boolean(row));
+}
+
+// สร้าง PO ใต้โปรเจค — backend บังคับให้มี key ครบทุกตัว (field_validator) แต่ค่าเป็น null ได้ทั้งหมด
+// ยกเว้นที่ผู้ใช้กรอกจริง จึงส่ง null ให้ฟิลด์ที่ยังไม่ใช้ในหน้านี้
+export async function createProjectOrder(projectId: string, fields: PurchaseOrderCreateFields): Promise<string> {
+  const payload = {
+    cus_id: fields.customerId || null,
+    due_date: fields.dueDate || null,
+    issue_date: fields.issueDate || null,
+    ship_via: null,
+    qt_on: null,
+    shipping_terms: null,
+    tax_rate: fields.taxRate,
+    recipient_id: null,
+    comment: null,
+    status_sent_date: null,
+    status_goods_received_: null,
+    status_paid_date: null,
+    status_note: null,
+    remark: fields.remark.trim() || null,
+    project_id: projectId,
+    condition_paid: null,
+    delivery_province_id: null,
+    delivery_district_id: null,
+    delivery_subdistrict_id: null,
+    approved_by_emp_id: null,
+    purchasing_fname: null,
+    purchasing_lname: null,
+  };
+  const reply = await requestJson(`/api/${API_VERSION}/purchase-orders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const details = (reply as { details?: unknown }).details;
+  const newId = isRecord(details) ? stringValue(details.id) : "";
+  if (!newId) throw new Error("สร้างใบสั่งซื้อสำเร็จ แต่ไม่พบเลขที่อ้างอิงเพื่อบันทึกรายการเหล็ก");
+  return newId;
 }
 
 export async function loadOrders(): Promise<OrdersData> {

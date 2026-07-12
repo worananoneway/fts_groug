@@ -1,12 +1,13 @@
 "use client";
 
-import { ClipboardList, Layers } from "lucide-react";
+import { ClipboardList, FolderKanban, Layers } from "lucide-react";
 
 import { LinkTabs } from "../ui/tabs";
 import { DIVISION_NAV } from "@/constants/division";
 import type { DivisionNavKey } from "@/types/division";
 
 const navIcons: Partial<Record<DivisionNavKey, typeof ClipboardList>> = {
+  projects: FolderKanban,
   po: ClipboardList,
   cutting: Layers,
 };

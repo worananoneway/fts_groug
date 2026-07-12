@@ -189,12 +189,6 @@ async function soft_delete(request: any, reply: any) {
 
         emp_authentication(module_name, user, reply);
 
-        if (!user || !user.id) {
-            console.error(`[Controller] Missing user ID from authenticated request.`);
-            return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>
-                reply_result(module_name, HttpStatusCode.UNAUTHORIZED)
-            );
-        }
         const emp_id = user?.id;
         const missing_fields: string[] = [];
         if (!request.params.po_id) {

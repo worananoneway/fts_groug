@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ClipboardList, Plus } from "lucide-react";
+import { useState } from "react";
+import { ClipboardList, Pencil, Plus } from "lucide-react";
 
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -37,19 +37,20 @@ export function PurchaseOrderDetail() {
   const [deleteDetail, setDeleteDetail] = useState<OrderDetail | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [poFields, setPoFields] = useState<PurchaseOrderUpdateFields>(toPoFields(selectedPo));
+  const [editPoOpen, setEditPoOpen] = useState(false);
   const [savingPo, setSavingPo] = useState(false);
 
-  useEffect(() => {
+  function openEditPo() {
     setPoFields(toPoFields(selectedPo));
-    // ซิงก์ค่าในฟอร์มใหม่ทุกครั้งที่เปลี่ยน PO ที่เลือก (ไม่ใช่ทุกครั้งที่ selectedPo อัปเดตหลังบันทึก)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPo?.id]);
+    setEditPoOpen(true);
+  }
 
   async function savePoFields() {
     setSavingPo(true);
     try {
       const result = await updatePurchaseOrderFields(poFields);
       setNotice(result);
+      if (result.ok) setEditPoOpen(false);
     } finally {
       setSavingPo(false);
     }
@@ -112,20 +113,69 @@ export function PurchaseOrderDetail() {
     <section className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm lg:sticky lg:top-42 lg:h-[calc(100vh-12rem)] lg:overflow-auto">
       <TimedToast notice={notice} onClose={() => setNotice(null)} />
       <div className="mb-5 rounded-xl border border-slate-100 bg-blue-50 p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600/10 text-blue-700">
-            <ClipboardList className="h-5 w-5" />
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600/10 text-blue-700">
+              <ClipboardList className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="font-mono text-lg font-bold text-slate-800">{selectedPo.no}</h2>
+              <p className="text-sm text-slate-500">{selectedPo.customer}</p>
+              <p className="mt-1 text-xs text-slate-400">
+                ออก {selectedPo.date} | กำหนด {selectedPo.due} | {fmt(selectedOrderRows.length)} รายการ
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-mono text-lg font-bold text-slate-800">{selectedPo.no}</h2>
-            <p className="text-sm text-slate-500">{selectedPo.customer}</p>
-            <p className="mt-1 text-xs text-slate-400">
-              ออก {selectedPo.date} | กำหนด {selectedPo.due} | {fmt(selectedOrderRows.length)} รายการ
-            </p>
-          </div>
+          <Button icon={<Pencil className="h-3.5 w-3.5" />} onClick={openEditPo} size="sm" variant="secondary">
+            แก้ไข
+          </Button>
         </div>
 
-        <div className="mt-4 grid gap-3 border-t border-blue-100 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+        <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 border-t border-blue-100 pt-3 text-sm sm:grid-cols-4">
+          <PoInfoItem label="ช่องทางขนส่ง" value={selectedPo.shipVia} />
+          <PoInfoItem label="อ้างอิงใบเสนอราคา" value={selectedPo.qtOn} />
+          <PoInfoItem label="เงื่อนไขการส่ง" value={selectedPo.shippingTerms} />
+          <PoInfoItem label="อัตราภาษี" value={selectedPo.taxRate ? `${selectedPo.taxRate}%` : ""} />
+          <PoInfoItem className="col-span-2 sm:col-span-4" label="หมายเหตุ" value={selectedPo.comment} />
+        </dl>
+      </div>
+
+      <div className="space-y-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button icon={<Plus className="h-4 w-4" />} onClick={() => setAddDetail(newOrderDetailDraft())}>
+            เพิ่มรายการ
+          </Button>
+          <PushToCuttingActions
+            hasPlateRows={selectedPlateRows.length > 0}
+            hasRoundRows={selectedRoundRows.length > 0}
+            poId={selectedPoId}
+          />
+        </div>
+        <OrderShapeTable
+          onDelete={setDeleteDetail}
+          onEdit={setEditDetail}
+          onRowClick={handleRowClick}
+          rows={selectedOrderRows}
+          title="รายการทั้งหมด"
+        />
+      </div>
+
+      <Modal
+        open={editPoOpen}
+        title={`แก้ไขรายละเอียด ${selectedPo.no}`}
+        onClose={() => setEditPoOpen(false)}
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button disabled={savingPo} onClick={() => setEditPoOpen(false)} variant="secondary">
+              ยกเลิก
+            </Button>
+            <Button disabled={savingPo} onClick={() => void savePoFields()}>
+              {savingPo ? "กำลังบันทึก..." : "บันทึก"}
+            </Button>
+          </div>
+        }
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="ช่องทางขนส่ง"
             onChange={(event) => setPoFields((current) => ({ ...current, shipVia: event.target.value }))}
@@ -152,38 +202,13 @@ export function PurchaseOrderDetail() {
             value={String(poFields.taxRate)}
           />
           <Field
-            className="sm:col-span-2 lg:col-span-3"
+            className="sm:col-span-2"
             label="หมายเหตุ"
             onChange={(event) => setPoFields((current) => ({ ...current, comment: event.target.value }))}
             value={poFields.comment}
           />
         </div>
-        <div className="mt-3 flex justify-end">
-          <Button disabled={savingPo} onClick={() => void savePoFields()} variant="secondary">
-            {savingPo ? "กำลังบันทึก..." : "บันทึกรายละเอียด PO"}
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button icon={<Plus className="h-4 w-4" />} onClick={() => setAddDetail(newOrderDetailDraft())}>
-            เพิ่มรายการ
-          </Button>
-          <PushToCuttingActions
-            hasPlateRows={selectedPlateRows.length > 0}
-            hasRoundRows={selectedRoundRows.length > 0}
-            poId={selectedPoId}
-          />
-        </div>
-        <OrderShapeTable
-          onDelete={setDeleteDetail}
-          onEdit={setEditDetail}
-          onRowClick={handleRowClick}
-          rows={selectedOrderRows}
-          title="รายการทั้งหมด"
-        />
-      </div>
+      </Modal>
 
       <Modal open={Boolean(detailView)} title="รายละเอียดรายการ" onClose={() => setDetailView(null)}>
         {detailView ? <DetailReadOnly row={detailView} /> : null}
@@ -234,6 +259,15 @@ export function PurchaseOrderDetail() {
         ต้องการลบรายการนี้จริงหรือไม่? ระบบจะเปลี่ยนสถานะรายการเป็น Cancelled
       </ConfirmDialog>
     </section>
+  );
+}
+
+function PoInfoItem({ className, label, value }: { className?: string; label: string; value?: string }) {
+  return (
+    <div className={className}>
+      <dt className="text-xs text-slate-400">{label}</dt>
+      <dd className="mt-0.5 text-slate-700">{value?.trim() ? value : "—"}</dd>
+    </div>
   );
 }
 
