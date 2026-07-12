@@ -671,8 +671,8 @@ export function CuttingProvider({
         thickness: selectedPlate.thickness || 1,
         quantity: 1,
         available_quantity: 1,
-        ord_id: ordId,
-        odd_id: oddId,
+        po_id: ordId,
+        podetail_id: oddId,
         remark: `เศษจากแผ่นที่ ${scrap.sheetNo}${plateLoadedFromPo ? ` (${plateLoadedFromPo})` : ""}`,
       });
     }
@@ -821,8 +821,8 @@ export function CuttingProvider({
         length: Math.max(1, Math.floor(scrap.length)),
         quantity: 1,
         available_quantity: 1,
-        ord_id: ordId,
-        odd_id: oddId,
+        po_id: ordId,
+        podetail_id: oddId,
         remark: `เศษจากแท่งที่ ${scrap.barNo}${roundLoadedFromPo ? ` (${roundLoadedFromPo})` : ""}`,
       });
     }

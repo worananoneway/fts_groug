@@ -116,14 +116,14 @@ tables:
         not_null: true
         default: 'generate_unique_id()'
         primary_key: true
-      - name: sr_ord_id
+      - name: sr_po_id
         type: 'varchar(20)'
         nullable: false
         not_null: true
         default: null
         foreign_key: true
         references: purchase_orders.po_id
-      - name: sr_odd_id
+      - name: sr_podetail_id
         type: 'varchar(20)'
         nullable: false
         not_null: true
@@ -422,14 +422,14 @@ tables:
         nullable: false
         not_null: true
         default: '''AVAILABLE''::public."stock_status_enum"'
-      - name: wsrb_ord_id
+      - name: wsrb_po_id
         type: 'varchar(20)'
         nullable: true
         not_null: false
         default: null
         foreign_key: true
         references: purchase_orders.po_id
-      - name: wsrb_odd_id
+      - name: wsrb_podetail_id
         type: 'varchar(20)'
         nullable: true
         not_null: false
@@ -527,14 +527,14 @@ tables:
         nullable: false
         not_null: true
         default: '''AVAILABLE''::public."stock_status_enum"'
-      - name: wmsp_ord_id
+      - name: wmsp_po_id
         type: 'varchar(20)'
         nullable: true
         not_null: false
         default: null
         foreign_key: true
         references: purchase_orders.po_id
-      - name: wmsp_odd_id
+      - name: wmsp_podetail_id
         type: 'varchar(20)'
         nullable: true
         not_null: false
@@ -573,14 +573,14 @@ tables:
         default: null
         foreign_key: true
         references: steel_round_bars.srb_id
-      - name: tlsrb_ord_id
+      - name: tlsrb_po_id
         type: 'varchar(20)'
         nullable: true
         not_null: false
         default: null
         foreign_key: true
         references: purchase_orders.po_id
-      - name: tlsrb_odd_id
+      - name: tlsrb_podetail_id
         type: 'varchar(20)'
         nullable: true
         not_null: false
@@ -669,14 +669,14 @@ tables:
         default: null
         foreign_key: true
         references: wastrel_steel_round_bars.wsrb_id
-      - name: tlwsrb_ord_id
+      - name: tlwsrb_po_id
         type: 'varchar(20)'
         nullable: true
         not_null: false
         default: null
         foreign_key: true
         references: purchase_orders.po_id
-      - name: tlwsrb_odd_id
+      - name: tlwsrb_podetail_id
         type: 'varchar(20)'
         nullable: true
         not_null: false
@@ -765,14 +765,14 @@ tables:
         default: null
         foreign_key: true
         references: ms_plates.msp_id
-      - name: tlmsp_ord_id
+      - name: tlmsp_po_id
         type: 'varchar(20)'
         nullable: true
         not_null: false
         default: null
         foreign_key: true
         references: purchase_orders.po_id
-      - name: tlmsp_odd_id
+      - name: tlmsp_podetail_id
         type: 'varchar(20)'
         nullable: true
         not_null: false
@@ -871,14 +871,14 @@ tables:
         default: null
         foreign_key: true
         references: wastrel_ms_plates.wmsp_id
-      - name: tlwmsp_ord_id
+      - name: tlwmsp_po_id
         type: 'varchar(20)'
         nullable: true
         not_null: false
         default: null
         foreign_key: true
         references: purchase_orders.po_id
-      - name: tlwmsp_odd_id
+      - name: tlwmsp_podetail_id
         type: 'varchar(20)'
         nullable: true
         not_null: false
@@ -1347,12 +1347,12 @@ foreign_keys:
   - from: purchase_orders_details.podetail_mm_id
     to: material_masters.mm_id
     constraint: purchase_orders_details_podetail_mm_id_fkey
-  - from: stock_reservations.sr_ord_id
+  - from: stock_reservations.sr_po_id
     to: purchase_orders.po_id
-    constraint: stock_reservations_sr_ord_id_fkey
-  - from: stock_reservations.sr_odd_id
+    constraint: stock_reservations_sr_po_id_fkey
+  - from: stock_reservations.sr_podetail_id
     to: purchase_orders_details.podetail_id
-    constraint: stock_reservations_sr_odd_id_fkey
+    constraint: stock_reservations_sr_podetail_id_fkey
   - from: steel_round_bars.srb_mm_id
     to: material_masters.mm_id
     constraint: steel_round_bars_srb_mm_id_fkey
@@ -1374,12 +1374,12 @@ foreign_keys:
   - from: wastrel_steel_round_bars.wsrb_loc_id
     to: locations.loc_id
     constraint: wastrel_steel_round_bars_wsrb_loc_id_fkey
-  - from: wastrel_steel_round_bars.wsrb_ord_id
+  - from: wastrel_steel_round_bars.wsrb_po_id
     to: purchase_orders.po_id
-    constraint: wastrel_steel_round_bars_wsrb_ord_id_fkey
-  - from: wastrel_steel_round_bars.wsrb_odd_id
+    constraint: wastrel_steel_round_bars_wsrb_po_id_fkey
+  - from: wastrel_steel_round_bars.wsrb_podetail_id
     to: purchase_orders_details.podetail_id
-    constraint: wastrel_steel_round_bars_wsrb_odd_id_fkey
+    constraint: wastrel_steel_round_bars_wsrb_podetail_id_fkey
   - from: wastrel_ms_plates.wmsp_mm_id
     to: material_masters.mm_id
     constraint: wastrel_ms_plates_wmsp_mm_id_fkey
@@ -1389,57 +1389,57 @@ foreign_keys:
   - from: wastrel_ms_plates.wmsp_loc_id
     to: locations.loc_id
     constraint: wastrel_ms_plates_wmsp_loc_id_fkey
-  - from: wastrel_ms_plates.wmsp_ord_id
+  - from: wastrel_ms_plates.wmsp_po_id
     to: purchase_orders.po_id
-    constraint: wastrel_ms_plates_wmsp_ord_id_fkey
-  - from: wastrel_ms_plates.wmsp_odd_id
+    constraint: wastrel_ms_plates_wmsp_po_id_fkey
+  - from: wastrel_ms_plates.wmsp_podetail_id
     to: purchase_orders_details.podetail_id
-    constraint: wastrel_ms_plates_wmsp_odd_id_fkey
+    constraint: wastrel_ms_plates_wmsp_podetail_id_fkey
   - from: timeline_srbs.tlsrb_srb_id
     to: steel_round_bars.srb_id
     constraint: timeline_srbs_tlsrb_srb_id_fkey
-  - from: timeline_srbs.tlsrb_ord_id
+  - from: timeline_srbs.tlsrb_po_id
     to: purchase_orders.po_id
-    constraint: timeline_srbs_tlsrb_ord_id_fkey
-  - from: timeline_srbs.tlsrb_odd_id
+    constraint: timeline_srbs_tlsrb_po_id_fkey
+  - from: timeline_srbs.tlsrb_podetail_id
     to: purchase_orders_details.podetail_id
-    constraint: timeline_srbs_tlsrb_odd_id_fkey
+    constraint: timeline_srbs_tlsrb_podetail_id_fkey
   - from: timeline_srbs.tlsrb_sr_id
     to: stock_reservations.sr_id
     constraint: timeline_srbs_tlsrb_sr_id_fkey
   - from: timeline_wsrbs.tlwsrb_wsrb_id
     to: wastrel_steel_round_bars.wsrb_id
     constraint: timeline_wsrbs_tlwsrb_wsrb_id_fkey
-  - from: timeline_wsrbs.tlwsrb_ord_id
+  - from: timeline_wsrbs.tlwsrb_po_id
     to: purchase_orders.po_id
-    constraint: timeline_wsrbs_tlwsrb_ord_id_fkey
-  - from: timeline_wsrbs.tlwsrb_odd_id
+    constraint: timeline_wsrbs_tlwsrb_po_id_fkey
+  - from: timeline_wsrbs.tlwsrb_podetail_id
     to: purchase_orders_details.podetail_id
-    constraint: timeline_wsrbs_tlwsrb_odd_id_fkey
+    constraint: timeline_wsrbs_tlwsrb_podetail_id_fkey
   - from: timeline_wsrbs.tlwsrb_sr_id
     to: stock_reservations.sr_id
     constraint: timeline_wsrbs_tlwsrb_sr_id_fkey
   - from: timeline_msps.tlmsp_msp_id
     to: ms_plates.msp_id
     constraint: timeline_msps_tlmsp_msp_id_fkey
-  - from: timeline_msps.tlmsp_ord_id
+  - from: timeline_msps.tlmsp_po_id
     to: purchase_orders.po_id
-    constraint: timeline_msps_tlmsp_ord_id_fkey
-  - from: timeline_msps.tlmsp_odd_id
+    constraint: timeline_msps_tlmsp_po_id_fkey
+  - from: timeline_msps.tlmsp_podetail_id
     to: purchase_orders_details.podetail_id
-    constraint: timeline_msps_tlmsp_odd_id_fkey
+    constraint: timeline_msps_tlmsp_podetail_id_fkey
   - from: timeline_msps.tlmsp_sr_id
     to: stock_reservations.sr_id
     constraint: timeline_msps_tlmsp_sr_id_fkey
   - from: timeline_wmsps.tlwmsp_wmsp_id
     to: wastrel_ms_plates.wmsp_id
     constraint: timeline_wmsps_tlwmsp_wmsp_id_fkey
-  - from: timeline_wmsps.tlwmsp_ord_id
+  - from: timeline_wmsps.tlwmsp_po_id
     to: purchase_orders.po_id
-    constraint: timeline_wmsps_tlwmsp_ord_id_fkey
-  - from: timeline_wmsps.tlwmsp_odd_id
+    constraint: timeline_wmsps_tlwmsp_po_id_fkey
+  - from: timeline_wmsps.tlwmsp_podetail_id
     to: purchase_orders_details.podetail_id
-    constraint: timeline_wmsps_tlwmsp_odd_id_fkey
+    constraint: timeline_wmsps_tlwmsp_podetail_id_fkey
   - from: timeline_wmsps.tlwmsp_sr_id
     to: stock_reservations.sr_id
     constraint: timeline_wmsps_tlwmsp_sr_id_fkey
