@@ -1,0 +1,247 @@
+"use client";
+
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { useRouter } from "next/navigation";
+
+import { MODULE_SUBTITLES } from "@/constants/division";
+import {
+  createOrderDetail,
+  loadOrders,
+  updateOrderDetail,
+  updateOrderDetailStatus,
+} from "@/services/division/purchase-orders";
+import type {
+  DataStatus,
+  MaterialMaster,
+  Notice,
+  OrderDetail,
+  OrderDetailStatus,
+  PurchaseOrder,
+} from "@/types/division";
+
+export interface PurchaseOrdersContextValue {
+  dataStatus: DataStatus;
+  headerSubtitle: string;
+
+  purchaseOrders: PurchaseOrder[];
+  orderDetails: Record<string, OrderDetail[]>;
+  poSearch: string;
+  setPoSearch: (value: string) => void;
+  selectedPoId: string | null;
+  selectPo: (id: string) => void;
+  filteredPurchaseOrders: PurchaseOrder[];
+  selectedPo: PurchaseOrder | null;
+  materialMasters: MaterialMaster[];
+  selectedOrderRows: OrderDetail[];
+  selectedRoundRows: OrderDetail[];
+  selectedPlateRows: OrderDetail[];
+
+  addOrderDetail: (detail: OrderDetail) => Promise<Notice>;
+  cancelOrderDetail: (orderDetailId: string) => Promise<Notice>;
+  updateOrderDetail: (detail: OrderDetail) => Promise<Notice>;
+
+  pushOrderDetailToCutting: (orderDetailId: string) => void;
+  pushRoundFromPo: (poId: string | null) => void;
+  pushPlateFromPo: (poId: string | null) => void;
+}
+
+const PurchaseOrdersContext = createContext<PurchaseOrdersContextValue | null>(null);
+
+export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const [dataStatus, setDataStatus] = useState<DataStatus>({
+    loading: true,
+    error: null,
+    source: "none",
+  });
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [orderDetails, setOrderDetails] = useState<Record<string, OrderDetail[]>>({});
+  const [materialMasters, setMaterialMasters] = useState<MaterialMaster[]>([]);
+  const [poSearch, setPoSearch] = useState("");
+  const [selectedPoId, setSelectedPoId] = useState<string | null>(null);
+
+  function applyOrders(data: Awaited<ReturnType<typeof loadOrders>>) {
+    setPurchaseOrders(data.purchaseOrders ?? []);
+    setOrderDetails(data.orderDetails ?? {});
+    setMaterialMasters(data.materialMasters ?? []);
+    setDataStatus({ loading: false, error: null, source: "api" });
+  }
+
+  useEffect(() => {
+    let active = true;
+    loadOrders()
+      .then((data) => {
+        if (!active) return;
+        applyOrders(data);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setDataStatus({
+          loading: false,
+          error: error instanceof Error ? error.message : "โหลดข้อมูลไม่สำเร็จ",
+          source: "none",
+        });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function refreshOrders() {
+    const data = await loadOrders();
+    applyOrders(data);
+  }
+
+  const filteredPurchaseOrders = useMemo(() => {
+    const query = poSearch.trim().toLowerCase();
+    if (!query) return purchaseOrders;
+    return purchaseOrders.filter(
+      (po) => po.no.toLowerCase().includes(query) || po.customer.toLowerCase().includes(query),
+    );
+  }, [poSearch, purchaseOrders]);
+
+  const selectedPo = selectedPoId ? purchaseOrders.find((po) => po.id === selectedPoId) ?? null : null;
+  const selectedOrderRows = selectedPoId ? orderDetails[selectedPoId] ?? [] : [];
+  const selectedRoundRows = selectedOrderRows.filter((row) => row.shape === "ROUND" && isCuttableOrderDetail(row));
+  const selectedPlateRows = selectedOrderRows.filter((row) => row.shape === "PLATE" && isCuttableOrderDetail(row));
+
+  function selectPo(id: string) {
+    setSelectedPoId((current) => (current === id ? null : id));
+  }
+
+  async function setSelectedOrderDetailsStatus(detailIds: string[], status: OrderDetailStatus) {
+    if (!selectedPoId || detailIds.length === 0) return;
+
+    const currentRows = orderDetails[selectedPoId] ?? [];
+    const remoteRows = currentRows.filter((row) => detailIds.includes(row.id) && !isLocalOrderDetailId(row.id));
+    await Promise.all(remoteRows.map((row) => updateOrderDetailStatus(selectedPoId, row, status)));
+
+    const nextRows = currentRows.map((row) =>
+      detailIds.includes(row.id) ? { ...row, status } : row,
+    );
+    setOrderDetails((current) => ({ ...current, [selectedPoId]: nextRows }));
+
+    if (remoteRows.length > 0) {
+      await refreshOrders();
+    }
+  }
+
+  async function cancelOrderDetail(orderDetailId: string): Promise<Notice> {
+    try {
+      await setSelectedOrderDetailsStatus([orderDetailId], "CANCELLED");
+      return { ok: true, text: "ลบรายการสำเร็จ" };
+    } catch {
+      return { ok: false, text: "ลบรายการไม่สำเร็จ" };
+    }
+  }
+
+  async function addOrderDetail(detail: OrderDetail): Promise<Notice> {
+    if (!selectedPoId) return { ok: false, text: "ไม่พบใบสั่งซื้อที่เลือก" };
+    if (!detail.materialId) return { ok: false, text: "กรุณาเลือกวัสดุจากรายการ" };
+    try {
+      await createOrderDetail(selectedPoId, detail);
+      await refreshOrders();
+      return { ok: true, text: "เพิ่มรายการสำเร็จ" };
+    } catch {
+      return { ok: false, text: "เพิ่มรายการไม่สำเร็จ" };
+    }
+  }
+
+  async function updateOrderDetailRow(detail: OrderDetail): Promise<Notice> {
+    if (!selectedPoId) return { ok: false, text: "ไม่พบใบสั่งซื้อที่เลือก" };
+    if (!detail.materialId) return { ok: false, text: "กรุณาเลือกวัสดุจากรายการ" };
+    try {
+      if (isLocalOrderDetailId(detail.id)) {
+        await createOrderDetail(selectedPoId, detail);
+      } else {
+        await updateOrderDetail(selectedPoId, detail);
+      }
+      await refreshOrders();
+      return { ok: true, text: "แก้ไขรายละเอียดสำเร็จ" };
+    } catch {
+      return { ok: false, text: "แก้ไขรายละเอียดไม่สำเร็จ" };
+    }
+  }
+
+  // ส่งงานไปหน้า /cutting ผ่าน query params — หน้า cutting โหลดข้อมูลของตัวเองจาก params
+  function pushPlateFromPo(poId: string | null) {
+    if (!poId) return;
+    const params = new URLSearchParams({ type: "plate", po: poId });
+    router.push(`/cutting?${params.toString()}`);
+  }
+
+  function pushRoundFromPo(poId: string | null) {
+    if (!poId) return;
+    const params = new URLSearchParams({ type: "roundbar", po: poId });
+    router.push(`/cutting?${params.toString()}`);
+  }
+
+  function pushOrderDetailToCutting(orderDetailId: string) {
+    if (!selectedPoId) return;
+    const row = (orderDetails[selectedPoId] ?? []).find((item) => item.id === orderDetailId);
+    if (!row) return;
+
+    const params = new URLSearchParams({
+      type: row.shape === "ROUND" ? "roundbar" : "plate",
+      po: selectedPoId,
+      detail: row.id,
+    });
+    router.push(`/cutting?${params.toString()}`);
+  }
+
+  const value: PurchaseOrdersContextValue = {
+    dataStatus,
+    headerSubtitle: MODULE_SUBTITLES.po,
+
+    purchaseOrders,
+    orderDetails,
+    poSearch,
+    setPoSearch,
+    selectedPoId,
+    selectPo,
+    filteredPurchaseOrders,
+    selectedPo,
+    materialMasters,
+    selectedOrderRows,
+    selectedRoundRows,
+    selectedPlateRows,
+
+    addOrderDetail,
+    cancelOrderDetail,
+    updateOrderDetail: updateOrderDetailRow,
+
+    pushOrderDetailToCutting,
+    pushRoundFromPo,
+    pushPlateFromPo,
+  };
+
+  return (
+    <PurchaseOrdersContext.Provider value={value}>
+      {children}
+    </PurchaseOrdersContext.Provider>
+  );
+}
+
+export function usePurchaseOrdersContext() {
+  const context = useContext(PurchaseOrdersContext);
+  if (!context) {
+    throw new Error("usePurchaseOrders must be used inside PurchaseOrdersProvider");
+  }
+  return context;
+}
+
+function isLocalOrderDetailId(id: string): boolean {
+  return id.startsWith("LOCAL-");
+}
+
+function isCuttableOrderDetail(row: OrderDetail): boolean {
+  return row.status === "PENDING" || row.status === "IN_PROCESS";
+}

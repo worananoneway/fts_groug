@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { FactoryHeader } from "./factory-header";
-import type { DataStatus } from "../calculation-division/types";
+import type { DataStatus } from "@/types/division";
 
 export function FactoryAppShell({
   children,

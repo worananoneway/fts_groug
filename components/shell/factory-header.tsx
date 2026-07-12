@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Info, Scissors } from "lucide-react";
 
 import { Badge } from "../ui/badge";
-import type { DataStatus } from "../calculation-division/types";
+import type { DataStatus } from "@/types/division";
 
 export function FactoryHeader({
   dataStatus,
@@ -45,7 +45,7 @@ export function FactoryHeader({
       </div>
 
       <nav className="mt-4 w-full px-4 sm:px-6 lg:px-10">{moduleTabs}</nav>
-      {subTabs ? <nav className="w-full px-4 pb-1 sm:px-6 lg:px-10">{subTabs}</nav> : null}
+      {subTabs ? <nav className="mt-2 w-full px-4 pb-3 sm:px-6 lg:px-10">{subTabs}</nav> : null}
     </header>
   );
 }
