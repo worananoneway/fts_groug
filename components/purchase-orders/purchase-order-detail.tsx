@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ClipboardList, Plus } from "lucide-react";
 
+import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { EmptyState } from "../ui/empty-state";
@@ -91,7 +92,7 @@ export function PurchaseOrderDetail() {
   return (
     <section className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm lg:sticky lg:top-42 lg:h-[calc(100vh-12rem)] lg:overflow-auto">
       <TimedToast notice={notice} onClose={() => setNotice(null)} />
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-100 bg-gradient-to-r from-blue-50/80 to-transparent p-4">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-100 bg-blue-50 p-4">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600/10 text-blue-700">
             <ClipboardList className="h-5 w-5" />
@@ -162,7 +163,7 @@ export function PurchaseOrderDetail() {
         }
       >
         {editDetail ? (
-          <OrderDetailFields detail={editDetail} materials={materialMasters} onChange={setEditDetail} />
+          <OrderDetailFields detail={editDetail} materials={materialMasters} onChange={setEditDetail} lockShape />
         ) : null}
       </Modal>
 
@@ -196,49 +197,55 @@ function OrderDetailFields({
   detail,
   materials,
   onChange,
+  lockShape = false,
 }: {
   detail: OrderDetail;
   materials: MaterialMaster[];
   onChange: (detail: OrderDetail) => void;
+  lockShape?: boolean;
 }) {
   const updateQty = (qty: number) => onChange({ ...detail, qty, remaining: Math.max(0, detail.remaining || qty) });
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        <Button
-          onClick={() =>
-            onChange({
-              ...detail,
-              diameter: undefined,
-              material: "",
-              materialId: undefined,
-              shape: "PLATE",
-              thickness: positiveInt(detail.thickness),
-              width: positiveInt(detail.width),
-            })
-          }
-          variant={detail.shape === "PLATE" ? "primary" : "secondary"}
-        >
-          แผ่น
-        </Button>
-        <Button
-          onClick={() =>
-            onChange({
-              ...detail,
-              diameter: positiveInt(detail.diameter),
-              material: "",
-              materialId: undefined,
-              shape: "ROUND",
-              thickness: undefined,
-              width: undefined,
-            })
-          }
-          variant={detail.shape === "ROUND" ? "primary" : "secondary"}
-        >
-          เพลา
-        </Button>
-      </div>
+      {lockShape ? (
+        <Badge tone="slate">{detail.shape === "ROUND" ? "เพลา" : "แผ่น"}</Badge>
+      ) : (
+        <div className="flex gap-2">
+          <Button
+            onClick={() =>
+              onChange({
+                ...detail,
+                diameter: undefined,
+                material: "",
+                materialId: undefined,
+                shape: "PLATE",
+                thickness: positiveInt(detail.thickness),
+                width: positiveInt(detail.width),
+              })
+            }
+            variant={detail.shape === "PLATE" ? "primary" : "secondary"}
+          >
+            แผ่น
+          </Button>
+          <Button
+            onClick={() =>
+              onChange({
+                ...detail,
+                diameter: positiveInt(detail.diameter),
+                material: "",
+                materialId: undefined,
+                shape: "ROUND",
+                thickness: undefined,
+                width: undefined,
+              })
+            }
+            variant={detail.shape === "ROUND" ? "primary" : "secondary"}
+          >
+            เพลา
+          </Button>
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         <MaterialAutocomplete
           materialId={detail.materialId}
