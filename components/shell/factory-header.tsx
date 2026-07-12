@@ -1,16 +1,21 @@
 import type { ReactNode } from "react";
-import { Info, Scissors } from "lucide-react";
+import Link from "next/link";
+import { Database, Scissors } from "lucide-react";
 
 import { Badge } from "../ui/badge";
+import { cn } from "../ui/button";
+import { MASTER_DATA_ENTRY_HREF } from "@/constants/division";
 import type { DataStatus } from "@/types/division";
 
 export function FactoryHeader({
   dataStatus,
+  masterDataActive = false,
   moduleTabs,
   subTabs,
   subtitle,
 }: {
   dataStatus: DataStatus;
+  masterDataActive?: boolean;
   moduleTabs: ReactNode;
   subTabs?: ReactNode;
   subtitle: string;
@@ -35,12 +40,24 @@ export function FactoryHeader({
           </div>
         </div>
 
-        <div className="hidden flex-col items-end gap-2 sm:flex">
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-sm text-blue-100 backdrop-blur">
-            <Info className="h-4 w-4" />
-            Factory Cutting Division
+        <div className="flex items-center gap-3">
+          <Link
+            href={MASTER_DATA_ENTRY_HREF}
+            aria-current={masterDataActive ? "page" : undefined}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition",
+              masterDataActive
+                ? "bg-gradient-to-br from-amber-300 to-amber-500 text-[#1a2f7a] shadow-amber-900/30 ring-2 ring-white/20"
+                : "border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20",
+            )}
+          >
+            <Database className="h-4 w-4" strokeWidth={2.5} />
+            ข้อมูลหลัก
+          </Link>
+
+          <div className="hidden flex-col items-end gap-2 sm:flex">
+            <Badge className="shadow-sm" tone={statusTone}>{statusLabel}</Badge>
           </div>
-          <Badge className="shadow-sm" tone={statusTone}>{statusLabel}</Badge>
         </div>
       </div>
 
