@@ -1,4 +1,11 @@
-import type { MaterialMaster, OrderDetail, OrderDetailStatus, PurchaseOrder, PurchaseOrderStatus } from "@/types/division";
+import type {
+  MaterialMaster,
+  OrderDetail,
+  OrderDetailStatus,
+  PurchaseOrder,
+  PurchaseOrderStatus,
+  PurchaseOrderUpdateFields,
+} from "@/types/division";
 import { API_VERSION, isRecord, readRows, requestJson, stringValue } from "./http";
 import { mapMaterialMasters, mapOrderDetails, mapPurchaseOrder, orderDetailApiStatus } from "./mappers";
 
@@ -100,4 +107,55 @@ function orderDetailPayload(orderId: string, detail: OrderDetail) {
     discount: raw.discount ?? null,
     unit_price: raw.unit_price ?? null,
   };
+}
+
+// endpoint นี้เป็น PUT แทนที่ทั้งแถว (ไม่ใช่ PATCH) — ต้อง round-trip ทุกฟิลด์จาก raw เดิม
+// ไม่งั้นฟิลด์ที่หน้านี้ไม่ได้แก้ (ลูกค้า, โครงการ, ที่อยู่จัดส่ง, ผู้อนุมัติ ฯลฯ) จะถูกเซ็ตเป็น NULL ทิ้ง
+export async function updatePurchaseOrder(
+  poId: string,
+  fields: PurchaseOrderUpdateFields,
+  raw: Record<string, unknown>,
+): Promise<void> {
+  const payload = {
+    cus_id: nestedId(raw, "customer", "id") ?? null,
+    due_date: raw.due_date ?? null,
+    remark: raw.remark ?? null,
+    issue_date: raw.issue_date ?? null,
+    ship_via: fields.shipVia,
+    qt_on: fields.qtOn,
+    shipping_terms: fields.shippingTerms,
+    tax_rate: fields.taxRate,
+    recipient_id: nestedId(raw, "recipient", "id") ?? null,
+    comment: fields.comment,
+    project_id: nestedId(raw, "project", "id") ?? null,
+    condition_paid: raw.condition_paid ?? null,
+    delivery_province_id: nestedId(raw, "delivery_address", "province", "id") ?? null,
+    delivery_district_id: nestedId(raw, "delivery_address", "district", "id") ?? null,
+    delivery_subdistrict_id: nestedId(raw, "delivery_address", "subdistrict", "id") ?? null,
+    approved_by_emp_id: nestedId(raw, "approved_by", "id") ?? null,
+    purchasing_fname: raw.purchasing_fname ?? null,
+    purchasing_lname: raw.purchasing_lname ?? null,
+  };
+  await requestJson(`/api/${API_VERSION}/purchase-orders/${poId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePurchaseOrder(poId: string): Promise<void> {
+  await requestJson(`/api/${API_VERSION}/purchase-orders/${poId}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "Deleted" }),
+  });
+}
+
+function nestedId(row: Record<string, unknown>, ...path: string[]): string | undefined {
+  let current: unknown = row;
+  for (const key of path) {
+    if (!isRecord(current)) return undefined;
+    current = current[key];
+  }
+  return current === null || current === undefined || typeof current === "object" ? undefined : String(current);
 }

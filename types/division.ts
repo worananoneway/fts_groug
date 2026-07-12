@@ -27,6 +27,21 @@ export interface PurchaseOrder {
   date: string;
   due: string;
   status: PurchaseOrderStatus;
+  shipVia?: string;
+  qtOn?: string;
+  shippingTerms?: string;
+  taxRate?: number;
+  comment?: string;
+  /** แถวดิบจาก GET เก็บไว้ใช้ round-trip ฟิลด์ที่ไม่ได้แก้ในหน้านี้ตอนส่ง PUT (endpoint แทนที่ทั้งแถว) */
+  raw?: Record<string, unknown>;
+}
+
+export interface PurchaseOrderUpdateFields {
+  shipVia: string;
+  qtOn: string;
+  shippingTerms: string;
+  taxRate: number;
+  comment: string;
 }
 
 export interface MaterialMaster {

@@ -25,6 +25,12 @@ export function mapPurchaseOrder(raw: Record<string, unknown>): PurchaseOrder | 
     date: formatDateString(raw.date ?? raw.issue_date ?? raw.po_issue_date),
     due: formatDateString(raw.due ?? raw.due_date ?? raw.po_due_date),
     status: mapPoStatus(raw.status ?? raw.po_status),
+    shipVia: stringValue(raw.ship_via ?? raw.po_ship_via),
+    qtOn: stringValue(raw.qt_on ?? raw.po_qt_on),
+    shippingTerms: stringValue(raw.shipping_terms ?? raw.po_shipping_terms),
+    taxRate: numberValue(raw.tax_rate ?? raw.po_tax_rate),
+    comment: stringValue(raw.comment ?? raw.po_comment),
+    raw,
   };
 }
 
