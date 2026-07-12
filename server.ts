@@ -7,7 +7,12 @@ dotenv.config();
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
-const server = fastify({ logger: true, ignoreTrailingSlash: true });
+const server = fastify({
+    logger: true,
+    routerOptions: {
+        ignoreTrailingSlash: true
+    }
+});
 
 app.prepare().then(async () => {
     //register plugins

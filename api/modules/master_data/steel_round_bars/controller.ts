@@ -87,6 +87,11 @@ async function get(request: any, reply: any) {
                 message: ErrorMessage.STATUS_INVALID
             });
         }
+        if(request.query.diameter){
+            conditions.params.push(request.query.diameter);
+            conditions.sql += ` AND srb_diameter = $${conditions.params.length} `;
+        }
+        
         if (invalid_fields.length > 0) {
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
