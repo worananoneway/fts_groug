@@ -17,7 +17,7 @@ export const reply_options = {
                 code: 'wsrb_srb_code'
             }
         },
-        code: 'wsrb_code',
+        display_id: 'wsrb_display_id',
         diameter: 'wsrb_diameter',
         length: 'wsrb_length',
         quantity: 'wsrb_quantity',

@@ -131,7 +131,7 @@ async function calculation_division(
         }
 
         const payload_record = payload as Record<string, unknown>;
-        const order_id = get_string(payload_record, ['order_id', 'ord_id']);
+        const order_id = get_string(payload_record, ['order_id', 'po_id']);
         const unit = get_string(payload_record, ['unit']) ?? 'input_unit';
         const srb_id = get_string(payload_record, ['srb_id']);
         const msp_id = get_string(payload_record, ['msp_id']);
@@ -512,12 +512,12 @@ const normalize_payload_demands = (payload: CalculationPayload, order_id: string
                 return null;
             }
 
-            const demand_id = get_string(row, ['order_detail_id', 'odd_id']) ?? `manual-${shape_type}-${entry.index + 1}`;
+            const demand_id = get_string(row, ['order_detail_id', 'podetail_id']) ?? `manual-${shape_type}-${entry.index + 1}`;
             return {
                 id: demand_id,
                 shape_type,
                 order_id,
-                order_detail_id: get_string(row, ['order_detail_id', 'odd_id']),
+                order_detail_id: get_string(row, ['order_detail_id', 'podetail_id']),
                 material_master_id: get_string(row, ['material_master_id', 'mm_id']),
                 length,
                 width: shape_type === 'Ms_plate' ? width : null,
@@ -764,8 +764,8 @@ const create_round_wastrel = (
             wsrb_length: round3(wastrel_length),
             wsrb_quantity: 1,
             wsrb_available_quantity: 1,
-            wsrb_ord_id: order_id,
-            wsrb_odd_id: order_detail_id,
+            wsrb_po_id: order_id,
+            wsrb_podetail_id: order_detail_id,
             wsrb_remark: remark,
         },
     };
@@ -1131,8 +1131,8 @@ const create_plate_wastrel = (
             wmsp_thickness: source.thickness,
             wmsp_quantity: 1,
             wmsp_available_quantity: 1,
-            wmsp_ord_id: order_id,
-            wmsp_odd_id: order_detail_id,
+            wmsp_po_id: order_id,
+            wmsp_podetail_id: order_detail_id,
             wmsp_remark: remark,
         },
     };

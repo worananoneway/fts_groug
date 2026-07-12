@@ -1,0 +1,76 @@
+[
+  {
+    "method": "GET",
+    "name": "Get Wastrel MS Plates",
+    "url": "/api/v1/wastrel-ms-plates",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {
+      "mm_id": null,
+      "msp_id": null,
+      "po_id": null,
+      "podetail_id": null,
+      "display_id": null,
+      "status": "Active"
+    },
+    "body": null
+  },
+  {
+    "method": "GET",
+    "name": "Get Wastrel MS Plate By ID",
+    "url": "/api/v1/wastrel-ms-plates/<wmsp_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "wmsp_id": null },
+    "body": null
+  },
+  {
+    "method": "POST",
+    "name": "Create Wastrel MS Plate",
+    "url": "/api/v1/wastrel-ms-plates",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {},
+    "body": {
+      "mm_id": null,
+      "msp_id": null,
+      "length": 1200,
+      "width": 600,
+      "thickness": 12,
+      "quantity": 2,
+      "available_quantity": 2,
+      "po_id": null,
+      "podetail_id": null,
+      "remark": "Wastrel MS plate example"
+    }
+  },
+  {
+    "method": "PUT",
+    "name": "Update Wastrel MS Plate",
+    "url": "/api/v1/wastrel-ms-plates/<wmsp_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "wmsp_id": null },
+    "body": {
+      "mm_id": null,
+      "msp_id": null,
+      "length": 1200,
+      "width": 600,
+      "thickness": 12,
+      "quantity": 2,
+      "available_quantity": 1,
+      "po_id": null,
+      "podetail_id": null,
+      "remark": "Updated wastrel MS plate"
+    }
+  },
+  {
+    "method": "PATCH",
+    "name": "Update Wastrel MS Plate Status",
+    "url": "/api/v1/wastrel-ms-plates/status/<wmsp_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "wmsp_id": null },
+    "body": { "status": "Active" }
+  }
+]

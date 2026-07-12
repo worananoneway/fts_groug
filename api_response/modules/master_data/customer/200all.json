@@ -1,0 +1,300 @@
+{
+    "status": "OK",
+    "statuscode": 200,
+    "details": [
+        {
+            "id": "6bdc4ef6436bb7b1d279",
+            "display_id": "CUS260711001",
+            "name_th": "บริษัท ตัวอย่าง จํากัด",
+            "name_en": "Example Company Limited",
+            "tax_id": null,
+            "tax_type": "company_tax_id",
+            "contact": {
+                "name": "สมชาย ใจดี",
+                "phone": "0812345678",
+                "fax": "021234567",
+                "email": "contact@example.com"
+            },
+            "address": {
+                "detail": "123 ถนนสุขุมวิท",
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 1,
+                    "name": "Bangkok"
+                },
+                "postcode": "10110"
+            },
+            "branch_type": "head_office",
+            "branch_number": "00000",
+            "pp20_file": null,
+            "certificate_file": null,
+            "created_at": "2026-07-11T17:15:59.433Z",
+            "updated_at": "2026-07-11T17:15:59.433Z",
+            "employee": {
+                "id": null,
+                "prefix": null,
+                "name": null
+            },
+            "status": "Active"
+        },
+        {
+            "id": "CUS-DEMO-006",
+            "display_id": "CUS260706006",
+            "name_th": "บริษัท เค.ที. แมชชีนเนอรี่ จำกัด",
+            "name_en": "K.T. Machinery Co., Ltd.",
+            "tax_id": "0105539001236",
+            "tax_type": "company_tax_id",
+            "contact": {
+                "name": "คุณกิตติ ทองแท้",
+                "phone": "02-789-0123",
+                "fax": null,
+                "email": "kitti@ktmachinery.com"
+            },
+            "address": {
+                "detail": "18/2 ถนนกิ่งแก้ว บางพลี",
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 1,
+                    "name": "Bangkok"
+                },
+                "postcode": "10540"
+            },
+            "branch_type": "head_office",
+            "branch_number": null,
+            "pp20_file": null,
+            "certificate_file": null,
+            "created_at": "2026-07-06T18:58:56.543Z",
+            "updated_at": "2026-07-06T18:58:56.543Z",
+            "employee": {
+                "id": null,
+                "prefix": null,
+                "name": null
+            },
+            "status": "Active"
+        },
+        {
+            "id": "CUS-DEMO-005",
+            "display_id": "CUS260706005",
+            "name_th": "หจก. รุ่งเจริญ โลหะกิจ",
+            "name_en": "Rungcharoen Metal Ltd., Part.",
+            "tax_id": "0105539001235",
+            "tax_type": "company_tax_id",
+            "contact": {
+                "name": "คุณบุญมี ศรีสุข",
+                "phone": "02-678-9012",
+                "fax": null,
+                "email": "boonmee@rc-metal.co.th"
+            },
+            "address": {
+                "detail": "42/7 ถนนเพชรเกษม 81",
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 1,
+                    "name": "Bangkok"
+                },
+                "postcode": "10160"
+            },
+            "branch_type": "head_office",
+            "branch_number": null,
+            "pp20_file": null,
+            "certificate_file": null,
+            "created_at": "2026-07-06T18:58:56.543Z",
+            "updated_at": "2026-07-06T18:58:56.543Z",
+            "employee": {
+                "id": null,
+                "prefix": null,
+                "name": null
+            },
+            "status": "Active"
+        },
+        {
+            "id": "CUS-DEMO-004",
+            "display_id": "CUS260706004",
+            "name_th": "บริษัท สยาม พรีซิชั่น พาร์ท จำกัด",
+            "name_en": "Siam Precision Parts Co., Ltd.",
+            "tax_id": "0105539001234",
+            "tax_type": "company_tax_id",
+            "contact": {
+                "name": "คุณอรทัย แสงทอง",
+                "phone": "02-567-8901",
+                "fax": null,
+                "email": "orathai@siamprecision.co.th"
+            },
+            "address": {
+                "detail": "999 หมู่ 4 ถนนสุขสวัสดิ์",
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 1,
+                    "name": "Bangkok"
+                },
+                "postcode": "10290"
+            },
+            "branch_type": "head_office",
+            "branch_number": null,
+            "pp20_file": null,
+            "certificate_file": null,
+            "created_at": "2026-07-06T18:58:56.543Z",
+            "updated_at": "2026-07-06T18:58:56.543Z",
+            "employee": {
+                "id": null,
+                "prefix": null,
+                "name": null
+            },
+            "status": "Active"
+        },
+        {
+            "id": "CUS-DEMO-003",
+            "display_id": "CUS260706003",
+            "name_th": "บริษัท พีเอ็มเค เอ็นจิเนียริ่ง จำกัด",
+            "name_en": "PMK Engineering Co., Ltd.",
+            "tax_id": "0105539001233",
+            "tax_type": "company_tax_id",
+            "contact": {
+                "name": "คุณประเสริฐ มั่นคง",
+                "phone": "02-456-7890",
+                "fax": null,
+                "email": "prasert@pmk-eng.com"
+            },
+            "address": {
+                "detail": "55/9 นิคมอุตสาหกรรมลาดกระบัง",
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 1,
+                    "name": "Bangkok"
+                },
+                "postcode": "10520"
+            },
+            "branch_type": "head_office",
+            "branch_number": null,
+            "pp20_file": null,
+            "certificate_file": null,
+            "created_at": "2026-07-06T18:58:56.543Z",
+            "updated_at": "2026-07-06T18:58:56.543Z",
+            "employee": {
+                "id": null,
+                "prefix": null,
+                "name": null
+            },
+            "status": "Active"
+        },
+        {
+            "id": "CUS-DEMO-002",
+            "display_id": "CUS260706002",
+            "name_th": "หจก. เอเชีย สตีล ซัพพลาย",
+            "name_en": "Asia Steel Supply Ltd., Part.",
+            "tax_id": "0105539001232",
+            "tax_type": "company_tax_id",
+            "contact": {
+                "name": "คุณวิภา รุ่งเรือง",
+                "phone": "02-345-6789",
+                "fax": null,
+                "email": "wipa@asiasteel.co.th"
+            },
+            "address": {
+                "detail": "120/5 ถนนบางนา-ตราด กม.4",
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 1,
+                    "name": "Bangkok"
+                },
+                "postcode": "10260"
+            },
+            "branch_type": "head_office",
+            "branch_number": null,
+            "pp20_file": null,
+            "certificate_file": null,
+            "created_at": "2026-07-06T18:58:56.543Z",
+            "updated_at": "2026-07-06T18:58:56.543Z",
+            "employee": {
+                "id": null,
+                "prefix": null,
+                "name": null
+            },
+            "status": "Active"
+        },
+        {
+            "id": "CUS-DEMO-001",
+            "display_id": "CUS260706001",
+            "name_th": "บริษัท ไทย เมทัล เวิร์คส์ จำกัด",
+            "name_en": "Thai Metal Works Co., Ltd.",
+            "tax_id": "0105539001231",
+            "tax_type": "company_tax_id",
+            "contact": {
+                "name": "คุณสมชาย ใจดี",
+                "phone": "02-234-5678",
+                "fax": null,
+                "email": "somchai@thaimetal.co.th"
+            },
+            "address": {
+                "detail": "88/1 ถนนพระราม 3 แขวงบางโพงพาง",
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 1,
+                    "name": "Bangkok"
+                },
+                "postcode": "10120"
+            },
+            "branch_type": "head_office",
+            "branch_number": null,
+            "pp20_file": null,
+            "certificate_file": null,
+            "created_at": "2026-07-06T18:58:56.543Z",
+            "updated_at": "2026-07-06T18:58:56.543Z",
+            "employee": {
+                "id": null,
+                "prefix": null,
+                "name": null
+            },
+            "status": "Active"
+        }
+    ]
+}

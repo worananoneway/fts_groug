@@ -4,7 +4,6 @@ import {
     ErrorField,
     ErrorMessage,
     Payload,
-    StockStatus,
     ValidationError
 } from './type';
 
@@ -20,10 +19,11 @@ import {
     ReplyErrorMessage,
     ReplySuccessMessage,
     Status,
+    StockStatus
 } from '@/api/utils/shared_types';
 import field_validator from '@/api/utils/field_validator';
 import { emp_authentication } from '@/api/utils/controller_auth';
-import {reply_result} from '@/api/utils/controller_replys'
+import { reply_result } from '@/api/utils/controller_replys'
 
 const emp_id = null
 const status_enum = get_enum_keys(StockStatus);
@@ -48,7 +48,14 @@ async function create(request: any, reply: any) {
             );
         }
 
-        const result = await service.create(payload);
+        const duplicate_check = await service.count_duplicate({ sql: ' ', params: [payload.code] });
+        if (duplicate_check.statuscode !== HttpStatusCode.OK || (duplicate_check.data && duplicate_check.data[0]?.duplicate_code > 0)) {
+            return reply.code(duplicate_check.statuscode).send(<Reply>
+                reply_result(module_name, duplicate_check.statuscode, Array.isArray(duplicate_check.error) ? duplicate_check.error : null)
+            );
+        }
+
+        const result = await service.create(payload, emp_id);
         return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
             reply_result(module_name, result.statuscode, null, result.data, reply_options)
         );
@@ -100,9 +107,9 @@ async function get(request: any, reply: any) {
 async function soft_delete(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
-        const user = request?.user?.id;
-        
-        emp_authentication(module_name, user, reply);
+        const emp_id = request?.user?.id;
+
+        emp_authentication(module_name, emp_id, reply);
 
         if (!request.params.srb_id) {
             console.error(`[Controller] Missing ${module_name} ID for deletion.`);
@@ -128,18 +135,18 @@ async function soft_delete(request: any, reply: any) {
 async function update(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
-        const user = request?.user?.id;
+        const emp_id = request?.user?.id;
 
-        emp_authentication(module_name, user, reply);
+        emp_authentication(module_name, emp_id, reply);
 
-        const payload: Payload = sanitize_payload(request.body);
-        const srb_id: string = sanitize_string(request.params.srb_id);
+        const payload: Payload = sanitize_payload(request?.body);
+        const srb_id: string = sanitize_string(request?.params?.srb_id);
         const srb_data = await service.get({ sql: ' AND srb_id = $1 ', params: [srb_id] });
         if (srb_data.statuscode !== HttpStatusCode.OK) {
             return reply.code(srb_data.statuscode).send(<Reply>
                 reply_result(module_name, srb_data.statuscode)
             );
-        } 
+        }
         const invalid_fields: ValidationError[] = [];
         if (invalid_fields.length > 0) {
             console.error(`[Controller] Validation errors found in ${module_name} update payload:`, invalid_fields);
@@ -147,7 +154,13 @@ async function update(request: any, reply: any) {
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
         }
-        const result = await service.update(srb_id, payload);
+        const duplicate_check = await service.count_duplicate({ sql: ' AND srb_id != $2', params: [payload.code, srb_id] });
+        if (duplicate_check.statuscode !== HttpStatusCode.OK || (duplicate_check.data && duplicate_check.data[0]?.duplicate_code > 0)) {
+            return reply.code(duplicate_check.statuscode).send(<Reply>
+                reply_result(module_name, duplicate_check.statuscode, Array.isArray(duplicate_check.error) ? duplicate_check.error : null)
+            );
+        }
+        const result = await service.update(srb_id, payload, emp_id);
         return reply.code(result.statuscode).send(<Reply>
             reply_result(module_name, result.statuscode, null, result?.data, reply_options)
         );
@@ -161,11 +174,11 @@ async function update(request: any, reply: any) {
 async function update_status(request: any, reply: any) {
     try {
         const lang = request.headers['accept-language'] || 'en-US';
-        const user = request?.user?.id;
+        const emp_id = request?.user?.id;
 
-        emp_authentication(module_name, user, reply);
+        emp_authentication(module_name, emp_id, reply);
 
-        const missing_fields: string[] = field_validator(request.body, [
+        const missing_fields: string[] = field_validator(request?.body, [
             'status'
         ]);
         if (!request.params.srb_id) {

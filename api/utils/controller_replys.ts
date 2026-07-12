@@ -391,7 +391,17 @@ export function reply_result(
                 statuscode: HttpStatusCode.UNPROCESSABLE_CONTENT,
                 details: {
                     error: ReplyErrorField.VALIDATION_ERROR,
-                    message: ReplyErrorMessage.VALIDATION_ERROR
+                    message: ReplyErrorMessage.VALIDATION_ERROR,
+                    errors: missing_fields?.map(field => {
+                        if (typeof field !== 'string') {
+                            return field;
+                        }
+                        const message = ReplyErrorMessage[field.toUpperCase() + '_INVALID' as keyof typeof ReplyErrorMessage];
+                        return {
+                            field: field.toUpperCase() as ValidationError['field'],
+                            message: message as ValidationError['message']
+                        };
+                    })
                 }
             }
         case HttpStatusCode.INTERNAL_SERVER_ERROR:

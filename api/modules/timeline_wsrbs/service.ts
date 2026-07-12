@@ -6,8 +6,8 @@ async function create(payload: Payload): Promise<Response> {
     const sql = `
         INSERT INTO public.timeline_wsrbs (
             tlwsrb_wsrb_id,
-            tlwsrb_ord_id,
-            tlwsrb_odd_id,
+            tlwsrb_po_id,
+            tlwsrb_podetail_id,
             tlwsrb_sr_id,
             tlwsrb_event_type,
             tlwsrb_quantity_change,
@@ -29,8 +29,8 @@ async function create(payload: Payload): Promise<Response> {
     try {
         const result = await sql_query(sql, [
             payload.wsrb_id,
-            payload.ord_id ?? null,
-            payload.odd_id ?? null,
+            payload.po_id ?? null,
+            payload.podetail_id ?? null,
             payload.sr_id ?? null,
             payload.event_type,
             payload.quantity_change ?? null,
@@ -73,10 +73,10 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
                 tlwsrb_id,
                 tlwsrb_wsrb_id,
                 wsrb_code AS tlwsrb_wsrb_code,
-                tlwsrb_ord_id,
-                ord_no AS tlwsrb_ord_no,
-                tlwsrb_odd_id,
-                odd_status AS tlwsrb_odd_status,
+                tlwsrb_po_id,
+                po_number AS tlwsrb_ord_no,
+                tlwsrb_podetail_id,
+                podetail_status AS tlwsrb_odd_status,
                 tlwsrb_sr_id,
                 sr_status AS tlwsrb_sr_status,
                 tlwsrb_event_type,
@@ -93,8 +93,8 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
                 tlwsrb_updated_at
             FROM public.timeline_wsrbs
             LEFT JOIN public.wastrel_steel_round_bars ON timeline_wsrbs.tlwsrb_wsrb_id = wastrel_steel_round_bars.wsrb_id
-            LEFT JOIN public.orders ON timeline_wsrbs.tlwsrb_ord_id = orders.ord_id
-            LEFT JOIN public.order_details ON timeline_wsrbs.tlwsrb_odd_id = order_details.odd_id
+            LEFT JOIN public.purchase_orders ON timeline_wsrbs.tlwsrb_po_id = purchase_orders.po_id
+            LEFT JOIN public.purchase_orders_details ON timeline_wsrbs.tlwsrb_podetail_id = purchase_orders_details.podetail_id
             LEFT JOIN public.stock_reservations ON timeline_wsrbs.tlwsrb_sr_id = stock_reservations.sr_id
             WHERE 1=1${conditions.sql}
             ORDER BY tlwsrb_event_at DESC, tlwsrb_created_at DESC
@@ -126,9 +126,61 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
     }
 }
 
+export async function get_wsrbs(id: string) {
+    const sql = `
+    SELECT
+        wsrb_available_quantity,
+        wsrb_quantity
+    FROM public.wastrel_steel_round_bars
+    WHERE wsrb_id = $1;
+    `;
+    try {
+        const results = await sql_query(sql, [id]);
+        return {
+            statuscode: HttpStatusCode.OK,
+            error: null,
+            data: results[0]
+        };
+    } catch (error) {
+        console.error(`[Service] An error occurred during getting WSRB:`, error);
+        return {
+            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
+            error: error,
+            data: null
+        };
+    }
+}
+
+export async function update_wsrbs(id: string, payload: any) {
+    const sql = `
+        UPDATE public.wastrel_steel_round_bars
+        SET
+            wsrb_available_quantity = $2,
+            wsrb_quantity = $3
+        WHERE wsrb_id = $1;
+    `;
+    try {
+        await sql_query(sql, [id, payload.total_available_quantity, payload.total_quantity]);
+        return {
+            statuscode: HttpStatusCode.OK,
+            error: null,
+            data: null
+        };
+    } catch (error) {
+        console.error(`[Service] An error occurred during updating WSRB:`, error);
+        return {
+            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
+            error: error,
+            data: null
+        };
+    }
+}
+
 const service = {
     create,
-    get
+    get,
+    get_wsrbs,
+    update_wsrbs,
 };
 
 export default service;

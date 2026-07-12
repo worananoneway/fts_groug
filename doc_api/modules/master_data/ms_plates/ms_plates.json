@@ -1,0 +1,82 @@
+[
+  {
+    "method": "GET",
+    "name": "Get MS Plates",
+    "url": "/api/v1/ms-plates",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "status": "Reserved" },
+    "body": null
+  },
+  {
+    "method": "GET",
+    "name": "Get MS Plate By ID",
+    "url": "/api/v1/ms-plates/<ms_plate_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "ms_plate_id": null },
+    "body": null
+  },
+  {
+    "method": "POST",
+    "name": "Create MS Plate",
+    "url": "/api/v1/ms-plates",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {},
+    "body": {
+      "id": null,
+      "mm_id": null,
+      "code": "MSP-0001",
+      "length": 6000,
+      "width": 1500,
+      "thickness": 12,
+      "quantity": 10,
+      "available_quantity": 8,
+      "received_date": "2026-07-11",
+      "remark": "MS plate example",
+      "created_at": "2026-07-11T00:00:00+07:00",
+      "updated_at": "2026-07-11T00:00:00+07:00"
+    }
+  },
+  {
+    "method": "PUT",
+    "name": "Update MS Plate",
+    "url": "/api/v1/ms-plates/<ms_plate_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "ms_plate_id": null },
+    "body": {
+      "id": null,
+      "mm_id": null,
+      "code": "MSP-0001",
+      "length": 6000,
+      "width": 1500,
+      "thickness": 12,
+      "quantity": 10,
+      "available_quantity": 8,
+      "received_date": "2026-07-11",
+      "remark": "Updated MS plate",
+      "created_at": "2026-07-11T00:00:00+07:00",
+      "updated_at": "2026-07-11T00:00:00+07:00"
+    }
+  },
+  {
+    "method": "PATCH",
+    "name": "Update MS Plate Status",
+    "url": "/api/v1/ms-plates/status/<ms_plate_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "ms_plate_id": null },
+    "body": { "status": "Reserved" }
+  },
+  {
+    "method": "DELETE",
+    "name": "Delete MS Plate",
+    "url": "/api/v1/ms-plates/<ms_plate_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "ms_plate_id": null },
+    "body": { "status": "Deleted" }
+  }
+]
