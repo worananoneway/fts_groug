@@ -32,7 +32,7 @@ export async function loadWastrelBars(): Promise<SavedRoundScrap[]> {
 
 export interface WastrelBarPayload {
   mm_id: string;
-  srb_id?: string;
+  srb_id?: string | null;
   code: string;
   diameter: number;
   length: number;
