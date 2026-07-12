@@ -11,11 +11,7 @@ export const ITEM_COLORS = [
   "#84cc16",
 ];
 
-// หน้า /cutting มีแท็บเดียว — เนื้อหาข้างใน (แผ่น/เพลากลม) เปลี่ยนตามงานที่ส่งมาจากหน้า PO
-export const DIVISION_NAV: DivisionNavItem[] = [
-  { key: "po", label: "ใบสั่งซื้อ PO", href: "/po" },
-  { key: "cutting", label: "ตัดแผ่นเหล็ก", href: "/cutting" },
-];
+export const DIVISION_NAV: DivisionNavItem[] = [{ key: "po", label: "ใบสั่งซื้อ PO", href: "/po" }];
 
 // ปลายทางของปุ่ม "ข้อมูลหลัก" ที่มุมขวาบน header (แยกจากแท็บงานตัด)
 export const MASTER_DATA_ENTRY_HREF = "/master-data/setting/customer";
