@@ -5,8 +5,8 @@ import { Payload, ReservationStatus } from "./type";
 async function create(payload: Payload): Promise<Response> {
     const sql = `
         INSERT INTO public.stock_reservations (
-            sr_ord_id,
-            sr_odd_id,
+            sr_po_id,
+            sr_podetail_id,
             sr_stock_type,
             sr_stock_id,
             sr_reserved_quantity,
@@ -19,8 +19,8 @@ async function create(payload: Payload): Promise<Response> {
     `;
     try {
         const result = await sql_query(sql, [
-            payload.ord_id,
-            payload.odd_id,
+            payload.po_id,
+            payload.podetail_id,
             payload.stock_type,
             payload.stock_id,
             payload.reserved_quantity ?? 1,
@@ -56,9 +56,9 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
         WITH stock_reservation_cte AS (
             SELECT
                 sr.sr_id,
-                sr.sr_ord_id,
+                sr.sr_po_id,
                 ord.ord_no AS sr_ord_no,
-                sr.sr_odd_id,
+                sr.sr_podetail_id,
                 odd.odd_shape_type::text AS sr_odd_shape_type,
                 odd.odd_required_length_mm AS sr_odd_required_length_mm,
                 odd.odd_required_width_mm AS sr_odd_required_width_mm,
@@ -78,8 +78,8 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
                 sr.sr_created_at,
                 sr.sr_updated_at
             FROM public.stock_reservations sr
-            LEFT JOIN public.orders ord ON sr.sr_ord_id = ord.ord_id
-            LEFT JOIN public.order_details odd ON sr.sr_odd_id = odd.odd_id
+            LEFT JOIN public.orders ord ON sr.sr_po_id = ord.po_id
+            LEFT JOIN public.order_details odd ON sr.sr_podetail_id = odd.podetail_id
             LEFT JOIN public.steel_round_bars srb
                 ON sr.sr_stock_type::text = 'Round_bar'
                 AND sr.sr_stock_id = srb.srb_id

@@ -8,16 +8,16 @@ export const reply_options = {
             }
         },
         order: {
-            $nullableBy: 'tlmsp_ord_id',
+            $nullableBy: 'tlmsp_po_id',
             $fields: {
-                id: 'tlmsp_ord_id',
+                id: 'tlmsp_po_id',
                 no: 'tlmsp_ord_no'
             }
         },
         order_detail: {
-            $nullableBy: 'tlmsp_odd_id',
+            $nullableBy: 'tlmsp_podetail_id',
             $fields: {
-                id: 'tlmsp_odd_id',
+                id: 'tlmsp_podetail_id',
                 status: 'tlmsp_odd_status'
             }
         },

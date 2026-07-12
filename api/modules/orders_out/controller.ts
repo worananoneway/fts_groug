@@ -44,8 +44,8 @@ type OrdersRequest = FastifyRequest<{
         width?: unknown;
     };
     Params: {
-        ord_id?: string;
-        odd_id?: string;
+        po_id?: string;
+        podetail_id?: string;
     };
     Querystring: {
         customer_id?: string;
@@ -53,7 +53,7 @@ type OrdersRequest = FastifyRequest<{
 }>;
 
 interface OrderRow {
-    ord_id: string;
+    po_id: string;
     ord_no: string;
     customer_name_th: string | null;
     ord_date: string | Date | null;
@@ -64,8 +64,8 @@ interface OrderRow {
 }
 
 interface OrderDetailRow {
-    odd_id: string;
-    odd_ord_id: string;
+    podetail_id: string;
+    odd_po_id: string;
     odd_mm_id: string;
     odd_shape_type: string;
     mm_name: string | null;
@@ -86,7 +86,7 @@ interface MaterialMasterRow {
 }
 
 interface OrderDetailCreatedRow {
-    odd_id: string;
+    podetail_id: string;
 }
 
 interface NormalizedOrderDetailPayload {
@@ -103,9 +103,9 @@ interface NormalizedOrderDetailPayload {
 async function get(request: OrdersRequest, reply: FastifyReply) {
     try {
         const conditions: Condition = { sql: '', params: [] };
-        if (request.params.ord_id) {
-            conditions.params.push(request.params.ord_id);
-            conditions.sql += ` AND o.ord_id = $${conditions.params.length} `;
+        if (request.params.po_id) {
+            conditions.params.push(request.params.po_id);
+            conditions.sql += ` AND o.po_id = $${conditions.params.length} `;
         }
         if (request.query.customer_id) {
             conditions.params.push(request.query.customer_id);
@@ -124,9 +124,9 @@ async function get(request: OrdersRequest, reply: FastifyReply) {
         }
 
         const detail_conditions: Condition = { sql: '', params: [] };
-        if (request.params.ord_id) {
-            detail_conditions.params.push(request.params.ord_id);
-            detail_conditions.sql += ` AND d.odd_ord_id = $${detail_conditions.params.length} `;
+        if (request.params.po_id) {
+            detail_conditions.params.push(request.params.po_id);
+            detail_conditions.sql += ` AND d.odd_po_id = $${detail_conditions.params.length} `;
         }
         const details = await service.get_order_details(detail_conditions);
         if (details.statuscode !== HttpStatusCode.OK) {
@@ -158,7 +158,7 @@ async function get(request: OrdersRequest, reply: FastifyReply) {
             statuscode: HttpStatusCode.OK,
             details: {
                 orders: (orders.data as OrderRow[] | null)?.map((order) => ({
-                    id: order.ord_id,
+                    id: order.po_id,
                     no: order.ord_no,
                     customer: order.customer_name_th,
                     date: order.ord_date,
@@ -168,8 +168,8 @@ async function get(request: OrdersRequest, reply: FastifyReply) {
                     remark: order.ord_remark
                 })),
                 order_details: (details.data as OrderDetailRow[] | null)?.map((detail) => ({
-                    id: detail.odd_id,
-                    ord_id: detail.odd_ord_id,
+                    id: detail.podetail_id,
+                    po_id: detail.odd_po_id,
                     mm_id: detail.odd_mm_id,
                     shape: detail.odd_shape_type === 'Round_bar' ? 'ROUND' : 'PLATE',
                     material: detail.mm_name,
@@ -204,7 +204,7 @@ async function get(request: OrdersRequest, reply: FastifyReply) {
 
 async function create_order_detail(request: OrdersRequest, reply: FastifyReply) {
     try {
-        if (!request.params.ord_id) {
+        if (!request.params.po_id) {
             return send_bad_request(reply);
         }
 
@@ -214,7 +214,7 @@ async function create_order_detail(request: OrdersRequest, reply: FastifyReply) 
         }
 
         const result = await service.create_order_detail({
-            ord_id: request.params.ord_id,
+            po_id: request.params.po_id,
             ...payload
         });
         if (result.statuscode !== HttpStatusCode.CREATED) {
@@ -226,7 +226,7 @@ async function create_order_detail(request: OrdersRequest, reply: FastifyReply) 
             status: HttpStatus.CREATED,
             statuscode: HttpStatusCode.CREATED,
             details: {
-                id: created?.odd_id
+                id: created?.podetail_id
             }
         });
     } catch (error) {
@@ -237,7 +237,7 @@ async function create_order_detail(request: OrdersRequest, reply: FastifyReply) 
 
 async function update_order_detail(request: OrdersRequest, reply: FastifyReply) {
     try {
-        if (!request.params.odd_id) {
+        if (!request.params.podetail_id) {
             return send_bad_request(reply);
         }
 
@@ -246,7 +246,7 @@ async function update_order_detail(request: OrdersRequest, reply: FastifyReply) 
             return send_bad_request(reply);
         }
 
-        const result = await service.update_order_detail(request.params.odd_id, payload);
+        const result = await service.update_order_detail(request.params.podetail_id, payload);
         if (result.statuscode === HttpStatusCode.NOT_FOUND) {
             return reply.code(HttpStatusCode.NOT_FOUND).send(<Reply>{
                 status: HttpStatus.NOT_FOUND,
@@ -271,7 +271,7 @@ async function update_order_detail(request: OrdersRequest, reply: FastifyReply) 
 async function update_order_status(request: OrdersRequest, reply: FastifyReply) {
     try {
         const status = normalize_status(request.body?.status);
-        if (!request.params.ord_id || !status) {
+        if (!request.params.po_id || !status) {
             return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>{
                 status: HttpStatus.BAD_REQUEST,
                 statuscode: HttpStatusCode.BAD_REQUEST,
@@ -282,7 +282,7 @@ async function update_order_status(request: OrdersRequest, reply: FastifyReply) 
             });
         }
 
-        const result = await service.update_order_status(request.params.ord_id, status);
+        const result = await service.update_order_status(request.params.po_id, status);
         if (result.statuscode === HttpStatusCode.NOT_FOUND) {
             return reply.code(HttpStatusCode.NOT_FOUND).send(<Reply>{
                 status: HttpStatus.NOT_FOUND,
@@ -321,7 +321,7 @@ async function update_order_status(request: OrdersRequest, reply: FastifyReply) 
 async function update_order_detail_status(request: OrdersRequest, reply: FastifyReply) {
     try {
         const status = normalize_status(request.body?.status);
-        if (!request.params.odd_id || !status) {
+        if (!request.params.podetail_id || !status) {
             return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>{
                 status: HttpStatus.BAD_REQUEST,
                 statuscode: HttpStatusCode.BAD_REQUEST,
@@ -332,7 +332,7 @@ async function update_order_detail_status(request: OrdersRequest, reply: Fastify
             });
         }
 
-        const result = await service.update_order_detail_status(request.params.odd_id, status);
+        const result = await service.update_order_detail_status(request.params.podetail_id, status);
         if (result.statuscode === HttpStatusCode.NOT_FOUND) {
             return reply.code(HttpStatusCode.NOT_FOUND).send(<Reply>{
                 status: HttpStatus.NOT_FOUND,

@@ -1,50 +1,65 @@
-import { TimelineWmsp } from './model';
-import service from './service';
+import { reply_options } from './model';
+import { reply_result } from '@/api/utils/controller_replys';
+import { emp_authentication } from '@/api/utils/controller_auth';
+import service from "./service";
 import {
     ErrorField,
     ErrorMessage,
     Payload,
-    StockStatus,
-    TimelineEventType,
-    ValidationError
-} from './type';
+    ValidationError,
+} from "./type";
 
-import { get_enum_keys, is_enum_key } from '@/api/utils/enum_checker';
-import { sanitize_payload } from '@/api/utils/input_sanitizer';
+import { get_enum_keys, is_enum_key } from "@/api/utils/enum_checker";
+import { sanitize_payload, sanitize_string } from "@/api/utils/input_sanitizer";
 import {
     Condition,
-    HttpStatus,
     HttpStatusCode,
     Reply,
-    ReplyErrorField,
-    ReplyErrorMessage,
-    ReplySuccessMessage,
-} from '@/api/utils/shared_types';
+    Status,
+    StockStatus,
+    TimelineEventType,
+} from "@/api/utils/shared_types";
+import field_validator from '@/api/utils/field_validator';
 
 const event_type_enum = get_enum_keys(TimelineEventType);
 const stock_status_enum = get_enum_keys(StockStatus);
 
-const module_name = 'TimelineWmsp';
+const module_name = `Timeline Wastrel MS Plates`;
 
 async function create(request: any, reply: any) {
     try {
-        const lang = request.headers['accept-language'] || 'en-US';
-        // const user = request.user;
-        // if (!user || !user.id) {
-        //     console.error("[Controller] Missing user ID from authenticated request.");
-        //     return reply.code(HttpStatusCode.UNAUTHORIZED).send(<Reply>{
-        //         status: HttpStatus.UNAUTHORIZED,
-        //         statuscode: HttpStatusCode.UNAUTHORIZED,
-        //         details: {
-        //             error: ReplyErrorField.UNAUTHORIZED,
-        //             message: ReplyErrorMessage.UNAUTHORIZED
-        //         }
-        //     });
-        // }
-        // const emp_id: string = user?.id;
-        const emp_id = null;
-        const payload: Payload = sanitize_payload(request.body);
-        console.log("[Controller] Creating timeline wastrel MS plate with payload:", payload);
+        const emp_id = request?.user?.id;
+
+        emp_authentication(module_name, emp_id, reply);
+
+        const payload = sanitize_payload(request.body);
+        console.log(`[Controller] Creating ${module_name} with payload:`, payload);
+
+        const requiredKeys = [
+            'wmsp_id',
+            'po_id',
+            'podetail_id',
+            'sr_id',
+            'event_type',
+            'quantity_change',
+            'length_before',
+            'width_before',
+            'length_after',
+            'width_after',
+            'status_before',
+            'status_after',
+            'location_before',
+            'location_after',
+            'event_at',
+            'remark'
+        ];
+        const missing_fields: string[] = field_validator(request.body, requiredKeys);
+        if (missing_fields.length > 0) {
+            return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>
+                reply_result(module_name, HttpStatusCode.BAD_REQUEST, missing_fields)
+            );
+        }
+
         const invalid_fields: ValidationError[] = [];
         if (!payload.wmsp_id) {
             invalid_fields.push({
@@ -58,16 +73,16 @@ async function create(request: any, reply: any) {
                 message: ErrorMessage.WMSP_ID_MAX_LENGTH
             });
         }
-        if (payload.ord_id && payload.ord_id.length > 20) {
+        if (payload.po_id && payload.po_id.length > 20) {
             invalid_fields.push({
-                field: ErrorField.ORD_ID,
-                message: ErrorMessage.ORD_ID_MAX_LENGTH
+                field: ErrorField.po_id,
+                message: ErrorMessage.po_id_MAX_LENGTH
             });
         }
-        if (payload.odd_id && payload.odd_id.length > 20) {
+        if (payload.podetail_id && payload.podetail_id.length > 20) {
             invalid_fields.push({
-                field: ErrorField.ODD_ID,
-                message: ErrorMessage.ODD_ID_MAX_LENGTH
+                field: ErrorField.podetail_id,
+                message: ErrorMessage.podetail_id_MAX_LENGTH
             });
         }
         if (payload.sr_id && payload.sr_id.length > 20) {
@@ -81,282 +96,154 @@ async function create(request: any, reply: any) {
                 field: ErrorField.EVENT_TYPE,
                 message: ErrorMessage.EVENT_TYPE_REQUIRED
             });
-        } else if (!is_enum_key(event_type_enum, payload.event_type)) {
+        }
+        else if (!is_enum_key(event_type_enum, request.body.event_type)) {
             invalid_fields.push({
                 field: ErrorField.EVENT_TYPE,
                 message: ErrorMessage.EVENT_TYPE_INVALID
             });
         } else {
-            payload.event_type = TimelineEventType[payload.event_type.toUpperCase() as keyof typeof TimelineEventType];
-        }
-        if (payload.quantity_change !== undefined && payload.quantity_change !== null && !Number.isInteger(Number(payload.quantity_change))) {
-            invalid_fields.push({
-                field: ErrorField.QUANTITY_CHANGE,
-                message: ErrorMessage.QUANTITY_CHANGE_INVALID
-            });
-        }
-        if (payload.length_before !== undefined && payload.length_before !== null && (isNaN(Number(payload.length_before)) || Number(payload.length_before) < 0)) {
-            invalid_fields.push({
-                field: ErrorField.LENGTH_BEFORE,
-                message: ErrorMessage.LENGTH_BEFORE_INVALID
-            });
-        }
-        if (payload.width_before !== undefined && payload.width_before !== null && (isNaN(Number(payload.width_before)) || Number(payload.width_before) < 0)) {
-            invalid_fields.push({
-                field: ErrorField.WIDTH_BEFORE,
-                message: ErrorMessage.WIDTH_BEFORE_INVALID
-            });
-        }
-        if (payload.length_after !== undefined && payload.length_after !== null && (isNaN(Number(payload.length_after)) || Number(payload.length_after) < 0)) {
-            invalid_fields.push({
-                field: ErrorField.LENGTH_AFTER,
-                message: ErrorMessage.LENGTH_AFTER_INVALID
-            });
-        }
-        if (payload.width_after !== undefined && payload.width_after !== null && (isNaN(Number(payload.width_after)) || Number(payload.width_after) < 0)) {
-            invalid_fields.push({
-                field: ErrorField.WIDTH_AFTER,
-                message: ErrorMessage.WIDTH_AFTER_INVALID
-            });
-        }
-        if (payload.status_before && !is_enum_key(stock_status_enum, payload.status_before)) {
-            invalid_fields.push({
-                field: ErrorField.STATUS_BEFORE,
-                message: ErrorMessage.STATUS_BEFORE_INVALID
-            });
-        } else if (payload.status_before) {
-            payload.status_before = StockStatus[payload.status_before.toUpperCase() as keyof typeof StockStatus];
-        }
-        if (payload.status_after && !is_enum_key(stock_status_enum, payload.status_after)) {
-            invalid_fields.push({
-                field: ErrorField.STATUS_AFTER,
-                message: ErrorMessage.STATUS_AFTER_INVALID
-            });
-        } else if (payload.status_after) {
-            payload.status_after = StockStatus[payload.status_after.toUpperCase() as keyof typeof StockStatus];
+            payload.event_type = TimelineEventType[request.body.event_type.toUpperCase() as keyof typeof TimelineEventType];
         }
         if (invalid_fields.length > 0) {
-            console.error("[Controller] Validation errors found in timeline wastrel MS plate creation payload:", invalid_fields);
-            return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>{
-                status: HttpStatus.UNPROCESSABLE_CONTENT,
-                statuscode: HttpStatusCode.UNPROCESSABLE_CONTENT,
-                details: {
-                    error: ReplyErrorField.VALIDATION_ERROR,
-                    message: ReplyErrorMessage.VALIDATION_ERROR,
-                    errors: invalid_fields
-                }
-            });
+            console.error(`[Controller] Validation errors found in ${module_name} creation payload:`, invalid_fields);
+            return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
+                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
+            );
         }
         const result = await service.create(payload, emp_id);
-        switch (result.statuscode) {
-            case HttpStatusCode.CREATED:
-                const data = result.data![0];
-                console.log("[Controller] Timeline wastrel MS plate created successfully with ID:", data.tlwmsp_id);
-                return reply.code(HttpStatusCode.CREATED).send(<Reply>{
-                    status: HttpStatus.CREATED,
-                    statuscode: HttpStatusCode.CREATED,
-                    details: {
-                        message: module_name.concat(' ', ReplySuccessMessage.CREATED),
-                        id: data.tlwmsp_id,
-                        wmsp_id: data.tlwmsp_wmsp_id,
-                        ord_id: data.tlwmsp_ord_id,
-                        odd_id: data.tlwmsp_odd_id,
-                        sr_id: data.tlwmsp_sr_id,
-                        event_type: data.tlwmsp_event_type,
-                        quantity_change: data.tlwmsp_quantity_change,
-                        length_before: data.tlwmsp_length_before,
-                        width_before: data.tlwmsp_width_before,
-                        length_after: data.tlwmsp_length_after,
-                        width_after: data.tlwmsp_width_after,
-                        status_before: data.tlwmsp_status_before,
-                        status_after: data.tlwmsp_status_after,
-                        location_before: data.tlwmsp_location_before,
-                        location_after: data.tlwmsp_location_after,
-                        event_at: data.tlwmsp_event_at,
-                        remark: data.tlwmsp_remark,
-                        created_at: data.tlwmsp_created_at,
-                        updated_at: data.tlwmsp_updated_at,
-                        emp_id: data.tlwmsp_emp_id
-                    }
-                });
-            case HttpStatusCode.INTERNAL_SERVER_ERROR:
-                return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-                    status: HttpStatus.INTERNAL_SERVER_ERROR,
-                    statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                    details: {
-                        error: ReplyErrorField.INTERNAL_SERVER_ERROR,
-                        message: ReplyErrorMessage.INTERNAL_SERVER_ERROR
-                    }
-                });
-            default:
-                console.error("[Controller] An unrecognized status code was returned from creating timeline wastrel MS plate:", result.statuscode);
-                return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-                    status: HttpStatus.INTERNAL_SERVER_ERROR,
-                    statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                    details: {
-                        error: ReplyErrorField.UNRECOGNIZED_STATUSCODE,
-                        message: ReplyErrorMessage.UNRECOGNIZED_STATUSCODE
-                    }
-                });
+        if (result.statuscode !== HttpStatusCode.CREATED) {
+            console.error(`[Controller] Failed to create ${module_name}:`, result.error);
+            return reply.code(result.statuscode).send(<Reply>
+                reply_result(module_name, result.statuscode)
+            );
         }
+        const wmsps = await service.get_wmsps(payload.wmsp_id);
+        if (wmsps.statuscode !== HttpStatusCode.OK) {
+            console.error(`[Controller] Failed to get WMSP:`, wmsps.error);
+            return reply.code(wmsps.statuscode).send(<Reply>
+                reply_result(module_name, wmsps.statuscode)
+            );
+        }
+        const wmsps_data = wmsps?.data;
+        const update_wmsps = {
+            total_quantity: wmsps_data?.wmsp_quantity,
+            total_available_quantity: wmsps_data?.wmsp_available_quantity
+        };
+        switch (payload.event_type) {
+            case TimelineEventType.ADD:
+                update_wmsps.total_quantity = wmsps_data?.wmsp_quantity + payload.quantity_change;
+                update_wmsps.total_available_quantity = wmsps_data?.wmsp_available_quantity + payload.quantity_change;
+                break;
+            case TimelineEventType.USED:
+                update_wmsps.total_quantity = wmsps_data?.wmsp_quantity - payload.quantity_change;
+                update_wmsps.total_available_quantity = wmsps_data?.wmsp_available_quantity - payload.quantity_change;
+                break;
+            case TimelineEventType.EDIT:
+                update_wmsps.total_quantity = wmsps_data?.wmsp_quantity + (wmsps_data?.wmsp_quantity - payload.quantity_change);
+                update_wmsps.total_available_quantity = wmsps_data?.wmsp_available_quantity + (wmsps_data?.wmsp_quantity - payload.quantity_change);
+                break;
+        }
+        const update_wmsps_result = await service.update_wmsps(payload.wmsp_id, update_wmsps);
+        if (update_wmsps_result.statuscode !== HttpStatusCode.OK) {
+            console.error(`[Controller] Failed to update WMSP:`, update_wmsps_result.error);
+            return reply.code(update_wmsps_result.statuscode).send(<Reply>
+                reply_result(module_name, update_wmsps_result.statuscode)
+            );
+        }
+        return reply.code(result.statuscode).send(<Reply>
+            reply_result(module_name, result.statuscode, null, result?.data, reply_options)
+        );
     } catch (error) {
-        console.error("[Controller] An error occurred during creating timeline wastrel MS plate:", error);
-        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-            details: {
-                error: ReplyErrorField.INTERNAL_SERVER_ERROR,
-                message: ReplyErrorMessage.INTERNAL_SERVER_ERROR
-            }
-        });
+        console.error(`[Controller] An error occurred during creating ${module_name}:`, error);
+        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
+            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
+        );
     }
 }
+
 async function get(request: any, reply: any) {
     try {
-        const lang = request.headers['accept-language'] || 'en-US';
-        const fields: string = request.reply_fields;
-        const conditions: Condition = { sql: '', params: [] };
+        const emp_id = request?.user?.emp_id;
 
+        emp_authentication(module_name, emp_id, reply);
+
+        const fields: string = request.reply_fields || `*`;
+        const conditions: Condition = { sql: ``, params: [] };
         const invalid_fields: ValidationError[] = [];
-        if (request.params.tlwmsp_id) {
-            conditions.params.push(request.params.tlwmsp_id);
+
+        if (request.timeline_wmsp_id) {
+            conditions.params.push(request.timeline_wmsp_id);
             conditions.sql += ` AND tlwmsp_id = $${conditions.params.length} `;
         }
-        if (request.query.wmsp_id) {
-            conditions.params.push(request.query.wmsp_id);
+        if (request.wmsp_id) {
+            conditions.params.push(sanitize_string(request.wmsp_id));
             conditions.sql += ` AND tlwmsp_wmsp_id = $${conditions.params.length} `;
         }
-        if (request.query.ord_id) {
-            conditions.params.push(request.query.ord_id);
-            conditions.sql += ` AND tlwmsp_ord_id = $${conditions.params.length} `;
+        if (request.po_id) {
+            conditions.params.push(sanitize_string(request.po_id));
+            conditions.sql += ` AND tlwmsp_po_id = $${conditions.params.length} `;
         }
-        if (request.query.odd_id) {
-            conditions.params.push(request.query.odd_id);
-            conditions.sql += ` AND tlwmsp_odd_id = $${conditions.params.length} `;
+        if (request.podetail_id) {
+            conditions.params.push(sanitize_string(request.podetail_id));
+            conditions.sql += ` AND tlwmsp_podetail_id = $${conditions.params.length} `;
         }
-        if (request.query.sr_id) {
-            conditions.params.push(request.query.sr_id);
+        if (request.sr_id) {
+            conditions.params.push(sanitize_string(request.sr_id));
             conditions.sql += ` AND tlwmsp_sr_id = $${conditions.params.length} `;
         }
-        if (request.query.event_type && is_enum_key(event_type_enum, request.query.event_type)) {
-            conditions.params.push(TimelineEventType[request.query.event_type.toUpperCase() as keyof typeof TimelineEventType]);
+        if (request.event_type && is_enum_key(event_type_enum, request.event_type)) {
+            conditions.params.push(TimelineEventType[request.event_type as keyof typeof TimelineEventType]);
             conditions.sql += ` AND tlwmsp_event_type = $${conditions.params.length} `;
-        } else if (request.query.event_type) {
-            console.error("[Controller] Invalid Type enum of event_type value provided for timeline wastrel MS plate: ", request.query.event_type);
+        } else if (request.event_type) {
+            console.error(`[Controller] Invalid event_type provided in request:`, request.event_type);
             invalid_fields.push({
                 field: ErrorField.EVENT_TYPE,
                 message: ErrorMessage.EVENT_TYPE_INVALID
             });
         }
-        if (request.query.status_before && is_enum_key(stock_status_enum, request.query.status_before)) {
-            conditions.params.push(StockStatus[request.query.status_before.toUpperCase() as keyof typeof StockStatus]);
+        if (request.status_before && is_enum_key(stock_status_enum, request.status_before)) {
+            conditions.params.push(StockStatus[request.status_before as keyof typeof StockStatus]);
             conditions.sql += ` AND tlwmsp_status_before = $${conditions.params.length} `;
-        } else if (request.query.status_before) {
-            console.error("[Controller] Invalid Type enum of status_before value provided for timeline wastrel MS plate: ", request.query.status_before);
+        } else if (request.status_before) {
+            console.error(`[Controller] Invalid status_before provided in request:`, request.status_before);
             invalid_fields.push({
                 field: ErrorField.STATUS_BEFORE,
                 message: ErrorMessage.STATUS_BEFORE_INVALID
             });
         }
-        if (request.query.status_after && is_enum_key(stock_status_enum, request.query.status_after)) {
-            conditions.params.push(StockStatus[request.query.status_after.toUpperCase() as keyof typeof StockStatus]);
+        if (request.status_after && is_enum_key(stock_status_enum, request.status_after)) {
+            conditions.params.push(StockStatus[request.status_after as keyof typeof StockStatus]);
             conditions.sql += ` AND tlwmsp_status_after = $${conditions.params.length} `;
-        } else if (request.query.status_after) {
-            console.error("[Controller] Invalid Type enum of status_after value provided for timeline wastrel MS plate: ", request.query.status_after);
+        } else if (request.status_after) {
+            console.error(`[Controller] Invalid status_after provided in request:`, request.status_after);
             invalid_fields.push({
                 field: ErrorField.STATUS_AFTER,
                 message: ErrorMessage.STATUS_AFTER_INVALID
             });
         }
+
         if (invalid_fields.length > 0) {
-            return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>{
-                status: HttpStatus.UNPROCESSABLE_CONTENT,
-                statuscode: HttpStatusCode.UNPROCESSABLE_CONTENT,
-                details: {
-                    error: ReplyErrorField.VALIDATION_ERROR,
-                    message: ReplyErrorMessage.VALIDATION_ERROR,
-                    errors: invalid_fields
-                }
-            });
+            return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
+                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
+            );
         }
 
         const results = await service.get(conditions, fields);
-        switch (results.statuscode) {
-            case HttpStatusCode.OK:
-                console.log(`[Controller] Successfully retrieved ${results.data?.length || 0} timeline wastrel MS plates.`);
-                return reply.code(HttpStatusCode.OK).send(<Reply>{
-                    status: HttpStatus.OK,
-                    statuscode: HttpStatusCode.OK,
-                    details: {
-                        event_type: request.query.event_type,
-                        status_before: request.query.status_before,
-                        status_after: request.query.status_after,
-                        timeline_wmsps: results.data?.map(timeline_wmsp => new TimelineWmsp(
-                            timeline_wmsp.tlwmsp_id,
-                            timeline_wmsp.tlwmsp_wmsp_id,
-                            timeline_wmsp.tlwmsp_ord_id,
-                            timeline_wmsp.tlwmsp_odd_id,
-                            timeline_wmsp.tlwmsp_sr_id,
-                            timeline_wmsp.tlwmsp_event_type,
-                            timeline_wmsp.tlwmsp_quantity_change,
-                            timeline_wmsp.tlwmsp_length_before,
-                            timeline_wmsp.tlwmsp_width_before,
-                            timeline_wmsp.tlwmsp_length_after,
-                            timeline_wmsp.tlwmsp_width_after,
-                            timeline_wmsp.tlwmsp_status_before,
-                            timeline_wmsp.tlwmsp_status_after,
-                            timeline_wmsp.tlwmsp_location_before,
-                            timeline_wmsp.tlwmsp_location_after,
-                            timeline_wmsp.tlwmsp_event_at,
-                            timeline_wmsp.tlwmsp_remark,
-                            timeline_wmsp.tlwmsp_created_at,
-                            timeline_wmsp.tlwmsp_updated_at,
-                            timeline_wmsp.tlwmsp_emp_id
-                        ))
-                    }
-                });
-            case HttpStatusCode.NOT_FOUND:
-                return reply.code(HttpStatusCode.NOT_FOUND).send(<Reply>{
-                    status: HttpStatus.NOT_FOUND,
-                    statuscode: HttpStatusCode.NOT_FOUND,
-                    details: {
-                        error: ReplyErrorField.NOT_FOUND,
-                        message: ReplyErrorMessage.NOT_FOUND
-                    }
-                });
-            case HttpStatusCode.INTERNAL_SERVER_ERROR:
-                return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-                    status: HttpStatus.INTERNAL_SERVER_ERROR,
-                    statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                    details: {
-                        error: ReplyErrorField.INTERNAL_SERVER_ERROR,
-                        message: ReplyErrorMessage.INTERNAL_SERVER_ERROR
-                    }
-                });
-            default:
-                console.error("[Controller] An unrecognized status code was returned from getting timeline wastrel MS plates:", results.statuscode);
-                return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-                    status: HttpStatus.INTERNAL_SERVER_ERROR,
-                    statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                    details: {
-                        error: ReplyErrorField.UNRECOGNIZED_STATUSCODE,
-                        message: ReplyErrorMessage.UNRECOGNIZED_STATUSCODE
-                    }
-                });
-        }
+        return reply.code(results.statuscode).send(<Reply>
+            reply_result(module_name, results.statuscode, null, results?.data, reply_options)
+        );
     } catch (error) {
-        console.error("[Controller] An error occurred during getting timeline wastrel MS plates:", error);
-        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>{
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-            details: {
-                error: ReplyErrorField.INTERNAL_SERVER_ERROR,
-                message: ReplyErrorMessage.INTERNAL_SERVER_ERROR
-            }
-        });
+        console.error(`[Controller] An error occurred during getting ${module_name}s:`, error);
+        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
+            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
+        );
     }
 }
-export default {
+
+const controller = {
     create,
     get
 };
+
+export default controller;

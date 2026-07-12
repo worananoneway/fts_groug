@@ -36,28 +36,22 @@ async function create(request: any, reply: any) {
         console.log(`[Controller] Creating ${module_name} with payload:`, payload);
 
         const requiredKeys = [
-            'cus_id',
-            'due_date',
-            'issue_date',
-            'ship_via',
-            'qt_on',
-            'shipping_terms',
-            'tax_rate',
-            'recipient_id',
-            'comment',
-            'status_sent_date',
-            'status_goods_received_',
-            'status_paid_date',
-            'status_note',
-            'remark',
-            'project_id',
-            'condition_paid',
-            'delivery_province_id',
-            'delivery_district_id',
-            'delivery_subdistrict_id',
-            'approved_by_emp_id',
-            'purchasing_fname',
-            'purchasing_lname'
+            'msp_id',
+            'po_id',
+            'podetail_id',
+            'sr_id',
+            'event_type',
+            'quantity_change',
+            'length_before',
+            'width_before',
+            'length_after',
+            'width_after',
+            'status_before',
+            'status_after',
+            'location_before',
+            'location_after',
+            'event_at',
+            'remark'
         ];
         const missing_fields: string[] = field_validator(request.body, requiredKeys);
         if (missing_fields.length > 0) {
@@ -67,43 +61,43 @@ async function create(request: any, reply: any) {
         }
 
         const invalid_fields: ValidationError[] = [];
-        // if () {
-        //     invalid_fields.push({
-        //         field: ErrorField.,
-        //         message: ErrorMessage.
-        //     });
-        // }
-        // if () {
-        //     invalid_fields.push({
-        //         field: ErrorField.,
-        //         message: ErrorMessage.
-        //     });
-        // }
-        // if () {
-        //     invalid_fields.push({
-        //         field: ErrorField.,
-        //         message: ErrorMessage.
-        //     });
-        // }
-        // if () {
-        //     invalid_fields.push({
-        //         field: ErrorField.,
-        //         message: ErrorMessage.
-        //     });
-        // }
-        // if () {
-        //     invalid_fields.push({
-        //         field: ErrorField.,
-        //         message: ErrorMessage.
-        //     });
-        // }
-        // if () {
-        //     invalid_fields.push({
-        //         field: ErrorField.,
-        //         message: ErrorMessage.
-        //     });
-        // }
-        if (!is_enum_key(event_type_enum, request.body.event_type)) {
+        if (!payload.msp_id) {
+            invalid_fields.push({
+                field: ErrorField.MSP_ID,
+                message: ErrorMessage.MSP_ID_REQUIRED
+            });
+        }
+        if (payload.msp_id && payload.msp_id.length > 20) {
+            invalid_fields.push({
+                field: ErrorField.MSP_ID,
+                message: ErrorMessage.MSP_ID_MAX_LENGTH
+            });
+        }
+        if (payload.po_id && payload.po_id.length > 20) {
+            invalid_fields.push({
+                field: ErrorField.po_id,
+                message: ErrorMessage.po_id_MAX_LENGTH
+            });
+        }
+        if (payload.podetail_id && payload.podetail_id.length > 20) {
+            invalid_fields.push({
+                field: ErrorField.podetail_id,
+                message: ErrorMessage.podetail_id_MAX_LENGTH
+            });
+        }
+        if (payload.sr_id && payload.sr_id.length > 20) {
+            invalid_fields.push({
+                field: ErrorField.SR_ID,
+                message: ErrorMessage.SR_ID_MAX_LENGTH
+            });
+        }
+        if (!payload.event_type) {
+            invalid_fields.push({
+                field: ErrorField.EVENT_TYPE,
+                message: ErrorMessage.EVENT_TYPE_REQUIRED
+            });
+        }
+        else if (!is_enum_key(event_type_enum, request.body.event_type)) {
             invalid_fields.push({
                 field: ErrorField.EVENT_TYPE,
                 message: ErrorMessage.EVENT_TYPE_INVALID
@@ -186,13 +180,13 @@ async function get(request: any, reply: any) {
             conditions.params.push(sanitize_string(request.msp_id));
             conditions.sql += ` AND tlmsp_msp_id = $${conditions.params.length} `;
         }
-        if (request.ord_id) {
-            conditions.params.push(sanitize_string(request.ord_id));
-            conditions.sql += ` AND tlmsp_ord_id = $${conditions.params.length} `;
+        if (request.po_id) {
+            conditions.params.push(sanitize_string(request.po_id));
+            conditions.sql += ` AND tlmsp_po_id = $${conditions.params.length} `;
         }
-        if (request.odd_id) {
-            conditions.params.push(sanitize_string(request.odd_id));
-            conditions.sql += ` AND tlmsp_odd_id = $${conditions.params.length} `;
+        if (request.podetail_id) {
+            conditions.params.push(sanitize_string(request.podetail_id));
+            conditions.sql += ` AND tlmsp_podetail_id = $${conditions.params.length} `;
         }
         if (request.sr_id) {
             conditions.params.push(sanitize_string(request.sr_id));

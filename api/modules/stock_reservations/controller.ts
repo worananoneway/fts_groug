@@ -34,8 +34,8 @@ interface StockReservationParams {
 }
 
 interface StockReservationQuery {
-    ord_id?: string;
-    odd_id?: string;
+    po_id?: string;
+    podetail_id?: string;
     stock_id?: string;
     stock_type?: string;
     status?: string;
@@ -47,9 +47,9 @@ interface StockReservationRequestMetadata {
 
 interface StockReservationRow {
     sr_id: string;
-    sr_ord_id: string;
+    sr_po_id: string;
     sr_ord_no: string | null;
-    sr_odd_id: string;
+    sr_podetail_id: string;
     sr_odd_shape_type: string | null;
     sr_odd_required_length_mm: number | null;
     sr_odd_required_width_mm: number | null;
@@ -90,16 +90,16 @@ function is_positive_number(value: unknown): boolean {
 }
 
 function add_id_length_errors(payload: Payload, invalid_fields: ValidationError[]): void {
-    if (payload.ord_id && payload.ord_id.length > 20) {
+    if (payload.po_id && payload.po_id.length > 20) {
         invalid_fields.push({
-            field: ErrorField.ORD_ID,
-            message: ErrorMessage.ORD_ID_MAX_LENGTH
+            field: ErrorField.po_id,
+            message: ErrorMessage.po_id_MAX_LENGTH
         });
     }
-    if (payload.odd_id && payload.odd_id.length > 20) {
+    if (payload.podetail_id && payload.podetail_id.length > 20) {
         invalid_fields.push({
-            field: ErrorField.ODD_ID,
-            message: ErrorMessage.ODD_ID_MAX_LENGTH
+            field: ErrorField.podetail_id,
+            message: ErrorMessage.podetail_id_MAX_LENGTH
         });
     }
     if (payload.stock_id && payload.stock_id.length > 20) {
@@ -113,8 +113,8 @@ function add_id_length_errors(payload: Payload, invalid_fields: ValidationError[
 function map_stock_reservation(stock_reservation: StockReservationRow): StockReservation {
     return new StockReservation(
         stock_reservation.sr_id,
-        stock_reservation.sr_ord_id,
-        stock_reservation.sr_odd_id,
+        stock_reservation.sr_po_id,
+        stock_reservation.sr_podetail_id,
         stock_reservation.sr_stock_type,
         stock_reservation.sr_stock_id,
         stock_reservation.sr_reserved_quantity,
@@ -126,11 +126,11 @@ function map_stock_reservation(stock_reservation: StockReservationRow): StockRes
         stock_reservation.sr_created_at,
         stock_reservation.sr_updated_at,
         new ReservationOrder(
-            stock_reservation.sr_ord_id,
+            stock_reservation.sr_po_id,
             stock_reservation.sr_ord_no
         ),
         new ReservationOrderDetail(
-            stock_reservation.sr_odd_id,
+            stock_reservation.sr_podetail_id,
             stock_reservation.sr_odd_shape_type,
             stock_reservation.sr_odd_required_length_mm,
             stock_reservation.sr_odd_required_width_mm,
@@ -165,16 +165,16 @@ async function create(request: FastifyRequest, reply: FastifyReply) {
         console.log("[Controller] Creating stock reservation with payload:", payload);
 
         const invalid_fields: ValidationError[] = [];
-        if (!payload.ord_id) {
+        if (!payload.po_id) {
             invalid_fields.push({
-                field: ErrorField.ORD_ID,
-                message: ErrorMessage.ORD_ID_REQUIRED
+                field: ErrorField.po_id,
+                message: ErrorMessage.po_id_REQUIRED
             });
         }
-        if (!payload.odd_id) {
+        if (!payload.podetail_id) {
             invalid_fields.push({
-                field: ErrorField.ODD_ID,
-                message: ErrorMessage.ODD_ID_REQUIRED
+                field: ErrorField.podetail_id,
+                message: ErrorMessage.podetail_id_REQUIRED
             });
         }
         if (!payload.stock_type) {
@@ -265,8 +265,8 @@ async function create(request: FastifyRequest, reply: FastifyReply) {
                     details: {
                         message: module_name.concat(" ", ReplySuccessMessage.CREATED),
                         id: data.sr_id,
-                        ord_id: data.sr_ord_id,
-                        odd_id: data.sr_odd_id,
+                        po_id: data.sr_po_id,
+                        podetail_id: data.sr_podetail_id,
                         stock_type: data.sr_stock_type,
                         stock_id: data.sr_stock_id,
                         reserved_quantity: data.sr_reserved_quantity,
@@ -324,13 +324,13 @@ async function get(request: FastifyRequest, reply: FastifyReply) {
             conditions.params.push(sanitize_string(params.sr_id));
             conditions.sql += ` AND sr.sr_id = $${conditions.params.length} `;
         }
-        if (query.ord_id) {
-            conditions.params.push(sanitize_string(query.ord_id));
-            conditions.sql += ` AND sr.sr_ord_id = $${conditions.params.length} `;
+        if (query.po_id) {
+            conditions.params.push(sanitize_string(query.po_id));
+            conditions.sql += ` AND sr.sr_po_id = $${conditions.params.length} `;
         }
-        if (query.odd_id) {
-            conditions.params.push(sanitize_string(query.odd_id));
-            conditions.sql += ` AND sr.sr_odd_id = $${conditions.params.length} `;
+        if (query.podetail_id) {
+            conditions.params.push(sanitize_string(query.podetail_id));
+            conditions.sql += ` AND sr.sr_podetail_id = $${conditions.params.length} `;
         }
         if (query.stock_id) {
             conditions.params.push(sanitize_string(query.stock_id));

@@ -1,8 +1,8 @@
 export const reply_options = {
     fields: {
         id: 'sr_id',
-        ord_id: 'sr_ord_id',
-        odd_id: 'sr_odd_id',
+        po_id: 'sr_po_id',
+        podetail_id: 'sr_podetail_id',
         stock_type: 'sr_stock_type',
         stock_id: 'sr_stock_id',
         reserved_quantity: 'sr_reserved_quantity',
@@ -15,13 +15,13 @@ export const reply_options = {
         updated_at: 'sr_updated_at',
         order: {
             $fields: {
-                id: 'sr_ord_id',
+                id: 'sr_po_id',
                 number: 'sr_ord_no'
             }
         },
         order_detail: {
             $fields: {
-                id: 'sr_odd_id',
+                id: 'sr_podetail_id',
                 shape_type: 'sr_odd_shape_type',
                 required_length_mm: 'sr_odd_required_length_mm',
                 required_width_mm: 'sr_odd_required_width_mm',

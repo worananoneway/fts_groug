@@ -2,8 +2,8 @@ export const reply_options = {
     fields: {
         id: 'tlwmsp_id',
         wmsp_id: 'tlwmsp_wmsp_id',
-        ord_id: 'tlwmsp_ord_id',
-        odd_id: 'tlwmsp_odd_id',
+        po_id: 'tlwmsp_po_id',
+        podetail_id: 'tlwmsp_podetail_id',
         sr_id: 'tlwmsp_sr_id',
         event_type: 'tlwmsp_event_type',
         quantity_change: 'tlwmsp_quantity_change',

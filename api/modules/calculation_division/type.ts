@@ -39,7 +39,7 @@ export interface ValidationError {
 
 export interface BaseDemandPayload {
     order_detail_id?: string;
-    odd_id?: string;
+    podetail_id?: string;
     material_master_id?: string;
     mm_id?: string;
     length?: number;
@@ -72,7 +72,7 @@ export type CuttingItemPayload = RoundBarDemandPayload | MsPlateDemandPayload;
 
 export interface CalculationPayload {
     order_id?: string;
-    ord_id?: string;
+    po_id?: string;
     srb_id?: string;
     msp_id?: string;
     unit?: string;
@@ -219,8 +219,8 @@ export interface ProposedRoundWastrel {
         wsrb_length: number;
         wsrb_quantity: 1;
         wsrb_available_quantity: 1;
-        wsrb_ord_id: string | null;
-        wsrb_odd_id: string | null;
+        wsrb_po_id: string | null;
+        wsrb_podetail_id: string | null;
         wsrb_remark: string;
     };
 }
@@ -251,8 +251,8 @@ export interface ProposedPlateWastrel {
         wmsp_thickness: number;
         wmsp_quantity: 1;
         wmsp_available_quantity: 1;
-        wmsp_ord_id: string | null;
-        wmsp_odd_id: string | null;
+        wmsp_po_id: string | null;
+        wmsp_podetail_id: string | null;
         wmsp_remark: string;
     };
 }
