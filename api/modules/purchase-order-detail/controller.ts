@@ -517,7 +517,6 @@ async function update(request: any, reply: any) {
     }
 }
 
-
 export default {
     create,
     soft_delete,

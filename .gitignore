@@ -56,3 +56,4 @@ bun.lockb
 /scripts
 */.claude*
 /.tmp
+/.cache
