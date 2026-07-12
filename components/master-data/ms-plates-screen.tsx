@@ -53,16 +53,6 @@ const columns: Array<DataTableColumn<MsPlateRow>> = [
     ),
   },
   {
-    key: "location",
-    header: "ตำแหน่งจัดเก็บ",
-    cell: (row) => (
-      <div>
-        <p>{dash(row.location)}</p>
-        <p className="text-xs text-slate-400">{dash(row.location_type)}</p>
-      </div>
-    ),
-  },
-  {
     key: "received_date",
     header: "วันที่รับเข้า",
     cell: (row) => formatDate(row.received_date),
