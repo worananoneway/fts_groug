@@ -44,14 +44,23 @@ export async function updateOrderDetailStatus(
   await putOrderDetail(orderId, { ...detail, status });
 }
 
-export async function createOrderDetail(orderId: string, detail: OrderDetail): Promise<void> {
+export async function createOrderDetail(orderId: string, detail: OrderDetail): Promise<string | undefined> {
   const item = orderDetailPayload(orderId, detail);
   // controller ของ purchase-order-details validate ฟิลด์จาก body ชั้นนอก แต่บันทึกจาก items
-  await requestJson(`/api/${API_VERSION}/purchase-order-details`, {
+  const payload = await requestJson(`/api/${API_VERSION}/purchase-order-details`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...item, items: [item] }),
   });
+  return createdOrderDetailId(payload.details);
+}
+
+// POST คืนแถวที่สร้าง (RETURNING *) มาเป็น array ซ้อน array — ดึง podetail_id ของแถวแรกออกมา
+function createdOrderDetailId(details: unknown): string | undefined {
+  if (!Array.isArray(details)) return undefined;
+  const row = details.flat(2).filter(isRecord).find((item) => item.podetail_id ?? item.id);
+  const value = row?.podetail_id ?? row?.id;
+  return value === undefined || value === null ? undefined : String(value);
 }
 
 export async function updateOrderDetail(orderId: string, detail: OrderDetail): Promise<void> {
