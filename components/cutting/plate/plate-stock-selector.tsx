@@ -26,7 +26,7 @@ export function PlateStockSelector() {
           value: plate.id,
           label: `${plate.code} | ${fmt(plate.length)}x${fmt(plate.width)} หนา ${plate.thickness} มม. (คงเหลือ ${plate.available_quantity})`,
         }))}
-        placeholder="กำหนดขนาดเอง"
+        placeholder={stockPlates.length === 0 ? "ไม่มีแผ่นในคลัง" : "เลือกแผ่นจากคลัง"}
         value={selectedPlateId}
       />
       {selectedPlate ? (

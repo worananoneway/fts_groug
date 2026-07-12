@@ -1,13 +1,16 @@
 import type { RoundBarStock, SavedRoundScrap } from "@/types/division";
-import { API_VERSION, flatString, nestedString, readArray, requestJson } from "./http";
+import steelRoundBarsApi from "@/hooks/master-data/steel_round_bars";
+import { API_VERSION, flatString, isRecord, nestedString, readArray, requestJson } from "./http";
 import { mapRoundStock } from "./mappers";
 
 export async function loadSteelRoundBars(): Promise<RoundBarStock[]> {
-  const payload = await requestJson(`/api/${API_VERSION}/steel-round-bars`);
-  const rawRows = readArray(payload, "steel_round_bars");
+  const reply = (await steelRoundBarsApi.get()) as { statuscode?: number; details?: unknown };
+  const rawRows = reply?.statuscode === 200 && Array.isArray(reply.details)
+    ? reply.details.filter(isRecord)
+    : [];
   return rawRows
     .map((row) => mapRoundStock(row))
-    .filter((row): row is RoundBarStock => Boolean(row));
+    .filter((row): row is RoundBarStock => row !== null && row.status !== "Inactive");
 }
 
 export async function loadWastrelBars(): Promise<SavedRoundScrap[]> {
@@ -29,12 +32,14 @@ export async function loadWastrelBars(): Promise<SavedRoundScrap[]> {
 
 export interface WastrelBarPayload {
   mm_id: string;
-  srb_id?: string;
+  srb_id?: string | null;
   code: string;
   diameter: number;
   length: number;
   quantity: number;
   available_quantity: number;
+  po_id?: string | null;
+  podetail_id?: string | null;
   ord_id?: string;
   odd_id?: string;
   remark?: string;

@@ -1,13 +1,12 @@
 import type { PlateStock, SavedPlateScrap } from "@/types/division";
-import { API_VERSION, flatString, nestedString, readArray, requestJson } from "./http";
+import { API_VERSION, flatString, nestedString, readArray, readRows, requestJson } from "./http";
 import { mapPlateStock } from "./mappers";
 
 export async function loadMsPlates(): Promise<PlateStock[]> {
-  const payload = await requestJson(`/api/${API_VERSION}/accounting/ms-plates`);
-  const rawRows = readArray(payload, "ms_plates");
-  return rawRows
+  const payload = await requestJson(`/api/${API_VERSION}/ms-plates`);
+  return readRows(payload)
     .map((row) => mapPlateStock(row))
-    .filter((row): row is PlateStock => Boolean(row));
+    .filter((row): row is PlateStock => row !== null && row.status !== "Inactive");
 }
 
 export async function loadWastrelPlates(): Promise<SavedPlateScrap[]> {
@@ -29,13 +28,15 @@ export async function loadWastrelPlates(): Promise<SavedPlateScrap[]> {
 
 export interface WastrelPlatePayload {
   mm_id: string;
-  msp_id?: string;
+  msp_id?: string | null;
   stock_code: string;
   length: number;
   width: number;
   thickness: number;
   quantity: number;
   available_quantity: number;
+  po_id?: string | null;
+  podetail_id?: string | null;
   ord_id?: string;
   odd_id?: string;
   remark?: string;

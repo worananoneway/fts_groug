@@ -25,8 +25,6 @@ export function RoundBarSettingsTab() {
     roundMismatchedCount,
     roundMismatchText,
     roundTotalPieces,
-    setBarDiameter,
-    setBarLength,
     setRKerf,
     setRMinScrap,
   } = useCutting();
@@ -62,28 +60,18 @@ export function RoundBarSettingsTab() {
 
         <div className="mt-4 grid grid-cols-2 gap-4">
           <Field
+            disabled
+            inputClassName="cursor-not-allowed text-slate-400"
             label="เส้นผ่านศูนย์กลาง Ø (มม.)"
-            onChange={(event) => setBarDiameter(Number(event.target.value))}
             type="number"
             value={barDiameter}
           />
           <Field
+            disabled
+            inputClassName="cursor-not-allowed text-slate-400"
             label="ความยาวแท่ง (มม.)"
-            onChange={(event) => setBarLength(Number(event.target.value))}
             type="number"
             value={barLength}
-          />
-          <Field
-            label="ความกว้างใบตัด Kerf (มม.)"
-            onChange={(event) => setRKerf(Number(event.target.value))}
-            type="number"
-            value={rKerf}
-          />
-          <Field
-            label="เศษขั้นต่ำที่บันทึก (มม.)"
-            onChange={(event) => setRMinScrap(Number(event.target.value))}
-            type="number"
-            value={rMinScrap}
           />
         </div>
 

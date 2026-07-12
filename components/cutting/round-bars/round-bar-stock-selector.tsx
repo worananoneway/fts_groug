@@ -26,7 +26,7 @@ export function RoundBarStockSelector() {
           value: bar.id,
           label: `${bar.code} | Ø${fmt(bar.diameter)} x ${fmt(bar.length)} มม. (คงเหลือ ${bar.available_quantity})`,
         }))}
-        placeholder="กำหนดขนาดเอง"
+        placeholder={stockBars.length === 0 ? "ไม่มีแท่งในคลัง" : undefined}
         value={selectedBarId}
       />
       {selectedBar ? (

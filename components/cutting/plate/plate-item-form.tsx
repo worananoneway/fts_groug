@@ -68,13 +68,7 @@ export function PlateItemForm() {
         }
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            inputClassName="text-center"
-            label="รหัส"
-            onChange={(event) => setPlateForm((form) => ({ ...form, code: event.target.value }))}
-            placeholder="A-Z"
-            value={plateForm.code}
-          />
+
           <Field
             label="จำนวน"
             min={1}

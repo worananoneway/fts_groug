@@ -33,6 +33,7 @@ export function RoundBarItemForm() {
       setNotice({ ok: false, text: "กรุณากรอกความยาวที่ต้องการตัด" });
       return;
     }
+
     addRoundItem();
     setOpen(false);
     setNotice({ ok: true, text: roundEditingItemId ? "แก้ไขรายการสำเร็จ" : "เพิ่มรายการสำเร็จ" });
@@ -69,11 +70,13 @@ export function RoundBarItemForm() {
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
-            inputClassName="text-center"
-            label="รหัส"
-            onChange={(event) => setRoundForm((form) => ({ ...form, code: event.target.value }))}
-            placeholder="A-Z"
-            value={roundForm.code}
+            label="ความยาว"
+            min={1}
+            step={1}
+            onChange={(event) => setRoundForm((form) => ({ ...form, length: positiveInt(event.target.value) }))}
+            placeholder="มม."
+            type="number"
+            value={roundForm.length}
           />
           <Field
             label="จำนวน"
@@ -82,15 +85,6 @@ export function RoundBarItemForm() {
             onChange={(event) => setRoundForm((form) => ({ ...form, quantity: positiveInt(event.target.value) }))}
             type="number"
             value={roundForm.quantity}
-          />
-          <Field
-            label="ความยาว"
-            min={1}
-            step={1}
-            onChange={(event) => setRoundForm((form) => ({ ...form, length: positiveInt(event.target.value) }))}
-            placeholder="มม."
-            type="number"
-            value={roundForm.length}
           />
         </div>
       </Modal>
