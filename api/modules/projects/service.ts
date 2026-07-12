@@ -1,5 +1,5 @@
 import sql_query from "@/api/utils/sql_query";
-import { Payload } from "./type";
+import { ErrorField, ErrorMessage, Payload } from "./type";
 import { Condition, Response, HttpStatusCode } from "@/api/utils/shared_types";
 async function count_duplicate(conditions: Condition): Promise<Response> {
     const sql = `
@@ -12,6 +12,21 @@ async function count_duplicate(conditions: Condition): Promise<Response> {
             ...conditions.params
 
         ]);
+        if (result[0]?.duplicate_name_th > 0) {
+            return {
+                statuscode: HttpStatusCode.CONFLICT,
+                error: [{ field: ErrorField.NAME_TH, message: ErrorMessage.NAME_TH_DUPLICATE }],
+                data: result
+            }
+        }
+        if (result[0]?.duplicate_name_en > 0) {
+            return {
+                statuscode: HttpStatusCode.CONFLICT,
+                error: [{ field: ErrorField.NAME_EN, message: ErrorMessage.NAME_EN_DUPLICATE }],
+                data: result
+            }
+        }
+
         return {
             statuscode: HttpStatusCode.OK,
             error: null,
@@ -139,7 +154,7 @@ async function get(conditions: Condition = { sql: "", params: [] }): Promise<Res
                 error: "project not found.",
                 data: null
             };
-        }        
+        }
         return {
             statuscode: HttpStatusCode.OK,
             error: null,
@@ -185,7 +200,7 @@ async function get_customer_by_id(customer_id: string): Promise<Response> {
         };
     }
 }
-async function get_manager_by_id(id:string): Promise<Response> {
+async function get_manager_by_id(id: string): Promise<Response> {
     const sql = `
         SELECT
             emp_status
