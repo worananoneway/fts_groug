@@ -64,18 +64,6 @@ export function PlateSettingsTab() {
             type="number"
             value={sheetH}
           />
-          <Field
-            label="ความกว้างใบตัด Kerf (มม.)"
-            onChange={(event) => setKerf(Number(event.target.value))}
-            type="number"
-            value={kerf}
-          />
-          <Field
-            label="เศษขั้นต่ำที่บันทึก (มม.)"
-            onChange={(event) => setMinScrap(Number(event.target.value))}
-            type="number"
-            value={minScrap}
-          />
         </div>
 
         <PlateSourcePlanCard />

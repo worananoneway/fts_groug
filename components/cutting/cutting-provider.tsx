@@ -14,7 +14,7 @@ import {
 import { useRouter } from "next/navigation";
 
 import { ITEM_COLORS, MODULE_SUBTITLES } from "@/constants/division";
-import { loadOrders, updateOrderDetailStatus } from "@/services/division/purchase-orders";
+import { loadOrders, updateOrderDetail, updateOrderDetailStatus, createOrderDetail } from "@/services/division/purchase-orders";
 import {
   createWastrelPlate,
   deleteWastrelPlate,
@@ -80,7 +80,7 @@ export interface CuttingContextValue {
   plateEditingItemId: number | null;
   plateLoadedFromPo: string | null;
   clearPlatePoLoad: () => void;
-  addPlateItem: () => void;
+  addPlateItem: () => Promise<Notice | null>;
   beginNewPlateItem: () => void;
   editPlateItem: (id: number) => void;
   removePlateItem: (id: number) => void;
@@ -116,7 +116,7 @@ export interface CuttingContextValue {
   roundEditingItemId: number | null;
   roundLoadedFromPo: string | null;
   clearRoundPoLoad: () => void;
-  addRoundItem: () => void;
+  addRoundItem: () => Promise<Notice | null>;
   beginNewRoundItem: () => void;
   editRoundItem: (id: number) => void;
   removeRoundItem: (id: number) => void;
@@ -209,30 +209,6 @@ export function CuttingProvider({
   const [stockBars, setStockBars] = useState<RoundBarStock[]>([]);
   const [scrapBars, setScrapBars] = useState<SavedRoundScrap[]>([]);
 
-  useEffect(() => {
-    if (module !== "plate" || startedPlateLoad.current) return;
-    startedPlateLoad.current = true;
-    setPlateLoading(true);
-    Promise.all([safeRequest(loadMsPlates), safeRequest(loadWastrelPlates)]).then(([stock, scraps]) => {
-      if (!mountedRef.current) return;
-      setStockPlates(stock);
-      setScrapPlates(scraps);
-      setPlateLoading(false);
-    });
-  }, [module]);
-
-  useEffect(() => {
-    if (module !== "roundbar" || startedRoundLoad.current) return;
-    startedRoundLoad.current = true;
-    setRoundLoading(true);
-    Promise.all([safeRequest(loadSteelRoundBars), safeRequest(loadWastrelBars)]).then(([stock, scraps]) => {
-      if (!mountedRef.current) return;
-      setStockBars(stock);
-      setScrapBars(scraps);
-      setRoundLoading(false);
-    });
-  }, [module]);
-
   // ---- state ของโมดูลตัดแผ่น ----
   const [platePoId, setPlatePoId] = useState<string | null>(null);
   const [selectedPlateId, rawSetSelectedPlateId] = useState("");
@@ -273,6 +249,44 @@ export function CuttingProvider({
   const [roundSavedScrapKeys, setRoundSavedScrapKeys] = useState<string[]>([]);
   const [roundScrapMessage, setRoundScrapMessage] = useState<Notice | null>(null);
   const [roundLoadedFromPo, setRoundLoadedFromPo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (module !== "plate" || startedPlateLoad.current) return;
+    startedPlateLoad.current = true;
+    setPlateLoading(true);
+    Promise.all([safeRequest(loadMsPlates), safeRequest(loadWastrelPlates)]).then(([stock, scraps]) => {
+      if (!mountedRef.current) return;
+      setStockPlates(stock);
+      setScrapPlates(scraps);
+      // ขนาดแผ่นมาจากคลังเท่านั้น จึงเลือกแผ่นแรกเป็นค่าตั้งต้นไว้ก่อน (seed จาก PO จะทับทีหลังถ้ามี)
+      const firstPlate = stock[0];
+      if (firstPlate) {
+        rawSetSelectedPlateId(firstPlate.id);
+        setSheetW(firstPlate.length);
+        setSheetH(firstPlate.width);
+      }
+      setPlateLoading(false);
+    });
+  }, [module]);
+
+  useEffect(() => {
+    if (module !== "roundbar" || startedRoundLoad.current) return;
+    startedRoundLoad.current = true;
+    setRoundLoading(true);
+    Promise.all([safeRequest(loadSteelRoundBars), safeRequest(loadWastrelBars)]).then(([stock, scraps]) => {
+      if (!mountedRef.current) return;
+      setStockBars(stock);
+      setScrapBars(scraps);
+      // ขนาดแท่งมาจากคลังเท่านั้น จึงเลือกแท่งแรกเป็นค่าตั้งต้นไว้ก่อน (seed จาก PO จะทับทีหลังถ้ามี)
+      const firstBar = stock[0];
+      if (firstBar) {
+        rawSetSelectedBarId(firstBar.id);
+        setBarDiameter(firstBar.diameter);
+        setBarLength(firstBar.length);
+      }
+      setRoundLoading(false);
+    });
+  }, [module]);
 
   const moduleLoading = module === "plate" ? plateLoading : roundLoading;
   const dataStatus: DataStatus = {
@@ -557,6 +571,22 @@ export function CuttingProvider({
     }
   }
 
+  // บันทึกขนาด/จำนวนที่แก้จาก modal กลับลง purchase_order_details (เฉพาะรายการที่มีแถวใน DB)
+  async function persistOrderDetailEdit(orderDetailId: string, changes: Partial<OrderDetail>) {
+    if (isLocalOrderDetailId(orderDetailId)) return;
+    for (const [orderId, rows] of Object.entries(orderDetails)) {
+      const row = rows.find((item) => item.id === orderDetailId);
+      if (!row) continue;
+      const nextRow = { ...row, ...changes };
+      await updateOrderDetail(orderId, nextRow);
+      setOrderDetails((current) => ({
+        ...current,
+        [orderId]: (current[orderId] ?? []).map((item) => (item.id === orderDetailId ? nextRow : item)),
+      }));
+      return;
+    }
+  }
+
   // ล้างป้าย PO = ตัดความเชื่อมโยงกับใบสั่งซื้อ และเอา params ออกจาก URL กัน refresh แล้ว seed ซ้ำ
   function clearPlatePoLoad() {
     setPlateLoadedFromPo(null);
@@ -577,10 +607,10 @@ export function CuttingProvider({
     setPlateForm({ code: "", width: "1", height: "1", quantity: "1" });
   }
 
-  function addPlateItem() {
+  async function addPlateItem(): Promise<Notice | null> {
     const w = Number(plateForm.width);
     const h = Number(plateForm.height);
-    if (!w || !h || w <= 0 || h <= 0) return;
+    if (!w || !h || w <= 0 || h <= 0) return null;
 
     const codeSourceItems = plateEditingItemId
       ? plateItems.filter((item) => item.id !== plateEditingItemId)
@@ -588,13 +618,46 @@ export function CuttingProvider({
     const code = (plateForm.code.trim().toUpperCase() || nextCode(codeSourceItems.map((item) => item.code))).slice(0, 3);
     const qty = Math.max(1, Math.floor(Number(plateForm.quantity) || 1));
     if (plateEditingItemId) {
+      // รายการที่มาจาก PO ต้องบันทึกกลับลง DB ก่อน ถ้าไม่สำเร็จให้คงค่าเดิมไว้
+      const editingItem = plateItems.find((item) => item.id === plateEditingItemId);
+      if (editingItem?.orderDetailId) {
+        try {
+          await persistOrderDetailEdit(editingItem.orderDetailId, { width: w, length: h, qty });
+        } catch {
+          return { ok: false, text: "บันทึกรายการลงฐานข้อมูลไม่สำเร็จ กรุณาลองใหม่" };
+        }
+      }
       setPlateItems((items) =>
         items.map((item) => (item.id === plateEditingItemId ? { ...item, code, w, h, qty } : item)),
       );
       setPlateEditingItemId(null);
       setPlateForm({ code: "", width: "1", height: "1", quantity: "1" });
       setPlateResult(null);
-      return;
+      return null;
+    }
+
+    // ถ้าหน้ากำลังผูกกับ PO อยู่ ให้สร้างแถวใหม่ลง purchase_order_details ด้วย
+    // แล้วเก็บ id ที่ได้ไว้กับรายการ เพื่อให้การแก้ไขครั้งถัดไปอัปเดตแถวเดิมได้
+    const plateOrdId = platePoId ?? purchaseOrders.find((po) => po.no === plateLoadedFromPo)?.id;
+    let createdDetailId: string | undefined;
+    if (plateOrdId) {
+      try {
+        createdDetailId = await createOrderDetail(plateOrdId, {
+          id: "",
+          shape: "PLATE",
+          materialId: selectedPlate?.material_master_id,
+          material: selectedPlate?.code ?? "",
+          length: h,
+          width: w,
+          thickness: selectedPlate?.thickness,
+          qty,
+          remaining: qty,
+          status: "PENDING",
+        });
+        await refreshOrders();
+      } catch {
+        return { ok: false, text: "บันทึกรายการลงฐานข้อมูลไม่สำเร็จ กรุณาลองใหม่" };
+      }
     }
 
     setPlateItems((items) => [
@@ -606,11 +669,13 @@ export function CuttingProvider({
         h,
         qty,
         color: ITEM_COLORS[items.length % ITEM_COLORS.length],
+        orderDetailId: createdDetailId,
       },
     ]);
     setPlateNextId((id) => id + 1);
     setPlateForm({ code: "", width: "1", height: "1", quantity: "1" });
     setPlateResult(null);
+    return null;
   }
 
   function removePlateItem(id: number) {
@@ -726,9 +791,9 @@ export function CuttingProvider({
     }
   }
 
-  function addRoundItem() {
+  async function addRoundItem(): Promise<Notice | null> {
     const length = Number(roundForm.length);
-    if (!length || length <= 0) return;
+    if (!length || length <= 0) return null;
 
     const codeSourceItems = roundEditingItemId
       ? roundItems.filter((item) => item.id !== roundEditingItemId)
@@ -736,13 +801,45 @@ export function CuttingProvider({
     const code = (roundForm.code.trim().toUpperCase() || nextCode(codeSourceItems.map((item) => item.code))).slice(0, 3);
     const qty = Math.max(1, Math.floor(Number(roundForm.quantity) || 1));
     if (roundEditingItemId) {
+      // รายการที่มาจาก PO ต้องบันทึกกลับลง DB ก่อน ถ้าไม่สำเร็จให้คงค่าเดิมไว้
+      const editingItem = roundItems.find((item) => item.id === roundEditingItemId);
+      if (editingItem?.orderDetailId) {
+        try {
+          await persistOrderDetailEdit(editingItem.orderDetailId, { length, qty });
+        } catch {
+          return { ok: false, text: "บันทึกรายการลงฐานข้อมูลไม่สำเร็จ กรุณาลองใหม่" };
+        }
+      }
       setRoundItems((items) =>
         items.map((item) => (item.id === roundEditingItemId ? { ...item, code, length, qty } : item)),
       );
       setRoundEditingItemId(null);
       setRoundForm({ code: "", length: "1", quantity: "1" });
       setRoundResult(null);
-      return;
+      return null;
+    }
+
+    // ถ้าหน้ากำลังผูกกับ PO อยู่ ให้สร้างแถวใหม่ลง purchase_order_details ด้วย
+    // แล้วเก็บ id ที่ได้ไว้กับรายการ เพื่อให้การแก้ไขครั้งถัดไปอัปเดตแถวเดิมได้
+    const roundOrdId = roundPoId ?? purchaseOrders.find((po) => po.no === roundLoadedFromPo)?.id;
+    let createdDetailId: string | undefined;
+    if (roundOrdId) {
+      try {
+        createdDetailId = await createOrderDetail(roundOrdId, {
+          id: "",
+          shape: "ROUND",
+          materialId: selectedBar?.material_master_id,
+          material: selectedBar?.code ?? "",
+          diameter: barDiameter,
+          length,
+          qty,
+          remaining: qty,
+          status: "PENDING",
+        });
+        await refreshOrders();
+      } catch {
+        return { ok: false, text: "บันทึกรายการลงฐานข้อมูลไม่สำเร็จ กรุณาลองใหม่" };
+      }
     }
 
     setRoundItems((items) => [
@@ -753,11 +850,13 @@ export function CuttingProvider({
         length,
         qty,
         color: ITEM_COLORS[items.length % ITEM_COLORS.length],
+        orderDetailId: createdDetailId,
       },
     ]);
     setRoundNextId((id) => id + 1);
     setRoundForm({ code: "", length: "1", quantity: "1" });
     setRoundResult(null);
+    return null;
   }
 
   function removeRoundItem(id: number) {
