@@ -42,24 +42,12 @@ async function create(request: any, reply: any) {
         const payload: Payload = sanitize_payload(request.body);
         console.log(`[Controller] Creating ${module_name} with payload:`, payload);
         const invalid_fields: ValidationError[] = [];
-        if (!payload.mm_id) {
-            invalid_fields.push({
-                field: ErrorField.MM_ID,
-                message: ErrorMessage.MM_ID_REQUIRED
-            });
-        }
-        if (!payload.code) {
-            invalid_fields.push({
-                field: ErrorField.CODE,
-                message: ErrorMessage.CODE_REQUIRED
-            });
-        }
-        if (!payload.code) {
-            invalid_fields.push({
-                field: ErrorField.CODE,
-                message: ErrorMessage.CODE_REQUIRED
-            });
-        }
+        // if (!payload.mm_id) {
+        //     invalid_fields.push({
+        //         field: ErrorField.MM_ID,
+        //         message: ErrorMessage.MM_ID_REQUIRED
+        //     });
+        // }
         if (!payload.length) {
             invalid_fields.push({
                 field: ErrorField.LENGTH,
@@ -88,12 +76,6 @@ async function create(request: any, reply: any) {
             invalid_fields.push({
                 field: ErrorField.AVAILABLE_QUANTITY,
                 message: ErrorMessage.AVAILABLE_QUANTITY_REQUIRED
-            });
-        }
-        if (!payload.status) {
-            invalid_fields.push({
-                field: ErrorField.STATUS,
-                message: ErrorMessage.STATUS_REQUIRED
             });
         }
         if (!payload.received_date) {
@@ -125,6 +107,12 @@ async function create(request: any, reply: any) {
             console.error(`[Controller] Validation errors found:`, invalid_fields);
             return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>
                 reply_result(module_name, HttpStatusCode.BAD_REQUEST, invalid_fields)
+            );
+        }
+        const duplicate_check = await service.count_duplicate({ sql: '', params: [payload.code] });
+        if (duplicate_check.statuscode !== HttpStatusCode.OK || (duplicate_check.data && duplicate_check.data[0]?.duplicate_code > 0)) {
+            return reply.code(duplicate_check.statuscode).send(<Reply>
+                reply_result(module_name, duplicate_check.statuscode, Array.isArray(duplicate_check.error) ? duplicate_check.error : null)
             );
         }
 
@@ -187,7 +175,7 @@ async function update(request: any, reply: any) {
 
         const emp_id: string = request?.user?.id;
         const payload: Payload = sanitize_payload(request.body);
-        const ms_plate_id: string = sanitize_string(request.params.ms_plate_id);
+        const ms_plate_id: string = sanitize_string(request.params.msp_id);
         const ms_plate_data = await service.get({ sql: ' AND msp_id = $1 ', params: [ms_plate_id] });
         if (ms_plate_data.statuscode !== HttpStatusCode.OK) {
             return reply.code(ms_plate_data.statuscode).send(<Reply>
@@ -195,24 +183,12 @@ async function update(request: any, reply: any) {
             );
         }
         const invalid_fields: ValidationError[] = [];
-        if (!payload.mm_id) {
-            invalid_fields.push({
-                field: ErrorField.MM_ID,
-                message: ErrorMessage.MM_ID_REQUIRED
-            });
-        }
-        if (!payload.code) {
-            invalid_fields.push({
-                field: ErrorField.CODE,
-                message: ErrorMessage.CODE_REQUIRED
-            });
-        }
-        if (!payload.code) {
-            invalid_fields.push({
-                field: ErrorField.CODE,
-                message: ErrorMessage.CODE_REQUIRED
-            });
-        }
+        // if (!payload.mm_id) {
+        //     invalid_fields.push({
+        //         field: ErrorField.MM_ID,
+        //         message: ErrorMessage.MM_ID_REQUIRED
+        //     });
+        // }
         if (!payload.length) {
             invalid_fields.push({
                 field: ErrorField.LENGTH,
@@ -241,30 +217,6 @@ async function update(request: any, reply: any) {
             invalid_fields.push({
                 field: ErrorField.AVAILABLE_QUANTITY,
                 message: ErrorMessage.AVAILABLE_QUANTITY_REQUIRED
-            });
-        }
-        if (!payload.loc_id) {
-            invalid_fields.push({
-                field: ErrorField.LOC_ID,
-                message: ErrorMessage.LOC_ID_REQUIRED
-            });
-        }
-        if (!payload.location_type) {
-            invalid_fields.push({
-                field: ErrorField.LOCATION_TYPE,
-                message: ErrorMessage.LOCATION_TYPE_REQUIRED
-            });
-        }
-        if (!payload.location) {
-            invalid_fields.push({
-                field: ErrorField.LOCATION,
-                message: ErrorMessage.LOCATION_REQUIRED
-            });
-        }
-        if (!payload.status) {
-            invalid_fields.push({
-                field: ErrorField.STATUS,
-                message: ErrorMessage.STATUS_REQUIRED
             });
         }
         if (!payload.received_date) {
@@ -297,6 +249,12 @@ async function update(request: any, reply: any) {
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
         }
+        const duplicate_check = await service.count_duplicate({ sql: ' AND msp_id != $2', params: [payload.code, payload.id] });
+        if (duplicate_check.statuscode !== HttpStatusCode.OK || (duplicate_check.data && duplicate_check.data[0]?.duplicate_code > 0)) {
+            return reply.code(duplicate_check.statuscode).send(<Reply>
+                reply_result(module_name, duplicate_check.statuscode, Array.isArray(duplicate_check.error) ? duplicate_check.error : null)
+            );
+        }
 
         const result = await service.update(ms_plate_id, payload, emp_id);
         return reply.code(result.statuscode).send(<Reply>
@@ -318,8 +276,8 @@ async function update_status(request: any, reply: any) {
         const missing_fields: string[] = field_validator(request.body, [
             'status'
         ]);
-        if (!request.params.ms_plate_id) {
-            missing_fields.unshift('ms_plate_id');
+        if (!request.params.msp_id) {
+            missing_fields.unshift('msp_id');
         }
         if (missing_fields.length > 0) {
             console.error(`[Controller] Missing required fields for updating ${module_name} status:`, missing_fields);
@@ -343,14 +301,14 @@ async function update_status(request: any, reply: any) {
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
         }
-        const ms_plate_id: string = request.params.ms_plate_id;
-        const ms_plate_data = await service.get({ sql: ` AND ms_plate_id = $1`, params: [ms_plate_id] });
+        const msp_id: string = request.params.msp_id;
+        const ms_plate_data = await service.get({ sql: ` AND msp_id = $1`, params: [msp_id] });
         if (ms_plate_data.statuscode !== HttpStatusCode.OK) {
             return reply.code(ms_plate_data.statuscode).send(<Reply>
                 reply_result(module_name, ms_plate_data.statuscode)
             );
         }
-        const result = await service.update_status(ms_plate_id, status, emp_id);
+        const result = await service.update_status(msp_id, status, emp_id);
         return reply.code(result.statuscode).send(<Reply>
             reply_result(module_name, result.statuscode, null, result?.data, reply_options)
         );
@@ -367,24 +325,15 @@ async function soft_delete(request: any, reply: any) {
         
         emp_authentication(module_name, request?.user, reply);
         const emp_id: string = request?.user?.id;
-        const ms_plate_id: string = request.params.ms_plate_id;
-        let status: string = sanitize_input(request.body.status);
+        const msp_id: string = request.params.msp_id;
         const invalid_fields: ValidationError[] = [];
-        if (!is_enum_key(status_enum, status) && status !== Status.DELETED) {
-            invalid_fields.push({
-                field: ErrorField.STATUS,
-                message: ErrorMessage.STATUS_DELETED_INVALID
-            });
-        } else {
-            status = Status[status.toUpperCase() as keyof typeof Status];
-        }
         if (invalid_fields.length > 0) {
             console.error(`[Controller] Validation errors found in ${module_name} creation payload:`, invalid_fields);
             return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
                 reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
             );
         }
-        const result = await service.soft_delete(ms_plate_id, emp_id);
+        const result = await service.soft_delete(msp_id, emp_id);
         return reply.code(result.statuscode).send(<Reply>
             reply_result(module_name, result.statuscode)
         );

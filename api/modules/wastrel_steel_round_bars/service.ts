@@ -9,7 +9,6 @@ async function create(payload: Payload, emp_id: string): Promise<Response> {
         INSERT INTO public.wastrel_steel_round_bars (
             wsrb_mm_id,
             wsrb_srb_id,
-            wsrb_code,
             wsrb_diameter,
             wsrb_length,
             wsrb_quantity,
@@ -20,7 +19,7 @@ async function create(payload: Payload, emp_id: string): Promise<Response> {
             wsrb_emp_id,
             wsrb_status
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'Reserved'
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Reserved'
         ) RETURNING *;
     `;
     try {
@@ -29,7 +28,6 @@ async function create(payload: Payload, emp_id: string): Promise<Response> {
         const result = await sql_query(sql, [
             payload.mm_id,
             payload.srb_id ?? null,
-            payload.code,
             payload.diameter,
             payload.length,
             quantity,
@@ -74,7 +72,7 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
                 mm_grade AS wsrb_mm_grade,
                 wsrb_srb_id,
                 srb_code AS wsrb_srb_code,
-                wsrb_code,
+                wsrb_display_id,
                 wsrb_diameter,
                 wsrb_length,
                 wsrb_quantity,
@@ -136,15 +134,14 @@ async function update(id: string, payload: Payload, emp_id: string): Promise<Res
         SET
             wsrb_mm_id = $2,
             wsrb_srb_id = $3,
-            wsrb_code = $4,
-            wsrb_diameter = $5,
-            wsrb_length = $6,
-            wsrb_quantity = $7,
-            wsrb_available_quantity = $8,
-            wsrb_po_id = $9,
-            wsrb_podetail_id = $10,
-            wsrb_remark = $11,
-            wsrb_emp_id = $12,
+            wsrb_diameter = $4,
+            wsrb_length = $5,
+            wsrb_quantity = $6,
+            wsrb_available_quantity = $7,
+            wsrb_po_id = $8,
+            wsrb_podetail_id = $9,
+            wsrb_remark = $10,
+            wsrb_emp_id = $11
         WHERE wsrb_id = $1
         RETURNING wsrb_id;
     `;
@@ -152,15 +149,14 @@ async function update(id: string, payload: Payload, emp_id: string): Promise<Res
         const result = await sql_query(sql, [
             id,
             payload.mm_id,
-            payload.srb_id ?? null,
-            payload.code,
+            payload.srb_id,
             payload.diameter,
             payload.length,
             payload.quantity ?? 1,
             payload.available_quantity ?? (payload.quantity ?? 1),
-            payload.po_id ?? null,
-            payload.podetail_id ?? null,
-            payload.remark ?? null,
+            payload.po_id,
+            payload.podetail_id,
+            payload.remark,
             emp_id
         ]);
         if (result.length === 0) {

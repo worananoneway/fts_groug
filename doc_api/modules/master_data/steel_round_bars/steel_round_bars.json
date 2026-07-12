@@ -1,0 +1,77 @@
+[
+  {
+    "method": "GET",
+    "name": "Get Steel Round Bars",
+    "url": "/api/v1/steel-round-bars",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "status": "AVAILABLE" },
+    "body": null
+  },
+  {
+    "method": "GET",
+    "name": "Get Steel Round Bar By ID",
+    "url": "/api/v1/steel-round-bars/<srb_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "srb_id": null },
+    "body": null
+  },
+  {
+    "method": "POST",
+    "name": "Create Steel Round Bar",
+    "url": "/api/v1/steel-round-bars",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {},
+    "body": {
+      "mm_id": null,
+      "code": "SRB-0001",
+      "diameter": 25,
+      "length": 6000,
+      "quantity": 10,
+      "available_quantity": 8,
+      "received_date": "2026-07-11",
+      "remark": "Steel round bar example"
+    }
+  },
+  {
+    "method": "PUT",
+    "name": "Update Steel Round Bar",
+    "url": "/api/v1/steel-round-bars/<srb_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "srb_id": null },
+    "body": {
+      "mm_id": null,
+      "code": "SRB-0001",
+      "diameter": 25,
+      "length": 6000,
+      "quantity": 10,
+      "available_quantity": 8,
+      "loc_id": null,
+      "location_type": "WAREHOUSE",
+      "location": "A-01",
+      "received_date": "2026-07-11",
+      "remark": "Updated steel round bar"
+    }
+  },
+  {
+    "method": "PATCH",
+    "name": "Update Steel Round Bar Status",
+    "url": "/api/v1/steel-round-bars/status/<srb_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "srb_id": null },
+    "body": { "status": "AVAILABLE" }
+  },
+  {
+    "method": "DELETE",
+    "name": "Delete Steel Round Bar",
+    "url": "/api/v1/steel-round-bars/<srb_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "srb_id": null },
+    "body": null
+  }
+]

@@ -2,7 +2,7 @@ import sql_query from "@/api/utils/sql_query";
 import { Condition, Response, HttpStatusCode } from "@/api/utils/shared_types";
 
 interface OrderDetailPayload {
-    ord_id: string;
+    po_id: string;
     mm_id: string;
     shape_type: string;
     length: number;
@@ -16,7 +16,7 @@ interface OrderDetailPayload {
 async function get_orders(conditions: Condition = { sql: "", params: [] }): Promise<Response> {
     const sql = `
         SELECT
-            o.ord_id,
+            o.po_id,
             o.ord_no,
             c.customer_name_th,
             o.ord_date,
@@ -49,8 +49,8 @@ async function get_orders(conditions: Condition = { sql: "", params: [] }): Prom
 async function get_order_details(conditions: Condition = { sql: "", params: [] }): Promise<Response> {
     const sql = `
         SELECT
-            d.odd_id,
-            d.odd_ord_id,
+            d.podetail_id,
+            d.odd_po_id,
             d.odd_mm_id,
             d.odd_shape_type,
             m.mm_name,
@@ -89,8 +89,8 @@ async function update_order_status(id: string, status: string): Promise<Response
         SET
             ord_status = $1::public."order_status_enum",
             ord_updated_at = NOW()
-        WHERE ord_id = $2
-        RETURNING ord_id;
+        WHERE po_id = $2
+        RETURNING po_id;
     `;
     try {
         const result = await sql_query(sql, [status, id]);
@@ -147,7 +147,7 @@ async function get_material_masters(): Promise<Response> {
 async function create_order_detail(payload: OrderDetailPayload): Promise<Response> {
     const sql = `
         INSERT INTO public.order_details (
-            odd_ord_id,
+            odd_po_id,
             odd_mm_id,
             odd_shape_type,
             odd_required_length_mm,
@@ -170,11 +170,11 @@ async function create_order_detail(payload: OrderDetailPayload): Promise<Respons
             $9,
             'Pending'::public."order_detail_status_enum"
         )
-        RETURNING odd_id;
+        RETURNING podetail_id;
     `;
     try {
         const result = await sql_query(sql, [
-            payload.ord_id,
+            payload.po_id,
             payload.mm_id,
             payload.shape_type,
             payload.length,
@@ -199,7 +199,7 @@ async function create_order_detail(payload: OrderDetailPayload): Promise<Respons
     }
 }
 
-async function update_order_detail(id: string, payload: Omit<OrderDetailPayload, "ord_id">): Promise<Response> {
+async function update_order_detail(id: string, payload: Omit<OrderDetailPayload, "po_id">): Promise<Response> {
     const sql = `
         UPDATE public.order_details
         SET
@@ -212,8 +212,8 @@ async function update_order_detail(id: string, payload: Omit<OrderDetailPayload,
             odd_quantity = $7,
             odd_remaining_quantity = $8,
             odd_updated_at = NOW()
-        WHERE odd_id = $9
-        RETURNING odd_id;
+        WHERE podetail_id = $9
+        RETURNING podetail_id;
     `;
     try {
         const result = await sql_query(sql, [
@@ -255,8 +255,8 @@ async function update_order_detail_status(id: string, status: string): Promise<R
         SET
             odd_status = $1::public."order_detail_status_enum",
             odd_updated_at = NOW()
-        WHERE odd_id = $2
-        RETURNING odd_id;
+        WHERE podetail_id = $2
+        RETURNING podetail_id;
     `;
     try {
         const result = await sql_query(sql, [status, id]);

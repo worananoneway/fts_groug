@@ -1,0 +1,47 @@
+{
+    "status": "Created",
+    "statuscode": 201,
+    "details": {
+        "id": "6bdc4ef6436bb7b1d279",
+        "display_id": "CUS260711001",
+        "name_th": "บริษัท ตัวอย่าง จํากัด",
+        "name_en": "Example Company Limited",
+        "tax_id": null,
+        "tax_type": "company_tax_id",
+        "contact": {
+            "name": "สมชาย ใจดี",
+            "phone": "0812345678",
+            "fax": "021234567",
+            "email": "contact@example.com"
+        },
+        "address": {
+            "detail": "123 ถนนสุขุมวิท",
+            "subdistrict": {
+                "id": 100101,
+                "name": null
+            },
+            "district": {
+                "id": 1001,
+                "name": null
+            },
+            "province": {
+                "id": 1,
+                "name": null
+            },
+            "postcode": "10110"
+        },
+        "branch_type": "head_office",
+        "branch_number": "00000",
+        "pp20_file": null,
+        "certificate_file": null,
+        "created_at": "2026-07-11T17:15:59.433Z",
+        "updated_at": "2026-07-11T17:15:59.433Z",
+        "employee": {
+            "id": null,
+            "prefix": null,
+            "name": null
+        },
+        "status": "Active",
+        "message": "Customer created successfully."
+    }
+}

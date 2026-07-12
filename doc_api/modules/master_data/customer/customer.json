@@ -1,0 +1,94 @@
+[
+  {
+    "method": "GET",
+    "name": "Get Customers",
+    "url": "/api/v1/customers",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {
+      "branch_type": "head_office",
+      "status": "Active",
+      "tax_type": "company_tax_id"
+    },
+    "body": null
+  },
+  {
+    "method": "GET",
+    "name": "Get Customer By ID",
+    "url": "/api/v1/customers/<customer_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "customer_id": null },
+    "body": null
+  },
+  {
+    "method": "POST",
+    "name": "Create Customer",
+    "url": "/api/v1/customers",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": {},
+    "body": {
+      "name_th": "บริษัท ตัวอย่าง จำกัด",
+      "name_en": "Example Company Limited",
+      "tax_id": null,
+      "tax_type": "company_tax_id",
+      "contact_name": "สมชาย ใจดี",
+      "contact_phone": "0812345678",
+      "contact_fax": "021234567",
+      "contact_email": "contact@example.com",
+      "address": "123 ถนนสุขุมวิท",
+      "subdistrict_id": 100101,
+      "district_id": 1001,
+      "province_id": 1,
+      "postcode": "10110",
+      "branch_type": "head_office",
+      "branch_number": "00000",
+      "bank_id": null
+    }
+  },
+  {
+    "method": "PUT",
+    "name": "Update Customer",
+    "url": "/api/v1/customers/<customer_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "customer_id": null },
+    "body": {
+      "name_th": "บริษัท ตัวอย่าง จำกัด",
+      "name_en": "Example Company Limited",
+      "tax_id": null,
+      "tax_type": "company_tax_id",
+      "contact_name": "สมชาย ใจดี",
+      "contact_phone": "0812345678",
+      "contact_fax": "021234567",
+      "contact_email": "contact@example.com",
+      "address": "123 ถนนสุขุมวิท",
+      "subdistrict_id": 100101,
+      "district_id": 1001,
+      "province_id": 1,
+      "postcode": "10110",
+      "branch_type": "head_office",
+      "branch_number": "00000",
+      "bank_id": null
+    }
+  },
+  {
+    "method": "PATCH",
+    "name": "Update Customer Status",
+    "url": "/api/v1/customers/status/<customer_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "customer_id": null },
+    "body": { "status": "Active" }
+  },
+  {
+    "method": "DELETE",
+    "name": "Delete Customer",
+    "url": "/api/v1/customers/<customer_id>",
+    "authorization": { "type": "Bearer Token", "token": "<token>" },
+    "headers": { "Accept-Language": "th-TH" },
+    "params": { "customer_id": null },
+    "body": null
+  }
+]

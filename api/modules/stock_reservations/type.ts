@@ -14,8 +14,8 @@ export enum ReservationStatus {
 
 export enum ErrorField {
     ID = 'id',
-    ORD_ID = 'ord_id',
-    ODD_ID = 'odd_id',
+    po_id = 'po_id',
+    podetail_id = 'podetail_id',
     STOCK_TYPE = 'stock_type',
     STOCK_ID = 'stock_id',
     RESERVED_QUANTITY = 'reserved_quantity',
@@ -26,10 +26,10 @@ export enum ErrorField {
 
 export enum ErrorMessage {
     ID_REQUIRED = 'Stock reservation ID is required.',
-    ORD_ID_REQUIRED = 'Order ID is required.',
-    ORD_ID_MAX_LENGTH = 'Order ID must be at most 20 characters long.',
-    ODD_ID_REQUIRED = 'Order detail ID is required.',
-    ODD_ID_MAX_LENGTH = 'Order detail ID must be at most 20 characters long.',
+    po_id_REQUIRED = 'Order ID is required.',
+    po_id_MAX_LENGTH = 'Order ID must be at most 20 characters long.',
+    podetail_id_REQUIRED = 'Order detail ID is required.',
+    podetail_id_MAX_LENGTH = 'Order detail ID must be at most 20 characters long.',
     STOCK_TYPE_REQUIRED = 'Reservation stock type is required.',
     STOCK_TYPE_INVALID = 'Reservation stock type is invalid.',
     STOCK_ID_REQUIRED = 'Stock ID is required.',
@@ -42,8 +42,8 @@ export enum ErrorMessage {
 }
 
 export interface Payload {
-    ord_id: string;
-    odd_id: string;
+    po_id: string;
+    podetail_id: string;
     stock_type: ReservationStockType;
     stock_id: string;
     reserved_quantity?: number;

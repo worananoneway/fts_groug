@@ -8,8 +8,8 @@ async function create(payload: Payload): Promise<Response> {
     const sql = `
         INSERT INTO public.timeline_msps (
             tlmsp_msp_id,
-            tlmsp_ord_id,
-            tlmsp_odd_id,
+            tlmsp_po_id,
+            tlmsp_podetail_id,
             tlmsp_sr_id,
             tlmsp_event_type,
             tlmsp_quantity_change,
@@ -33,8 +33,8 @@ async function create(payload: Payload): Promise<Response> {
     try {
         const result = await sql_query(sql, [
             payload.msp_id,
-            payload.ord_id ?? null,
-            payload.odd_id ?? null,
+            payload.po_id ?? null,
+            payload.podetail_id ?? null,
             payload.sr_id ?? null,
             payload.event_type,
             payload.quantity_change ?? null,
@@ -79,10 +79,10 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
                 tlmsp_id,
                 tlmsp_msp_id,
                 msp_code AS tlmsp_msp_code,
-                tlmsp_ord_id,
-                ord_no AS tlmsp_ord_no,
-                tlmsp_odd_id,
-                odd_status AS tlmsp_odd_status,
+                tlmsp_po_id,
+                po_number AS tlmsp_ord_no,
+                tlmsp_podetail_id,
+                podetail_status AS tlmsp_odd_status,
                 tlmsp_sr_id,
                 sr_status AS tlmsp_sr_status,
                 tlmsp_event_type,
@@ -101,8 +101,8 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
                 tlmsp_updated_at
             FROM public.timeline_msps
             LEFT JOIN public.ms_plates ON timeline_msps.tlmsp_msp_id = ms_plates.msp_id
-            LEFT JOIN public.orders ON timeline_msps.tlmsp_ord_id = orders.ord_id
-            LEFT JOIN public.order_details ON timeline_msps.tlmsp_odd_id = order_details.odd_id
+            LEFT JOIN public.purchase_orders ON timeline_msps.tlmsp_po_id = purchase_orders.po_id
+            LEFT JOIN public.purchase_orders_details ON timeline_msps.tlmsp_podetail_id = purchase_orders_details.podetail_id
             LEFT JOIN public.stock_reservations ON timeline_msps.tlmsp_sr_id = stock_reservations.sr_id
             WHERE 1=1${conditions.sql}
             ORDER BY tlmsp_event_at DESC, tlmsp_created_at DESC
@@ -133,10 +133,59 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
         };
     }
 }
-
+export async function get_msps(id: string) {
+    const sql = `
+    SELECT
+        msp_available_quantity,
+        msp_quantity
+    FROM public.ms_plates
+    WHERE msp_id = $1;
+    `;
+    try {
+        const results = await sql_query(sql, [id]);
+        return {
+            statuscode: HttpStatusCode.OK,
+            error: null,
+            data: results[0]
+        };
+    } catch (error) {
+        console.error(`[Service] An error occurred during getting MSP:`, error);
+        return {
+            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
+            error: error,
+            data: null
+        };
+    }
+}
+export async function update_msps(id: string, payload: any) {
+    const sql = `
+        UPDATE public.ms_plates
+        SET
+            msp_available_quantity = $2,
+            msp_quantity = $3
+        WHERE msp_id = $1;
+    `;
+    try {
+        await sql_query(sql, [id, payload.total_available_quantity, payload.total_quantity]);
+        return {
+            statuscode: HttpStatusCode.OK,
+            error: null,
+            data: null
+        };
+    } catch (error) {
+        console.error(`[Service] An error occurred during updating MSP:`, error);
+        return {
+            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
+            error: error,
+            data: null
+        };
+    }
+}
 const service = {
     create,
-    get
+    get,
+    get_msps,
+    update_msps,
 };
 
 export default service;

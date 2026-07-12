@@ -13,8 +13,8 @@ export enum StockStatus {
 export enum ErrorField {
     ID = 'id',
     WMSP_ID = 'wmsp_id',
-    ORD_ID = 'ord_id',
-    ODD_ID = 'odd_id',
+    po_id = 'po_id',
+    podetail_id = 'podetail_id',
     SR_ID = 'sr_id',
     EVENT_TYPE = 'event_type',
     QUANTITY_CHANGE = 'quantity_change',
@@ -33,8 +33,8 @@ export enum ErrorMessage {
     ID_REQUIRED = 'Timeline wastrel MS plate ID is required.',
     WMSP_ID_REQUIRED = 'Wastrel MS plate ID is required.',
     WMSP_ID_MAX_LENGTH = 'Wastrel MS plate ID must be at most 20 characters long.',
-    ORD_ID_MAX_LENGTH = 'Order ID must be at most 20 characters long.',
-    ODD_ID_MAX_LENGTH = 'Order detail ID must be at most 20 characters long.',
+    po_id_MAX_LENGTH = 'Order ID must be at most 20 characters long.',
+    podetail_id_MAX_LENGTH = 'Order detail ID must be at most 20 characters long.',
     SR_ID_MAX_LENGTH = 'Stock reservation ID must be at most 20 characters long.',
     EVENT_TYPE_REQUIRED = 'Event type is required.',
     EVENT_TYPE_INVALID = 'Event type is invalid.',
@@ -49,8 +49,8 @@ export enum ErrorMessage {
 }
 export interface Payload {
     wmsp_id: string;
-    ord_id?: string;
-    odd_id?: string;
+    po_id?: string;
+    podetail_id?: string;
     sr_id?: string;
     event_type: TimelineEventType;
     quantity_change?: number;

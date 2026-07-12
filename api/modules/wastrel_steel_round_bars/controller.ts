@@ -34,7 +34,6 @@ async function create(request: any, reply: any) {
         const requiredKeys = [
             'mm_id',
             'srb_id',
-            'code',
             'diameter',
             'length',
             'quantity',
@@ -62,12 +61,6 @@ async function create(request: any, reply: any) {
             invalid_fields.push({
                 field: ErrorField.SRB_ID,
                 message: ErrorMessage.SRB_ID_MAX_LENGTH
-            });
-        }
-        if (payload.code && payload.code.length > 50) {
-            invalid_fields.push({
-                field: ErrorField.CODE,
-                message: ErrorMessage.CODE_MAX_LENGTH
             });
         }
         if (typeof payload.diameter !== 'number' || payload.diameter <= 0) {
@@ -205,7 +198,6 @@ async function update(request: any, reply: any) {
         const requiredKeys = [
             'mm_id',
             'srb_id',
-            'code',
             'diameter',
             'length',
             'quantity',
@@ -234,12 +226,6 @@ async function update(request: any, reply: any) {
             invalid_fields.push({
                 field: ErrorField.SRB_ID,
                 message: ErrorMessage.SRB_ID_MAX_LENGTH
-            });
-        }
-        if (payload.code && payload.code.length > 50) {
-            invalid_fields.push({
-                field: ErrorField.CODE,
-                message: ErrorMessage.CODE_MAX_LENGTH
             });
         }
         if (typeof payload.diameter !== 'number' || payload.diameter <= 0) {
