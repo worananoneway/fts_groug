@@ -1,0 +1,7 @@
+{
+    "status": "Created",
+    "statuscode": 201,
+    "details": {
+        "message": "Purchase Order Detail created successfully."
+    }
+}

@@ -5,7 +5,7 @@ import { AlertTriangle, CheckCircle2, X } from "lucide-react";
 
 import { cn } from "./button";
 import { IconButton } from "./icon-button";
-import type { Notice } from "../calculation-division/types";
+import type { Notice } from "@/types/division";
 
 export function TimedToast({
   notice,

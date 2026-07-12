@@ -1,0 +1,504 @@
+{
+    "status": "OK",
+    "statuscode": 200,
+    "details": [
+        {
+            "id": "9d82be5e41e049d7666d",
+            "number": "PO-20260710006",
+            "customer": {
+                "id": null,
+                "display_id": null,
+                "name_th": null,
+                "name_en": null,
+                "tax_id": null,
+                "tax_type": null,
+                "contact": null,
+                "address": null,
+                "branch_type": null,
+                "branch_number": null
+            },
+            "due_date": "2026-08-08T17:00:00.000Z",
+            "remark": "Purchase order example",
+            "issue_date": "2026-07-09T17:00:00.000Z",
+            "ship_via": "Truck",
+            "qt_on": "QT-2026-001",
+            "shipping_terms": "ส่งภายใน 30 วัน",
+            "tax_rate": 7,
+            "recipient": {
+                "id": "SEED_EMP_000000001",
+                "display_id": null,
+                "prefix": null,
+                "firstname_th": null,
+                "lastname_th": null,
+                "firstname_en": null,
+                "lastname_en": null,
+                "number_id": null,
+                "department": null,
+                "position": null,
+                "email": null,
+                "phone": null
+            },
+            "comment": "กรุณาติดต่อก่อนจัดส่ง",
+            "status_date": {
+                "sent_date": null,
+                "goods_received_date": null,
+                "paid_date": null
+            },
+            "status_note": null,
+            "details": [],
+            "price_summary": {
+                "subtotal": "0",
+                "tax_rate": 7,
+                "tax": 0,
+                "total": 0
+            },
+            "created_at": "2026-07-10T21:43:41.158Z",
+            "updated_at": "2026-07-10T21:43:41.158Z",
+            "emp": null,
+            "status": "Post Sent",
+            "project": {
+                "id": "SEED_PRJ_000000001",
+                "display_id": null,
+                "name_en": null,
+                "name_th": null
+            },
+            "condition_paid": 30,
+            "delivery_address": {
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 10,
+                    "name": "Saraburi"
+                }
+            },
+            "approved_by": {
+                "id": "SEED_EMP_000000001",
+                "prefix": null,
+                "name": ""
+            },
+            "purchasing_fname": "สมชาย",
+            "purchasing_lname": "ใจดี"
+        },
+        {
+            "id": "faa1c2e5a1717f0483a7",
+            "number": "PO-20260710005",
+            "customer": {
+                "id": null,
+                "display_id": null,
+                "name_th": null,
+                "name_en": null,
+                "tax_id": null,
+                "tax_type": null,
+                "contact": null,
+                "address": null,
+                "branch_type": null,
+                "branch_number": null
+            },
+            "due_date": "2026-08-08T17:00:00.000Z",
+            "remark": "Purchase order example",
+            "issue_date": "2026-07-09T17:00:00.000Z",
+            "ship_via": "Truck",
+            "qt_on": "QT-2026-001",
+            "shipping_terms": "ส่งภายใน 30 วัน",
+            "tax_rate": 7,
+            "recipient": {
+                "id": "SEED_EMP_000000001",
+                "display_id": null,
+                "prefix": null,
+                "firstname_th": null,
+                "lastname_th": null,
+                "firstname_en": null,
+                "lastname_en": null,
+                "number_id": null,
+                "department": null,
+                "position": null,
+                "email": null,
+                "phone": null
+            },
+            "comment": "กรุณาติดต่อก่อนจัดส่ง",
+            "status_date": {
+                "sent_date": null,
+                "goods_received_date": null,
+                "paid_date": null
+            },
+            "status_note": null,
+            "details": [],
+            "price_summary": {
+                "subtotal": "0",
+                "tax_rate": 7,
+                "tax": 0,
+                "total": 0
+            },
+            "created_at": "2026-07-10T19:19:22.201Z",
+            "updated_at": "2026-07-10T19:19:22.201Z",
+            "emp": null,
+            "status": "Post Sent",
+            "project": {
+                "id": "SEED_PRJ_000000001",
+                "display_id": null,
+                "name_en": null,
+                "name_th": null
+            },
+            "condition_paid": 30,
+            "delivery_address": {
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 10,
+                    "name": "Saraburi"
+                }
+            },
+            "approved_by": {
+                "id": "SEED_EMP_000000001",
+                "prefix": null,
+                "name": ""
+            },
+            "purchasing_fname": "สมชาย",
+            "purchasing_lname": "ใจดี"
+        },
+        {
+            "id": "0a30ab145ded41601991",
+            "number": "PO-20260710004",
+            "customer": {
+                "id": null,
+                "display_id": null,
+                "name_th": null,
+                "name_en": null,
+                "tax_id": null,
+                "tax_type": null,
+                "contact": null,
+                "address": null,
+                "branch_type": null,
+                "branch_number": null
+            },
+            "due_date": "2026-08-08T17:00:00.000Z",
+            "remark": "Purchase order example",
+            "issue_date": "2026-07-09T17:00:00.000Z",
+            "ship_via": "Truck",
+            "qt_on": "QT-2026-001",
+            "shipping_terms": "ส่งภายใน 30 วัน",
+            "tax_rate": 7,
+            "recipient": {
+                "id": "SEED_EMP_000000001",
+                "display_id": null,
+                "prefix": null,
+                "firstname_th": null,
+                "lastname_th": null,
+                "firstname_en": null,
+                "lastname_en": null,
+                "number_id": null,
+                "department": null,
+                "position": null,
+                "email": null,
+                "phone": null
+            },
+            "comment": "กรุณาติดต่อก่อนจัดส่ง",
+            "status_date": {
+                "sent_date": null,
+                "goods_received_date": null,
+                "paid_date": null
+            },
+            "status_note": null,
+            "details": [],
+            "price_summary": {
+                "subtotal": "0",
+                "tax_rate": 7,
+                "tax": 0,
+                "total": 0
+            },
+            "created_at": "2026-07-10T18:37:00.175Z",
+            "updated_at": "2026-07-10T18:37:00.175Z",
+            "emp": null,
+            "status": "Post Sent",
+            "project": {
+                "id": "SEED_PRJ_000000001",
+                "display_id": null,
+                "name_en": null,
+                "name_th": null
+            },
+            "condition_paid": 30,
+            "delivery_address": {
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 10,
+                    "name": "Saraburi"
+                }
+            },
+            "approved_by": {
+                "id": "SEED_EMP_000000001",
+                "prefix": null,
+                "name": ""
+            },
+            "purchasing_fname": "สมชาย",
+            "purchasing_lname": "ใจดี"
+        },
+        {
+            "id": "12809314b32cd1bbe12f",
+            "number": "PO-20260710003",
+            "customer": {
+                "id": null,
+                "display_id": null,
+                "name_th": null,
+                "name_en": null,
+                "tax_id": null,
+                "tax_type": null,
+                "contact": null,
+                "address": null,
+                "branch_type": null,
+                "branch_number": null
+            },
+            "due_date": "2026-08-08T17:00:00.000Z",
+            "remark": "Purchase order example",
+            "issue_date": "2026-07-09T17:00:00.000Z",
+            "ship_via": "Truck",
+            "qt_on": "QT-2026-001",
+            "shipping_terms": "ส่งภายใน 30 วัน",
+            "tax_rate": 7,
+            "recipient": {
+                "id": "SEED_EMP_000000001",
+                "display_id": null,
+                "prefix": null,
+                "firstname_th": null,
+                "lastname_th": null,
+                "firstname_en": null,
+                "lastname_en": null,
+                "number_id": null,
+                "department": null,
+                "position": null,
+                "email": null,
+                "phone": null
+            },
+            "comment": "กรุณาติดต่อก่อนจัดส่ง",
+            "status_date": {
+                "sent_date": null,
+                "goods_received_date": null,
+                "paid_date": null
+            },
+            "status_note": null,
+            "details": [],
+            "price_summary": {
+                "subtotal": "0",
+                "tax_rate": 7,
+                "tax": 0,
+                "total": 0
+            },
+            "created_at": "2026-07-10T16:34:44.540Z",
+            "updated_at": "2026-07-10T16:34:44.540Z",
+            "emp": null,
+            "status": "Post Sent",
+            "project": {
+                "id": "SEED_PRJ_000000001",
+                "display_id": null,
+                "name_en": null,
+                "name_th": null
+            },
+            "condition_paid": 30,
+            "delivery_address": {
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 10,
+                    "name": "Saraburi"
+                }
+            },
+            "approved_by": {
+                "id": "SEED_EMP_000000001",
+                "prefix": null,
+                "name": ""
+            },
+            "purchasing_fname": "สมชาย",
+            "purchasing_lname": "ใจดี"
+        },
+        {
+            "id": "40691a5cd12a3cb3e86d",
+            "number": "PO-20260710002",
+            "customer": {
+                "id": null,
+                "display_id": null,
+                "name_th": null,
+                "name_en": null,
+                "tax_id": null,
+                "tax_type": null,
+                "contact": null,
+                "address": null,
+                "branch_type": null,
+                "branch_number": null
+            },
+            "due_date": "2026-08-08T17:00:00.000Z",
+            "remark": "Purchase order example",
+            "issue_date": "2026-07-09T17:00:00.000Z",
+            "ship_via": "Truck",
+            "qt_on": "QT-2026-001",
+            "shipping_terms": "ส่งภายใน 30 วัน",
+            "tax_rate": 7,
+            "recipient": {
+                "id": "SEED_EMP_000000001",
+                "display_id": null,
+                "prefix": null,
+                "firstname_th": null,
+                "lastname_th": null,
+                "firstname_en": null,
+                "lastname_en": null,
+                "number_id": null,
+                "department": null,
+                "position": null,
+                "email": null,
+                "phone": null
+            },
+            "comment": "กรุณาติดต่อก่อนจัดส่ง",
+            "status_date": {
+                "sent_date": null,
+                "goods_received_date": null,
+                "paid_date": null
+            },
+            "status_note": null,
+            "details": [],
+            "price_summary": {
+                "subtotal": "0",
+                "tax_rate": 7,
+                "tax": 0,
+                "total": 0
+            },
+            "created_at": "2026-07-10T16:27:22.141Z",
+            "updated_at": "2026-07-10T16:27:22.141Z",
+            "emp": null,
+            "status": "Post Sent",
+            "project": {
+                "id": "SEED_PRJ_000000001",
+                "display_id": null,
+                "name_en": null,
+                "name_th": null
+            },
+            "condition_paid": 30,
+            "delivery_address": {
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 10,
+                    "name": "Saraburi"
+                }
+            },
+            "approved_by": {
+                "id": "SEED_EMP_000000001",
+                "prefix": null,
+                "name": ""
+            },
+            "purchasing_fname": "สมชาย",
+            "purchasing_lname": "ใจดี"
+        },
+        {
+            "id": "dd1901f7aeebf72617f2",
+            "number": "PO-20260710001",
+            "customer": {
+                "id": null,
+                "display_id": null,
+                "name_th": null,
+                "name_en": null,
+                "tax_id": null,
+                "tax_type": null,
+                "contact": null,
+                "address": null,
+                "branch_type": null,
+                "branch_number": null
+            },
+            "due_date": "2026-08-08T17:00:00.000Z",
+            "remark": "Purchase order example",
+            "issue_date": "2026-07-09T17:00:00.000Z",
+            "ship_via": "Truck",
+            "qt_on": "QT-2026-001",
+            "shipping_terms": "ส่งภายใน 30 วัน",
+            "tax_rate": 7,
+            "recipient": {
+                "id": "SEED_EMP_000000001",
+                "display_id": null,
+                "prefix": null,
+                "firstname_th": null,
+                "lastname_th": null,
+                "firstname_en": null,
+                "lastname_en": null,
+                "number_id": null,
+                "department": null,
+                "position": null,
+                "email": null,
+                "phone": null
+            },
+            "comment": "กรุณาติดต่อก่อนจัดส่ง",
+            "status_date": {
+                "sent_date": null,
+                "goods_received_date": null,
+                "paid_date": null
+            },
+            "status_note": null,
+            "details": [],
+            "price_summary": {
+                "subtotal": "0",
+                "tax_rate": 7,
+                "tax": 0,
+                "total": 0
+            },
+            "created_at": "2026-07-10T16:24:28.959Z",
+            "updated_at": "2026-07-10T16:24:28.959Z",
+            "emp": null,
+            "status": "Post Sent",
+            "project": {
+                "id": "SEED_PRJ_000000001",
+                "display_id": null,
+                "name_en": null,
+                "name_th": null
+            },
+            "condition_paid": 30,
+            "delivery_address": {
+                "subdistrict": {
+                    "id": 100101,
+                    "name": "Phra Borom Maha Ratchawang"
+                },
+                "district": {
+                    "id": 1001,
+                    "name": "Khet Phra Nakhon"
+                },
+                "province": {
+                    "id": 10,
+                    "name": "Saraburi"
+                }
+            },
+            "approved_by": {
+                "id": "SEED_EMP_000000001",
+                "prefix": null,
+                "name": ""
+            },
+            "purchasing_fname": "สมชาย",
+            "purchasing_lname": "ใจดี"
+        }
+    ]
+}

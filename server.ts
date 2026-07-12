@@ -13,11 +13,11 @@ app.prepare().then(async () => {
     //register plugins
 
     //register routes
-    server.register(import("./api/modules/master-data/customer/router"), {
+    server.register(import("./api/modules/master_data/customer/router"), {
         prefix: "/api/:version/accounting/customers"
     });
 
-    server.register(import("./api/modules/master-data/steel_round_bars/router"), {
+    server.register(import("./api/modules/master_data/steel_round_bars/router"), {
         prefix: "/api/:version/steel-round-bars"
     });
 
@@ -29,7 +29,7 @@ app.prepare().then(async () => {
         prefix: "/api/:version/wastrel-ms-plates"
     });
 
-    server.register(import("./api/modules/master-data/ms_plates/router"), {
+    server.register(import("./api/modules/master_data/ms_plates/router"), {
         prefix: "/api/:version/accounting/ms-plates"
     });
 
@@ -48,15 +48,8 @@ app.prepare().then(async () => {
     server.register(import("./api/modules/projects/router"), {
         prefix: "/api/:version/accounting/projects"
     });
-    server.register(import("./api/modules/purchase_orders/router"), {
-        prefix: "/api/:version/accounting/purchase-orders"
-    });
 
-    server.register(import("./api/modules/orders/router"), {
-        prefix: "/api/:version/orders"
-    });
-
-    // server.register(import("../tfs_groug/api/modules/employee/router"), {
+    // server.register(import("./api/modules/master_data/employees/router"), {
     //     prefix: "/api/:version/hrm-payroll/employees"
     // });
 
@@ -74,6 +67,14 @@ app.prepare().then(async () => {
 
     server.register(import("./api/modules/stock_reservations/router"), {
         prefix: "/api/:version/stock-reservations"
+    });
+
+    server.register(import("./api/modules/purchase_orders/router"), {
+        prefix: "/api/:version/purchase-orders"
+    });
+
+    server.register(import("./api/modules/purchase-order-detail/router"), {
+        prefix: "/api/:version/purchase-order-details"
     });
 
     server.all("/*", async (request: FastifyRequest, reply: FastifyReply) => {

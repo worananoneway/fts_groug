@@ -1,45 +1,24 @@
-export class TimelineWmsp {
-    constructor(
-        public id: string,
-        public wmsp_id: string,
-        public ord_id: string | null,
-        public odd_id: string | null,
-        public sr_id: string | null,
-        public event_type: string,
-        public quantity_change: number | null,
-        public length_before: number | null,
-        public width_before: number | null,
-        public length_after: number | null,
-        public width_after: number | null,
-        public status_before: string | null,
-        public status_after: string | null,
-        public location_before: string | null,
-        public location_after: string | null,
-        public event_at: Date,
-        public remark: string | null,
-        public created_at: Date,
-        public updated_at: Date | null,
-        public emp_id: string | null
-    ) {
-        this.id = id;
-        this.wmsp_id = wmsp_id;
-        this.ord_id = ord_id;
-        this.odd_id = odd_id;
-        this.sr_id = sr_id;
-        this.event_type = event_type;
-        this.quantity_change = quantity_change;
-        this.length_before = length_before;
-        this.width_before = width_before;
-        this.length_after = length_after;
-        this.width_after = width_after;
-        this.status_before = status_before;
-        this.status_after = status_after;
-        this.location_before = location_before;
-        this.location_after = location_after;
-        this.event_at = event_at;
-        this.remark = remark;
-        this.created_at = created_at;
-        this.updated_at = updated_at;
-        this.emp_id = emp_id;
+export const reply_options = {
+    fields: {
+        id: 'tlwmsp_id',
+        wmsp_id: 'tlwmsp_wmsp_id',
+        ord_id: 'tlwmsp_ord_id',
+        odd_id: 'tlwmsp_odd_id',
+        sr_id: 'tlwmsp_sr_id',
+        event_type: 'tlwmsp_event_type',
+        quantity_change: 'tlwmsp_quantity_change',
+        length_before: 'tlwmsp_length_before',
+        width_before: 'tlwmsp_width_before',
+        length_after: 'tlwmsp_length_after',
+        width_after: 'tlwmsp_width_after',
+        status_before: 'tlwmsp_status_before',
+        status_after: 'tlwmsp_status_after',
+        location_before: 'tlwmsp_location_before',
+        location_after: 'tlwmsp_location_after',
+        event_at: 'tlwmsp_event_at',
+        remark: 'tlwmsp_remark',
+        created_at: 'tlwmsp_created_at',
+        updated_at: 'tlwmsp_updated_at',
+        emp_id: 'tlwmsp_emp_id'
     }
-}
+};

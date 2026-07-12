@@ -2,6 +2,8 @@ import sql_query from "@/api/utils/sql_query";
 import { Condition, HttpStatusCode, Response } from "@/api/utils/shared_types";
 import { Payload } from "./type";
 
+const module_name = 'timeline_msps';
+
 async function create(payload: Payload): Promise<Response> {
     const sql = `
         INSERT INTO public.timeline_msps (
@@ -48,10 +50,10 @@ async function create(payload: Payload): Promise<Response> {
             payload.remark ?? null
         ]);
         if (result.length === 0) {
-            console.error("[Service] Failed to create timeline MSP: No row was created.");
+            console.error(`[Service] Failed to create ${module_name}: No row was created.`);
             return {
                 statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                error: "No row was created.",
+                error: `${module_name} not created.`,
                 data: null
             };
         }
@@ -61,7 +63,7 @@ async function create(payload: Payload): Promise<Response> {
             data: result
         };
     } catch (error) {
-        console.error("[Service] An error occurred during creating timeline MSP:", error);
+        console.error(`[Service] An error occurred during creating ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,
@@ -70,9 +72,9 @@ async function create(payload: Payload): Promise<Response> {
     }
 }
 
-async function get(conditions: Condition = { sql: "", params: [] }, filter: string = "*"): Promise<Response> {
+async function get(conditions: Condition = { sql: ``, params: [] }, filter: string = `*`): Promise<Response> {
     const sql = `
-        WITH timeline_msps_cte AS (
+        WITH ${module_name}_cte AS (
             SELECT
                 tlmsp_id,
                 tlmsp_msp_id,
@@ -105,15 +107,15 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
             WHERE 1=1${conditions.sql}
             ORDER BY tlmsp_event_at DESC, tlmsp_created_at DESC
         )
-        SELECT ${filter} FROM timeline_msps_cte;
+        SELECT ${filter} FROM ${module_name}_cte;
     `;
     try {
         const results = await sql_query(sql, conditions.params);
         if (results.length === 0) {
-            console.error("[Service] Failed to find timeline MSP(s): Not found.");
+            console.error(`[Service] Failed to find ${module_name}(s): Not found.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "Timeline MSP not found.",
+                error: `${module_name} not found.`,
                 data: null
             };
         }
@@ -123,7 +125,7 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
             data: results
         };
     } catch (error) {
-        console.error("[Service] An error occurred during getting timeline MSPs:", error);
+        console.error(`[Service] An error occurred during getting ${module_name}s:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error: error,

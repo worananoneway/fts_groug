@@ -1,17 +1,4 @@
-export enum TimelineEventType {
-    ADD = 'Add',
-    EDIT = 'Edit',
-    USED = 'Used',
-}
-
-export enum StockStatus {
-    ACTIVE = 'Active',
-    INACTIVE = 'Inactive',
-    DELETED = 'Deleted',
-    RESERVED = 'Reserved',
-    USED = 'Used',
-}
-
+import {StockStatus, TimelineEventType} from "@/api/utils/shared_types";
 export enum ErrorField {
     ID = 'id',
     MSP_ID = 'msp_id',
@@ -41,7 +28,7 @@ export enum ErrorMessage {
     ODD_ID_MAX_LENGTH = 'Order detail ID must be at most 20 characters long.',
     SR_ID_MAX_LENGTH = 'Stock reservation ID must be at most 20 characters long.',
     EVENT_TYPE_REQUIRED = 'Timeline event type is required.',
-    EVENT_TYPE_INVALID = 'Timeline event type is invalid.',
+    EVENT_TYPE_INVALID = 'Invalid event type out of enum values.',
     QUANTITY_CHANGE_INVALID = 'Quantity change must be an integer.',
     LENGTH_BEFORE_INVALID = 'Length before must be a number.',
     WIDTH_BEFORE_INVALID = 'Width before must be a number.',

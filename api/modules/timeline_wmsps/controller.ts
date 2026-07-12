@@ -41,7 +41,7 @@ async function create(request: any, reply: any) {
         //         }
         //     });
         // }
-        // const emp_id: string = user.id;
+        // const emp_id: string = user?.id;
         const emp_id = null;
         const payload: Payload = sanitize_payload(request.body);
         console.log("[Controller] Creating timeline wastrel MS plate with payload:", payload);
