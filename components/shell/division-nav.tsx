@@ -6,7 +6,7 @@ import { LinkTabs } from "../ui/tabs";
 import { DIVISION_NAV } from "@/constants/division";
 import type { DivisionNavKey } from "@/types/division";
 
-const navIcons = {
+const navIcons: Partial<Record<DivisionNavKey, typeof ClipboardList>> = {
   po: ClipboardList,
   cutting: Layers,
 };

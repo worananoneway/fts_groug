@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "FTS-GROUP | Factory Cutting Division",
+  title: "FTS-GROUP",
   description: "ระบบงานตัดของโรงงาน — ใบสั่งซื้อ, ตัดแผ่นเหล็ก, ตัดเพลาเหล็กกลม",
 };
 

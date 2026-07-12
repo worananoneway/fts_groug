@@ -2,7 +2,7 @@ import api_handler from "@/hooks/api_handler";
 
 async function create(data: Record<string, any>) {
     try {
-        const response = await api_handler.post("/master-data/ms-plates", undefined, data);
+        const response = await api_handler.post("/ms-plates", undefined, data);
         return response.data;
     } catch (error) {
         console.error("[Hook] An error occurred while creating ms_plate:", error);
@@ -12,7 +12,7 @@ async function create(data: Record<string, any>) {
 
 async function softDelete(ms_plate_id: string) {
     try {
-        const response = await api_handler.delete(`/master-data/ms-plates/${ms_plate_id}`);
+        const response = await api_handler.delete(`/ms-plates/${ms_plate_id}`);
         return response.data;
     } catch (error) {
         console.error("[Hook] An error occurred while deleting ms_plate:", error);
@@ -22,7 +22,7 @@ async function softDelete(ms_plate_id: string) {
 
 async function get(ms_plate_id?: string) {
     try {
-        const response = await api_handler.get(`/master-data/ms-plates${ms_plate_id ? `/${ms_plate_id}` : ''}`);
+        const response = await api_handler.get(`/ms-plates${ms_plate_id ? `/${ms_plate_id}` : ''}`);
         return response.data;
     } catch (error) {
         console.error("[Hook] An error occurred while fetching ms_plate:", error);
@@ -32,7 +32,7 @@ async function get(ms_plate_id?: string) {
 
 async function getById(ms_plate_id: string) {
     try {
-        const response = await api_handler.get(`/master-data/ms-plates/${ms_plate_id}`);
+        const response = await api_handler.get(`/ms-plates/${ms_plate_id}`);
         return response.data;
     } catch (error) {
         console.error("[Hook] An error occurred while fetching ms_plate by id:", error);
@@ -42,7 +42,7 @@ async function getById(ms_plate_id: string) {
 
 async function updated(ms_plate_id: string, data: Record<string, any>) {
     try {
-        const response = await api_handler.put(`/master-data/ms-plates/${ms_plate_id}`, undefined, undefined, data);
+        const response = await api_handler.put(`/ms-plates/${ms_plate_id}`, undefined, undefined, data);
         return response.data;
     } catch (error) {
         console.error("[Hook] An error occurred while updating ms_plate:", error);
@@ -52,7 +52,7 @@ async function updated(ms_plate_id: string, data: Record<string, any>) {
 
 async function updateStatus(ms_plate_id: string, data: Record<string, any>) {
     try {
-        const response = await api_handler.patch(`/master-data/ms-plates/status/${ms_plate_id}`, undefined, undefined, data);
+        const response = await api_handler.patch(`/ms-plates/status/${ms_plate_id}`, undefined, undefined, data);
         return response.data;
     } catch (error) {
         console.error("[Hook] An error occurred while updating ms_plate status:", error);

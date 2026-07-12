@@ -91,7 +91,7 @@ app.prepare().then(async () => {
     });
 
     server.listen({
-        port: 3000,
+        port: Number(process.env.PORT) || 3000,
         host: "0.0.0.0"
     }).then((address: string) => {
         console.log(` > Ready on ${address}`);
