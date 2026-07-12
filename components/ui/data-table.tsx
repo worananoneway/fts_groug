@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { cn } from "./button";
-import type { DataTableColumn } from "../calculation-division/types";
+import type { DataTableColumn } from "@/types/division";
 
 interface DataTableProps<T> {
   columns: Array<DataTableColumn<T>>;
