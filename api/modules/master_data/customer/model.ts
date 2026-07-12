@@ -14,6 +14,8 @@ export const reply_options = {
                 email: 'customer_contact_email'
             }
         },
+        full_address_th: { $join: ['customer_address', 'customer_subdistrict_name_th', 'customer_district_name_th', 'customer_province_name_th'] },
+        full_address_en: { $join: ['customer_address', 'customer_subdistrict_name_en', 'customer_district_name_en', 'customer_province_name_en'] },
         address: {
             $fields: {
                 detail: 'customer_address',
