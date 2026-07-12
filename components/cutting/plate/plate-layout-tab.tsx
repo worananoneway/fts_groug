@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 
+import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import { ConfirmDialog } from "../../ui/confirm-dialog";
 import { EmptyState } from "../../ui/empty-state";
@@ -25,9 +28,19 @@ export function PlateLayoutTab() {
     sheetH,
     sheetW,
   } = useCutting();
+  const router = useRouter();
   const [previewSheet, setPreviewSheet] = useState<{ sheet: PlateSheet; sheetNo: number } | null>(null);
   const [planAction, setPlanAction] = useState<PlanAction | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [resolvedSheets, setResolvedSheets] = useState<Record<number, "confirmed" | "cancelled">>({});
+  const [allDone, setAllDone] = useState(false);
+
+  useEffect(() => {
+    if (!allDone) return;
+    const timer = setTimeout(() => router.push("/po"), 1500);
+    return () => clearTimeout(timer);
+  }, [allDone, router]);
 
   if (!plateResult) {
     return <EmptyState>ยังไม่มีแผนการตัด ไปที่แท็บตั้งค่าแล้วกดคำนวณ</EmptyState>;
@@ -40,18 +53,45 @@ export function PlateLayoutTab() {
           .join(", ")}`
       : "";
 
+  function markResolved(sourceNo: number | undefined, status: "confirmed" | "cancelled") {
+    const next = { ...resolvedSheets };
+    if (sourceNo) {
+      next[sourceNo] = status;
+    } else {
+      plateResult?.sheets.forEach((_, i) => {
+        next[i + 1] = status;
+      });
+    }
+    setResolvedSheets(next);
+    if (plateResult && Object.keys(next).length >= plateResult.sheets.length) {
+      setAllDone(true);
+    }
+  }
+
   async function runConfirm() {
     if (!planAction) return;
-    const result = await confirmPlatePlan({ detailIds: planAction.detailIds, scrapSourceNo: planAction.sourceNo });
-    setNotice(result);
-    setPlanAction(null);
+    setIsProcessing(true);
+    try {
+      const result = await confirmPlatePlan({ detailIds: planAction.detailIds, scrapSourceNo: planAction.sourceNo });
+      setNotice(result);
+      if (result.ok) markResolved(planAction.sourceNo, "confirmed");
+      setPlanAction(null);
+    } finally {
+      setIsProcessing(false);
+    }
   }
 
   async function runCancel() {
     if (!planAction) return;
-    const result = await cancelPlatePlan({ detailIds: planAction.detailIds, scrapSourceNo: planAction.sourceNo });
-    setNotice(result);
-    setPlanAction(null);
+    setIsProcessing(true);
+    try {
+      const result = await cancelPlatePlan({ detailIds: planAction.detailIds, scrapSourceNo: planAction.sourceNo });
+      setNotice(result);
+      if (result.ok) markResolved(planAction.sourceNo, "cancelled");
+      setPlanAction(null);
+    } finally {
+      setIsProcessing(false);
+    }
   }
 
   const columns = splitInTwo(plateResult.sheets);
@@ -61,7 +101,7 @@ export function PlateLayoutTab() {
       <TimedToast notice={notice} onClose={() => setNotice(null)} />
       <UnfulfilledAlert message={unfulfilledMessage} />
       <div className="grid gap-5 xl:grid-cols-[minmax(160px,1fr)_minmax(0,4fr)_minmax(0,4fr)]">
-        <div className="space-y-4 xl:sticky xl:top-56 xl:self-start">
+        <div className="space-y-4 xl:sticky xl:top-56 xl:row-span-2 xl:self-start">
           <CalculationSummary
             averageUtilization={plateAverageUtilization}
             scrapCount={plateScraps.length}
@@ -70,51 +110,68 @@ export function PlateLayoutTab() {
             vertical
           />
         </div>
+        <div className="flex flex-wrap items-center justify-end gap-2 rounded-lg bg-white p-4 shadow-sm xl:col-span-2">
+          <Button onClick={() => setPlanAction({ mode: "confirm" })} variant="success">
+            ยืนยันทั้งหมด
+          </Button>
+          <Button onClick={() => setPlanAction({ mode: "cancel" })} variant="danger">
+            ยกเลิกทั้งหมด
+          </Button>
+        </div>
         {columns.map((column, columnIndex) => (
           <div key={columnIndex} className="space-y-5">
             {column.map(({ sheet, index }) => {
               const detailIds = detailIdsForSheet(sheet);
+              const sheetNo = index + 1;
+              const status = resolvedSheets[sheetNo];
               return (
               <div
                 key={index}
                 role="button"
                 tabIndex={0}
-                onClick={() => setPreviewSheet({ sheet, sheetNo: index + 1 })}
+                onClick={() => setPreviewSheet({ sheet, sheetNo })}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    setPreviewSheet({ sheet, sheetNo: index + 1 });
+                    setPreviewSheet({ sheet, sheetNo });
                   }
                 }}
+                className={status ? "opacity-50 grayscale transition-all" : "transition-all"}
               >
                 <PlateLayoutCanvas
                   actions={
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setPlanAction({ detailIds, mode: "confirm", sourceNo: index + 1 });
-                        }}
-                        variant="success"
-                      >
-                        ยืนยัน
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setPlanAction({ detailIds, mode: "cancel", sourceNo: index + 1 });
-                        }}
-                        variant="danger"
-                      >
-                        ยกเลิก
-                      </Button>
-                    </>
+                    status ? (
+                      <Badge tone={status === "confirmed" ? "emerald" : "red"}>
+                        {status === "confirmed" ? "ยืนยันแล้ว" : "ยกเลิกแล้ว"}
+                      </Badge>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setPlanAction({ detailIds, mode: "confirm", sourceNo: sheetNo });
+                          }}
+                          variant="success"
+                        >
+                          ยืนยัน
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setPlanAction({ detailIds, mode: "cancel", sourceNo: sheetNo });
+                          }}
+                          variant="danger"
+                        >
+                          ยกเลิก
+                        </Button>
+                      </>
+                    )
                   }
                   sheet={sheet}
                   sheetH={sheetH}
-                  sheetNo={index + 1}
+                  sheetNo={sheetNo}
                   sheetW={sheetW}
                   sourceCode={selectedPlate?.code}
                 />
@@ -137,23 +194,51 @@ export function PlateLayoutTab() {
       </Modal>
       <ConfirmDialog
         open={planAction?.mode === "confirm"}
-        title={`ยืนยันแผนการตัดแผ่นที่ ${planAction?.sourceNo ?? ""}`}
+        title={planAction?.sourceNo ? `ยืนยันแผนการตัดแผ่นที่ ${planAction.sourceNo}` : "ยืนยันแผนการตัดทั้งหมด"}
         onCancel={() => setPlanAction(null)}
         onConfirm={() => void runConfirm()}
         confirmLabel="ยืนยัน"
+        loading={isProcessing}
         variant="success"
       >
-        ระบบจะเปลี่ยนสถานะรายการในแผ่นนี้เป็น Completed และบันทึกเศษของแผ่นนี้ลงคลัง
+        {planAction?.sourceNo
+          ? "ระบบจะเปลี่ยนสถานะรายการในแผ่นนี้เป็น Completed และบันทึกเศษของแผ่นนี้ลงคลัง"
+          : "ระบบจะเปลี่ยนสถานะรายการทุกแผ่นเป็น Completed และบันทึกเศษทั้งหมดลงคลัง"}
       </ConfirmDialog>
       <ConfirmDialog
         open={planAction?.mode === "cancel"}
-        title={`ยกเลิกแผนการตัดแผ่นที่ ${planAction?.sourceNo ?? ""}`}
+        title={planAction?.sourceNo ? `ยกเลิกแผนการตัดแผ่นที่ ${planAction.sourceNo}` : "ยกเลิกแผนการตัดทั้งหมด"}
         onCancel={() => setPlanAction(null)}
         onConfirm={() => void runCancel()}
         confirmLabel="ยืนยันยกเลิก"
+        loading={isProcessing}
       >
-        ระบบจะเปลี่ยนสถานะรายการในแผ่นนี้เป็น Cancelled
+        {planAction?.sourceNo
+          ? "ระบบจะเปลี่ยนสถานะรายการในแผ่นนี้เป็น Cancelled"
+          : "ระบบจะเปลี่ยนสถานะรายการทุกแผ่นเป็น Cancelled"}
       </ConfirmDialog>
+      <Modal
+        open={allDone}
+        title="เสร็จสมบูรณ์"
+        onClose={() => router.push("/po")}
+        footer={
+          <div className="flex justify-center">
+            <Button onClick={() => router.push("/po")} variant="success">
+              ไปหน้าใบสั่งซื้อ PO ตอนนี้
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col items-center gap-3 py-6 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+            <CheckCircle2 className="h-9 w-9 text-emerald-600" strokeWidth={2} />
+          </div>
+          <h3 className="text-lg font-bold text-slate-800">ยืนยันครบทุกแผ่นแล้ว</h3>
+          <p className="max-w-xs text-sm text-slate-500">
+            ระบบบันทึกเศษของทุกแผ่นลงคลังเรียบร้อยแล้ว กำลังพาไปหน้าใบสั่งซื้อ PO...
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -166,9 +251,9 @@ function splitInTwo<T>(items: T[]): Array<Array<{ sheet: T; index: number }>> {
 }
 
 interface PlanAction {
-  detailIds: string[];
+  detailIds?: string[];
   mode: "confirm" | "cancel";
-  sourceNo: number;
+  sourceNo?: number;
 }
 
 function detailIdsForSheet(sheet: PlateSheet): string[] {

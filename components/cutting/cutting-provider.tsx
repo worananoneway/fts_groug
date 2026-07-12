@@ -712,13 +712,22 @@ export function CuttingProvider({
     setPlateTab("layout");
   }
 
+  // หาแถวรายการใน PO ที่กำลังตัดอยู่ ใช้ระบุวัสดุ/ความหนาของเศษเมื่อไม่ได้เลือกสต็อกจากคลัง
+  function activeOrderRow(orderId: string | null, detailIds: string[]) {
+    const rows = orderId ? orderDetails[orderId] ?? [] : [];
+    return rows.find((row) => detailIds.includes(row.id));
+  }
+
   async function persistPlateScraps(sourceNo?: number) {
     const targetScraps = sourceNo
       ? unsavedPlateScraps.filter((scrap) => scrap.sheetNo === sourceNo)
       : unsavedPlateScraps;
     if (targetScraps.length === 0) return;
-    if (!selectedPlate?.material_master_id) {
-      throw new Error("กรุณาเลือกแผ่นจากคลังก่อนบันทึกเศษ เพื่อระบุวัสดุของเศษ");
+
+    const orderRow = activeOrderRow(platePoId, activePlateOrderDetailIds);
+    const mmId = selectedPlate?.material_master_id || orderRow?.materialId;
+    if (!mmId) {
+      throw new Error("ไม่พบวัสดุของเศษ กรุณาเลือกแผ่นจากคลัง เพื่อระบุวัสดุของเศษ");
     }
 
     const stamp = Date.now().toString(36).toUpperCase();
@@ -728,16 +737,16 @@ export function CuttingProvider({
 
     for (const [index, scrap] of scraps.entries()) {
       await createWastrelPlate({
-        mm_id: selectedPlate.material_master_id,
-        msp_id: selectedPlate.id,
+        mm_id: mmId,
+        msp_id: selectedPlate?.id ?? null,
         stock_code: `SCRAP-${stamp}-${index + 1}`,
         length: Math.max(1, Math.floor(scrap.w)),
         width: Math.max(1, Math.floor(scrap.h)),
-        thickness: selectedPlate.thickness || 1,
+        thickness: selectedPlate?.thickness || orderRow?.thickness || 1,
         quantity: 1,
         available_quantity: 1,
-        po_id: ordId,
-        podetail_id: oddId,
+        po_id: ordId ?? null,
+        podetail_id: oddId ?? null,
         remark: `เศษจากแผ่นที่ ${scrap.sheetNo}${plateLoadedFromPo ? ` (${plateLoadedFromPo})` : ""}`,
       });
     }
@@ -902,8 +911,11 @@ export function CuttingProvider({
       ? unsavedRoundScraps.filter((scrap) => scrap.barNo === sourceNo)
       : unsavedRoundScraps;
     if (targetScraps.length === 0) return;
-    if (!selectedBar?.material_master_id) {
-      throw new Error("กรุณาเลือกแท่งจากคลังก่อนบันทึกเศษ เพื่อระบุวัสดุของเศษ");
+
+    const orderRow = activeOrderRow(roundPoId, activeRoundOrderDetailIds);
+    const mmId = selectedBar?.material_master_id || orderRow?.materialId;
+    if (!mmId) {
+      throw new Error("ไม่พบวัสดุของเศษ กรุณาเลือกแท่งจากคลัง เพื่อระบุวัสดุของเศษ");
     }
 
     const stamp = Date.now().toString(36).toUpperCase();
@@ -913,15 +925,15 @@ export function CuttingProvider({
 
     for (const [index, scrap] of scraps.entries()) {
       await createWastrelBar({
-        mm_id: selectedBar.material_master_id,
-        srb_id: selectedBar.id,
+        mm_id: mmId,
+        srb_id: selectedBar?.id ?? null,
         code: `WSRB-${stamp}-${index + 1}`,
         diameter: barDiameter,
         length: Math.max(1, Math.floor(scrap.length)),
         quantity: 1,
         available_quantity: 1,
-        po_id: ordId,
-        podetail_id: oddId,
+        po_id: ordId ?? null,
+        podetail_id: oddId ?? null,
         remark: `เศษจากแท่งที่ ${scrap.barNo}${roundLoadedFromPo ? ` (${roundLoadedFromPo})` : ""}`,
       });
     }

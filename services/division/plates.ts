@@ -28,7 +28,7 @@ export async function loadWastrelPlates(): Promise<SavedPlateScrap[]> {
 
 export interface WastrelPlatePayload {
   mm_id: string;
-  msp_id?: string;
+  msp_id?: string | null;
   stock_code: string;
   length: number;
   width: number;
