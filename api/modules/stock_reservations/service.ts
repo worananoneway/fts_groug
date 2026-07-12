@@ -2,7 +2,9 @@ import sql_query from "@/api/utils/sql_query";
 import { Condition, HttpStatusCode, Response } from "@/api/utils/shared_types";
 import { Payload, ReservationStatus } from "./type";
 
-async function create(payload: Payload): Promise<Response> {
+const module_name = `stock_reservations`;
+
+async function create(payload: Payload, emp_id: string): Promise<Response> {
     const sql = `
         INSERT INTO public.stock_reservations (
             sr_po_id,
@@ -11,10 +13,9 @@ async function create(payload: Payload): Promise<Response> {
             sr_stock_id,
             sr_reserved_quantity,
             sr_reserved_length_mm,
-            sr_reserved_width_mm,
-            sr_status
+            sr_reserved_width_mm
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8
+            $1, $2, $3, $4, $5, $6, $7
         ) RETURNING *;
     `;
     try {
@@ -26,13 +27,12 @@ async function create(payload: Payload): Promise<Response> {
             payload.reserved_quantity ?? 1,
             payload.reserved_length_mm ?? null,
             payload.reserved_width_mm ?? null,
-            payload.status ?? ReservationStatus.RESERVED
         ]);
         if (result.length === 0) {
-            console.error("[Service] Failed to create stock reservation: No row was created.");
+            console.error(`[Service] Failed to create ${module_name}: No row was created.`);
             return {
                 statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
-                error: "No row was created.",
+                error: `No row was created.`,
                 data: null
             };
         }
@@ -42,7 +42,7 @@ async function create(payload: Payload): Promise<Response> {
             data: result
         };
     } catch (error) {
-        console.error("[Service] An error occurred during creating stock reservation:", error);
+        console.error(`[Service] An error occurred during creating ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error,
@@ -51,9 +51,9 @@ async function create(payload: Payload): Promise<Response> {
     }
 }
 
-async function get(conditions: Condition = { sql: "", params: [] }, filter: string = "*"): Promise<Response> {
+async function get(conditions: Condition = { sql: ``, params: [] }, filter: string = `*`): Promise<Response> {
     const sql = `
-        WITH stock_reservation_cte AS (
+        WITH ${module_name}_cte AS (
             SELECT
                 sr.sr_id,
                 sr.sr_po_id,
@@ -92,18 +92,18 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
             LEFT JOIN public.wastrel_ms_plates wmsp
                 ON sr.sr_stock_type::text = 'Wastrel_ms_plate'
                 AND sr.sr_stock_id = wmsp.wmsp_id
-            WHERE 1=1${conditions.sql}
+            WHERE 1=1 AND sr_status != 'Deleted'${conditions.sql}
             ORDER BY sr.sr_created_at DESC
         )
-        SELECT ${filter || "*"} FROM stock_reservation_cte;
+        SELECT ${filter || `*`} FROM ${module_name}_cte;
     `;
     try {
         const results = await sql_query(sql, conditions.params);
         if (results.length === 0) {
-            console.error("[Service] Failed to find stock reservation(s): Not found.");
+            console.error(`[Service] Failed to find ${module_name}(s): Not found.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "Stock reservation not found.",
+                error: `${module_name} not found.`,
                 data: null
             };
         }
@@ -113,7 +113,7 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
             data: results
         };
     } catch (error) {
-        console.error("[Service] An error occurred during getting stock reservations:", error);
+        console.error(`[Service] An error occurred during getting ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error,
@@ -122,22 +122,21 @@ async function get(conditions: Condition = { sql: "", params: [] }, filter: stri
     }
 }
 
-async function soft_delete(id: string): Promise<Response> {
+async function soft_delete(id: string, emp_id: string): Promise<Response> {
     const sql = `
         UPDATE public.stock_reservations
         SET
-            sr_status = $2,
-            sr_updated_at = NOW()
+            sr_status = 'Deleted',
         WHERE sr_id = $1
         RETURNING sr_id;
     `;
     try {
-        const result = await sql_query(sql, [id, ReservationStatus.INACTIVE]);
+        const result = await sql_query(sql, [id]);
         if (result.length === 0) {
-            console.error("[Service] Failed to delete stock reservation: No row was deleted.");
+            console.error(`[Service] Failed to delete ${module_name}: No row was deleted.`);
             return {
                 statuscode: HttpStatusCode.NOT_FOUND,
-                error: "No row was deleted.",
+                error: `No row was deleted.`,
                 data: null
             };
         }
@@ -147,7 +146,7 @@ async function soft_delete(id: string): Promise<Response> {
             data: null
         };
     } catch (error) {
-        console.error("[Service] An error occurred during deleting stock reservation:", error);
+        console.error(`[Service] An error occurred during deleting ${module_name}:`, error);
         return {
             statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
             error,

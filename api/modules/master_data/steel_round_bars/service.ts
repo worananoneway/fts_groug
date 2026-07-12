@@ -108,7 +108,7 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
                 srb_updated_at
             FROM public.steel_round_bars
             LEFT JOIN public.material_masters ON steel_round_bars.srb_mm_id = material_masters.mm_id
-            WHERE 1=1 AND srb_status != 'Inactive' ${conditions.sql}
+            WHERE 1=1 AND srb_status != 'Deleted' ${conditions.sql}
             ORDER BY srb_created_at DESC
         )
         SELECT ${filter} FROM ${module_name}_cte;
