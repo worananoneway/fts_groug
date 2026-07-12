@@ -12,7 +12,7 @@ export interface TabDefinition<T extends string> {
   label: string;
 }
 
-export type DivisionNavKey = "po" | "cutting" | "master-data";
+export type DivisionNavKey = "projects" | "po" | "cutting" | "master-data";
 
 export interface DivisionNavItem {
   key: DivisionNavKey;
@@ -24,6 +24,8 @@ export interface PurchaseOrder {
   id: string;
   no: string;
   customer: string;
+  customerId?: string;
+  projectId?: string;
   date: string;
   due: string;
   status: PurchaseOrderStatus;
@@ -42,6 +44,59 @@ export interface PurchaseOrderUpdateFields {
   shippingTerms: string;
   taxRate: number;
   comment: string;
+}
+
+// ฟิลด์ที่ฟอร์มสร้าง PO ให้ผู้ใช้กรอก — project_id ถูกเติมอัตโนมัติจากหน้าโปรเจค ที่เหลือ backend รับ null ได้
+export interface PurchaseOrderCreateFields {
+  customerId: string;
+  issueDate: string;
+  dueDate: string;
+  taxRate: number;
+  remark: string;
+}
+
+// ค่าตรงกับ project_enum ในฐานข้อมูล — ฝั่ง update ส่งค่านี้ตรง ๆ (ดู statusForCreate ใน services/division/projects.ts)
+export type ProjectStatusValue = "Opened" | "Waiting - PO" | "Closed" | "Completed" | "Cancelled";
+
+export interface Project {
+  id: string;
+  displayId: string;
+  nameTh: string;
+  nameEn: string;
+  contactName: string;
+  contactPhone: string;
+  contactFax: string;
+  contactEmail: string;
+  customerId: string;
+  customerName: string;
+  managerId: string;
+  managerName: string;
+  budget: number;
+  closingDate: string;
+  note: string;
+  status: string;
+  createdAt: string;
+}
+
+/** ฟิลด์ที่ฟอร์มสร้าง/แก้ไขโปรเจคส่งให้ API — backend ต้องการครบทุก key ทั้ง POST และ PUT */
+export interface ProjectFields {
+  nameTh: string;
+  nameEn: string;
+  contactName: string;
+  contactPhone: string;
+  contactFax: string;
+  contactEmail: string;
+  customerId: string;
+  managerId: string;
+  budget: number;
+  closingDate: string;
+  note: string;
+  status: ProjectStatusValue;
+}
+
+export interface CustomerOption {
+  id: string;
+  name: string;
 }
 
 export interface MaterialMaster {

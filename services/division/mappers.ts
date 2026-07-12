@@ -22,6 +22,8 @@ export function mapPurchaseOrder(raw: Record<string, unknown>): PurchaseOrder | 
       nestedString(raw.customer, "name_en") ||
       nestedString(raw.supplier, "name") ||
       "ไม่ระบุลูกค้า",
+    customerId: nestedString(raw.customer, "id") || stringValue(raw.po_customer_id ?? raw.po_cus_id),
+    projectId: nestedString(raw.project, "id") || stringValue(raw.po_project_id),
     date: formatDateString(raw.date ?? raw.issue_date ?? raw.po_issue_date),
     due: formatDateString(raw.due ?? raw.due_date ?? raw.po_due_date),
     status: mapPoStatus(raw.status ?? raw.po_status),

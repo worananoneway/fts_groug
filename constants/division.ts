@@ -11,7 +11,11 @@ export const ITEM_COLORS = [
   "#84cc16",
 ];
 
-export const DIVISION_NAV: DivisionNavItem[] = [{ key: "po", label: "ใบสั่งซื้อ PO", href: "/po" }];
+// เรียงตามลำดับงานจริง: เปิดโปรเจคก่อน แล้วค่อยออกใบสั่งซื้อภายใต้โปรเจค
+export const DIVISION_NAV: DivisionNavItem[] = [
+  { key: "projects", label: "โปรเจค", href: "/projects" },
+  { key: "po", label: "ใบสั่งซื้อ PO", href: "/po" },
+];
 
 // ปลายทางของปุ่ม "ข้อมูลหลัก" ที่มุมขวาบน header (แยกจากแท็บงานตัด)
 export const MASTER_DATA_ENTRY_HREF = "/master-data/setting/customer";

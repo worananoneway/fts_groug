@@ -85,6 +85,11 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
       .then((data) => {
         if (!active) return;
         applyOrders(data);
+        // เปิดจากหน้าโปรเจค (/po?po=<id>) — เลือก PO นั้นให้อัตโนมัติถ้ามีอยู่จริง
+        const requestedPoId = new URLSearchParams(window.location.search).get("po");
+        if (requestedPoId && (data.purchaseOrders ?? []).some((po) => po.id === requestedPoId)) {
+          setSelectedPoId(requestedPoId);
+        }
       })
       .catch((error) => {
         if (!active) return;
