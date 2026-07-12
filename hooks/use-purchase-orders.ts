@@ -22,6 +22,8 @@ export function usePurchaseOrders() {
     addOrderDetail: context.addOrderDetail,
     cancelOrderDetail: context.cancelOrderDetail,
     updateOrderDetail: context.updateOrderDetail,
+    updatePurchaseOrderFields: context.updatePurchaseOrderFields,
+    deletePurchaseOrder: context.deletePurchaseOrder,
     pushRoundFromPo: context.pushRoundFromPo,
     pushPlateFromPo: context.pushPlateFromPo,
   };

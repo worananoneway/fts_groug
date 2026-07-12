@@ -1,19 +1,39 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { useState } from "react";
+import { Search, Trash2 } from "lucide-react";
 
 import { Badge } from "../ui/badge";
+import { ConfirmDialog } from "../ui/confirm-dialog";
 import { Field } from "../ui/field";
+import { IconButton } from "../ui/icon-button";
 import { EmptyState } from "../ui/empty-state";
+import { TimedToast } from "../ui/timed-toast";
 import { fmt, statusLabel } from "@/utils/format";
 import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
-import type { PurchaseOrderStatus } from "@/types/division";
+import type { Notice, PurchaseOrder, PurchaseOrderStatus } from "@/types/division";
 
 export function PurchaseOrderList() {
-  const { poSearch, purchaseOrders, selectPo, selectedPoId, setPoSearch } = usePurchaseOrders();
+  const { deletePurchaseOrder, poSearch, purchaseOrders, selectPo, selectedPoId, setPoSearch } = usePurchaseOrders();
+  const [deleteTarget, setDeleteTarget] = useState<PurchaseOrder | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [notice, setNotice] = useState<Notice | null>(null);
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      const result = await deletePurchaseOrder(deleteTarget.id);
+      setNotice(result);
+      if (result.ok) setDeleteTarget(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   return (
     <section className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
+      <TimedToast notice={notice} onClose={() => setNotice(null)} />
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-slate-800">ใบสั่งซื้อ</h2>
         <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
@@ -39,10 +59,17 @@ export function PurchaseOrderList() {
           purchaseOrders.map((po) => {
             const active = po.id === selectedPoId;
             return (
-              <button
+              <div
                 key={po.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => selectPo(po.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    selectPo(po.id);
+                  }
+                }}
                 className={`group relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-xl border px-4 py-3 pl-5 text-left transition ${
                   active
                     ? "border-blue-500/50 bg-blue-50/80 shadow-sm"
@@ -61,12 +88,33 @@ export function PurchaseOrderList() {
                     ออก {po.date} | กำหนด {po.due}
                   </p>
                 </div>
-                <Badge tone={statusTone(po.status)}>{statusLabel(po.status)}</Badge>
-              </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge tone={statusTone(po.status)}>{statusLabel(po.status)}</Badge>
+                  <IconButton
+                    icon={<Trash2 className="h-4 w-4" />}
+                    label="ลบใบสั่งซื้อ"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setDeleteTarget(po);
+                    }}
+                    tone="danger"
+                  />
+                </div>
+              </div>
             );
           })
         )}
       </div>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="ยืนยันการลบใบสั่งซื้อ"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void confirmDelete()}
+        loading={isDeleting}
+      >
+        ต้องการลบใบสั่งซื้อ {deleteTarget?.no} จริงหรือไม่? ระบบจะเปลี่ยนสถานะเป็น Deleted และซ่อนออกจากรายการ
+      </ConfirmDialog>
     </section>
   );
 }
@@ -76,4 +124,3 @@ function statusTone(status: PurchaseOrderStatus) {
   if (status === "DONE") return "emerald";
   return "amber";
 }
-
