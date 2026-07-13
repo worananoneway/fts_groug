@@ -506,6 +506,16 @@ async function update(request: any, reply: any) {
             conditions.sql = sql_mainpart.join(', ');
         }        
         const result = await service.update(conditions);
+        conditions.params.push(payload[0].po_id); // Assuming the last parameter is po_id
+        conditions.sql = ` AND podetail_po_id = $${conditions.params.length} `;
+        const po_data = await service.get(conditions); // Assuming the last parameter is po_id
+        if (po_data.statuscode !== HttpStatusCode.OK) {
+            console.error("[Controller] Failed to retrieve purchase order details after update.");
+            return reply.code(po_data.statuscode).send(<Reply>
+                reply_result(module_name, po_data.statuscode)
+            );
+        }
+        
         reply.code(result.statuscode).send(<Reply>
             reply_result(module_name, result.statuscode, null, result.data)
         );

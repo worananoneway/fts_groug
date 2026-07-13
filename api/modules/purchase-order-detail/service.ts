@@ -59,10 +59,11 @@ async function get(conditions: Condition = { sql: "", params: [] }): Promise<Res
     const sql = `
         SELECT 
 
-            podetail_id
+            podetail_id,
+            podetail_status,
 
         FROM public.purchase_orders_details
-        WHERE 1=1${conditions.sql}
+        WHERE 1=1 AND podetail_status != 'Deleted'${conditions.sql}
     `;
 
     try {
@@ -196,10 +197,31 @@ async function update( conditions: Condition ): Promise<Response> {
         };
     }
 }
-
+async function get_po(po_id: string) {
+    const sql = `
+        SELECT * FROM public.purchase_orders_details
+        WHERE podetail_po_id = $1
+    `;
+    try {
+        const result = await sql_query(sql, [po_id]);
+        return {
+            statuscode: HttpStatusCode.OK,
+            error: null,
+            data: result
+        };
+    } catch (error) {
+        console.error(`[Service] An error occurred during getting purchase order details:`, error);
+        return {
+            statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR,
+            error: `Failed to get purchase order details.`,
+            data: null
+        };
+    }
+}
 export default {
     create,
     get,
     hard_delete,
-    update
+    update,
+    get_po
 };
