@@ -34,6 +34,9 @@ export interface PurchaseOrder {
   shippingTerms?: string;
   taxRate?: number;
   comment?: string;
+  vendorId?: string;
+  managerId?: string;
+
   /** แถวดิบจาก GET เก็บไว้ใช้ round-trip ฟิลด์ที่ไม่ได้แก้ในหน้านี้ตอนส่ง PUT (endpoint แทนที่ทั้งแถว) */
   raw?: Record<string, unknown>;
 }
@@ -53,6 +56,24 @@ export interface PurchaseOrderCreateFields {
   dueDate: string;
   taxRate: number;
   remark: string;
+  comment: string;
+  qtOn: string;
+  shipVia: string;
+  shippingTerms: string;
+  conditionPaid: number;
+  recipientId: string;
+  approvedByEmpId: string;
+  purchasingFname: string;
+  purchasingLname: string;
+  deliveryProvinceId: string;
+  deliveryDistrictId: string;
+  deliverySubdistrictId: string;
+}
+
+export interface AddressOption {
+  id: string;
+  name: string;
+  parentId: string;
 }
 
 // ค่าตรงกับ project_enum ในฐานข้อมูล — ฝั่ง update ส่งค่านี้ตรง ๆ (ดู statusForCreate ใน services/division/projects.ts)
@@ -95,6 +116,11 @@ export interface ProjectFields {
 }
 
 export interface CustomerOption {
+  id: string;
+  name: string;
+}
+
+export interface EmployeeOption {
   id: string;
   name: string;
 }

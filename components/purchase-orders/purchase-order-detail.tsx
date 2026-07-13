@@ -132,6 +132,7 @@ export function PurchaseOrderDetail() {
         </div>
 
         <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 border-t border-blue-100 pt-3 text-sm sm:grid-cols-4">
+          <PoInfoItem label="ลูกค้า" value={selectedPo.customer} />
           <PoInfoItem label="ช่องทางขนส่ง" value={selectedPo.shipVia} />
           <PoInfoItem label="อ้างอิงใบเสนอราคา" value={selectedPo.qtOn} />
           <PoInfoItem label="เงื่อนไขการส่ง" value={selectedPo.shippingTerms} />

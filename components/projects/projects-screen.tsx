@@ -16,11 +16,13 @@ import { IconButton } from "../ui/icon-button";
 import { Modal } from "../ui/modal";
 import { Select } from "../ui/select";
 import { TimedToast } from "../ui/timed-toast";
+import { loadActiveEmployees } from "@/services/division/employees";
 import { createProject, loadCustomerOptions, loadProjects, updateProject } from "@/services/division/projects";
 import type {
   CustomerOption,
   DataStatus,
   DataTableColumn,
+  EmployeeOption,
   Notice,
   Project,
   ProjectFields,
@@ -124,6 +126,7 @@ export function ProjectsScreen() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [dataStatus, setDataStatus] = useState<DataStatus>({ loading: true, error: null, source: "none" });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -136,9 +139,14 @@ export function ProjectsScreen() {
   const load = useCallback(async () => {
     setDataStatus((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const [nextProjects, nextCustomers] = await Promise.all([loadProjects(), loadCustomerOptions()]);
+      const [nextProjects, nextCustomers, nextEmployees] = await Promise.all([
+        loadProjects(),
+        loadCustomerOptions(),
+        loadActiveEmployees(),
+      ]);
       setProjects(nextProjects);
       setCustomers(nextCustomers);
+      setEmployees(nextEmployees);
       setDataStatus({ loading: false, error: null, source: "api" });
     } catch (error) {
       console.error("[Projects] โหลดข้อมูลไม่สำเร็จ:", error);
@@ -265,7 +273,6 @@ export function ProjectsScreen() {
                 โปรเจค
                 <Badge tone="blue">{filteredProjects.length} รายการ</Badge>
               </h2>
-              <p className="text-sm text-slate-400">เปิดโปรเจคก่อน แล้วออกใบสั่งซื้อ PO ภายใต้โปรเจค</p>
             </div>
           </div>
 
@@ -366,11 +373,12 @@ export function ProjectsScreen() {
               value={form.customerId}
               onChange={(event) => setForm((current) => ({ ...current, customerId: event.target.value }))}
             />
-            <Field
-              label="ผู้จัดการโครงการ (รหัสพนักงาน)"
-              helper="ระบุ emp_id ที่มีอยู่ในระบบ"
-              onChange={(event) => setForm((current) => ({ ...current, managerId: event.target.value }))}
+            <Select
+              label="ผู้จัดการโครงการ"
+              options={employees.map((employee) => ({ value: employee.id, label: employee.name }))}
+              placeholder="เลือกพนักงาน"
               value={form.managerId}
+              onChange={(event) => setForm((current) => ({ ...current, managerId: event.target.value }))}
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
