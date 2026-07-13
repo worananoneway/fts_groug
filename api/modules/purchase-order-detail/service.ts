@@ -60,10 +60,10 @@ async function get(conditions: Condition = { sql: "", params: [] }): Promise<Res
         SELECT 
 
             podetail_id,
-            podetail_status,
+            podetail_status
 
         FROM public.purchase_orders_details
-        WHERE 1=1 AND podetail_status != 'Deleted'${conditions.sql}
+        WHERE 1=1${conditions.sql}
     `;
 
     try {
