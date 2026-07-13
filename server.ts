@@ -54,9 +54,9 @@ app.prepare().then(async () => {
         prefix: "/api/:version/projects"
     });
 
-    // server.register(import("./api/modules/master_data/employees/router"), {
-    //     prefix: "/api/:version/hrm-payroll/employees"
-    // });
+    server.register(import("./api/modules/master_data/employees/router"), {
+        prefix: "/api/:version/employees"
+    });
 
     server.register(import("./api/modules/address/router"), {
         prefix: "/api/:version/addresses"

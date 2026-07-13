@@ -13,9 +13,11 @@ import { useRouter } from "next/navigation";
 import { MODULE_SUBTITLES } from "@/constants/division";
 import {
   createOrderDetail,
+  deletePurchaseOrder,
   loadOrders,
   updateOrderDetail,
   updateOrderDetailStatus,
+  updatePurchaseOrder,
 } from "@/services/division/purchase-orders";
 import type {
   DataStatus,
@@ -24,6 +26,7 @@ import type {
   OrderDetail,
   OrderDetailStatus,
   PurchaseOrder,
+  PurchaseOrderUpdateFields,
 } from "@/types/division";
 
 export interface PurchaseOrdersContextValue {
@@ -46,6 +49,8 @@ export interface PurchaseOrdersContextValue {
   addOrderDetail: (detail: OrderDetail) => Promise<Notice>;
   cancelOrderDetail: (orderDetailId: string) => Promise<Notice>;
   updateOrderDetail: (detail: OrderDetail) => Promise<Notice>;
+  updatePurchaseOrderFields: (fields: PurchaseOrderUpdateFields) => Promise<Notice>;
+  deletePurchaseOrder: (poId: string) => Promise<Notice>;
 
   pushOrderDetailToCutting: (orderDetailId: string) => void;
   pushRoundFromPo: (poId: string | null) => void;
@@ -80,6 +85,11 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
       .then((data) => {
         if (!active) return;
         applyOrders(data);
+        // เปิดจากหน้าโปรเจค (/po?po=<id>) — เลือก PO นั้นให้อัตโนมัติถ้ามีอยู่จริง
+        const requestedPoId = new URLSearchParams(window.location.search).get("po");
+        if (requestedPoId && (data.purchaseOrders ?? []).some((po) => po.id === requestedPoId)) {
+          setSelectedPoId(requestedPoId);
+        }
       })
       .catch((error) => {
         if (!active) return;
@@ -171,6 +181,28 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function updatePurchaseOrderFields(fields: PurchaseOrderUpdateFields): Promise<Notice> {
+    if (!selectedPoId || !selectedPo?.raw) return { ok: false, text: "ไม่พบใบสั่งซื้อที่เลือก" };
+    try {
+      await updatePurchaseOrder(selectedPoId, fields, selectedPo.raw);
+      await refreshOrders();
+      return { ok: true, text: "บันทึกรายละเอียดใบสั่งซื้อสำเร็จ" };
+    } catch {
+      return { ok: false, text: "บันทึกรายละเอียดใบสั่งซื้อไม่สำเร็จ" };
+    }
+  }
+
+  async function removePurchaseOrder(poId: string): Promise<Notice> {
+    try {
+      await deletePurchaseOrder(poId);
+      if (selectedPoId === poId) setSelectedPoId(null);
+      await refreshOrders();
+      return { ok: true, text: "ลบใบสั่งซื้อสำเร็จ" };
+    } catch {
+      return { ok: false, text: "ลบใบสั่งซื้อไม่สำเร็จ" };
+    }
+  }
+
   // ส่งงานไปหน้า /cutting ผ่าน query params — หน้า cutting โหลดข้อมูลของตัวเองจาก params
   function pushPlateFromPo(poId: string | null) {
     if (!poId) return;
@@ -217,6 +249,8 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
     addOrderDetail,
     cancelOrderDetail,
     updateOrderDetail: updateOrderDetailRow,
+    updatePurchaseOrderFields,
+    deletePurchaseOrder: removePurchaseOrder,
 
     pushOrderDetailToCutting,
     pushRoundFromPo,

@@ -1,4 +1,12 @@
-import type { MaterialMaster, OrderDetail, OrderDetailStatus, PurchaseOrder, PurchaseOrderStatus } from "@/types/division";
+import type {
+  MaterialMaster,
+  OrderDetail,
+  OrderDetailStatus,
+  PurchaseOrder,
+  PurchaseOrderCreateFields,
+  PurchaseOrderStatus,
+  PurchaseOrderUpdateFields,
+} from "@/types/division";
 import { API_VERSION, isRecord, readRows, requestJson, stringValue } from "./http";
 import { mapMaterialMasters, mapOrderDetails, mapPurchaseOrder, orderDetailApiStatus } from "./mappers";
 
@@ -6,6 +14,59 @@ export interface OrdersData {
   purchaseOrders: PurchaseOrder[];
   orderDetails: Record<string, OrderDetail[]>;
   materialMasters: MaterialMaster[];
+}
+
+
+export async function loadProjectOrders(projectId: string): Promise<PurchaseOrder[]> {
+  let payload: { details?: unknown };
+  try {
+    payload = await requestJson(`/api/${API_VERSION}/purchase-orders?project_id=${encodeURIComponent(projectId)}`);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("404")) return [];
+    throw error;
+  }
+  return readRows(payload)
+    .filter((row) => stringValue(row.status) !== "Deleted")
+    .map((row) => mapPurchaseOrder(row))
+    .filter((row): row is PurchaseOrder => Boolean(row));
+}
+
+// สร้าง PO ใต้โปรเจค — backend บังคับให้มี key ครบทุกตัว (field_validator) แต่ค่าเป็น null ได้
+// ฟิลด์ที่ผู้ใช้ไม่ได้กรอก (เช่น สถานะการส่ง/ชำระเงินที่ยังไม่เกิดตอนสร้างใหม่) ส่ง null
+export async function createProjectOrder(projectId: string, fields: PurchaseOrderCreateFields): Promise<string> {
+  const payload = {
+    cus_id: fields.customerId || null,
+    due_date: fields.dueDate || null,
+    issue_date: fields.issueDate || null,
+    ship_via: fields.shipVia.trim() || null,
+    qt_on: fields.qtOn.trim() || null,
+    shipping_terms: fields.shippingTerms.trim() || null,
+    tax_rate: fields.taxRate,
+    recipient_id: fields.recipientId.trim() || null,
+    comment: fields.comment.trim() || null,
+    status_sent_date: null,
+    status_goods_received_: null,
+    status_paid_date: null,
+    status_note: null,
+    remark: fields.remark.trim() || null,
+    project_id: projectId,
+    condition_paid: fields.conditionPaid || null,
+    delivery_province_id: fields.deliveryProvinceId || null,
+    delivery_district_id: fields.deliveryDistrictId || null,
+    delivery_subdistrict_id: fields.deliverySubdistrictId || null,
+    approved_by_emp_id: fields.approvedByEmpId.trim() || null,
+    purchasing_fname: fields.purchasingFname.trim() || null,
+    purchasing_lname: fields.purchasingLname.trim() || null,
+  };
+  const reply = await requestJson(`/api/${API_VERSION}/purchase-orders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const details = (reply as { details?: unknown }).details;
+  const newId = isRecord(details) ? stringValue(details.id) : "";
+  if (!newId) throw new Error("สร้างใบสั่งซื้อสำเร็จ แต่ไม่พบเลขที่อ้างอิงเพื่อบันทึกรายการเหล็ก");
+  return newId;
 }
 
 export async function loadOrders(): Promise<OrdersData> {
@@ -100,4 +161,89 @@ function orderDetailPayload(orderId: string, detail: OrderDetail) {
     discount: raw.discount ?? null,
     unit_price: raw.unit_price ?? null,
   };
+}
+
+// endpoint นี้เป็น PUT แทนที่ทั้งแถว (ไม่ใช่ PATCH) — ต้อง round-trip ทุกฟิลด์จาก raw เดิม
+// ไม่งั้นฟิลด์ที่หน้านี้ไม่ได้แก้ (ลูกค้า, โครงการ, ที่อยู่จัดส่ง, ผู้อนุมัติ ฯลฯ) จะถูกเซ็ตเป็น NULL ทิ้ง
+export async function updatePurchaseOrder(
+  poId: string,
+  fields: PurchaseOrderUpdateFields,
+  raw: Record<string, unknown>,
+): Promise<void> {
+  const payload = {
+    cus_id: nestedId(raw, "customer", "id") ?? null,
+    due_date: raw.due_date ?? null,
+    remark: raw.remark ?? null,
+    issue_date: raw.issue_date ?? null,
+    ship_via: fields.shipVia,
+    qt_on: fields.qtOn,
+    shipping_terms: fields.shippingTerms,
+    tax_rate: fields.taxRate,
+    recipient_id: nestedId(raw, "recipient", "id") ?? null,
+    comment: fields.comment,
+    project_id: nestedId(raw, "project", "id") ?? null,
+    condition_paid: raw.condition_paid ?? null,
+    delivery_province_id: nestedId(raw, "delivery_address", "province", "id") ?? null,
+    delivery_district_id: nestedId(raw, "delivery_address", "district", "id") ?? null,
+    delivery_subdistrict_id: nestedId(raw, "delivery_address", "subdistrict", "id") ?? null,
+    approved_by_emp_id: nestedId(raw, "approved_by", "id") ?? null,
+    purchasing_fname: raw.purchasing_fname ?? null,
+    purchasing_lname: raw.purchasing_lname ?? null,
+  };
+  await requestJson(`/api/${API_VERSION}/purchase-orders/${poId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePurchaseOrder(poId: string): Promise<void> {
+  await requestJson(`/api/${API_VERSION}/purchase-orders/${poId}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "Deleted" }),
+  });
+}
+
+// แก้ไข PO ที่มีอยู่แล้ว โดยฟอร์มเดียวกับตอนสร้าง (ครอบคลุมทุกคอลัมน์ที่ endpoint PUT นี้ต้องการ)
+// project_id ส่งแยกเป็นพารามิเตอร์เพราะฟอร์มแก้ไขไม่ได้ให้ย้าย PO ข้ามโปรเจค
+export async function updateProjectOrder(
+  poId: string,
+  fields: PurchaseOrderCreateFields,
+  projectId: string,
+): Promise<void> {
+  const payload = {
+    cus_id: fields.customerId || null,
+    due_date: fields.dueDate || null,
+    remark: fields.remark.trim() || null,
+    issue_date: fields.issueDate || null,
+    ship_via: fields.shipVia.trim() || null,
+    qt_on: fields.qtOn.trim() || null,
+    shipping_terms: fields.shippingTerms.trim() || null,
+    tax_rate: fields.taxRate,
+    recipient_id: fields.recipientId.trim() || null,
+    comment: fields.comment.trim() || null,
+    project_id: projectId,
+    condition_paid: fields.conditionPaid || null,
+    delivery_province_id: fields.deliveryProvinceId || null,
+    delivery_district_id: fields.deliveryDistrictId || null,
+    delivery_subdistrict_id: fields.deliverySubdistrictId || null,
+    approved_by_emp_id: fields.approvedByEmpId.trim() || null,
+    purchasing_fname: fields.purchasingFname.trim() || null,
+    purchasing_lname: fields.purchasingLname.trim() || null,
+  };
+  await requestJson(`/api/${API_VERSION}/purchase-orders/${poId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function nestedId(row: Record<string, unknown>, ...path: string[]): string | undefined {
+  let current: unknown = row;
+  for (const key of path) {
+    if (!isRecord(current)) return undefined;
+    current = current[key];
+  }
+  return current === null || current === undefined || typeof current === "object" ? undefined : String(current);
 }
