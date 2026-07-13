@@ -14,7 +14,7 @@ import { EmptyState } from "../ui/empty-state";
 import { Field } from "../ui/field";
 import { IconButton } from "../ui/icon-button";
 import { Modal } from "../ui/modal";
-import { Select } from "../ui/select";
+import { Autocomplete } from "../ui/autocomplete";
 import { TimedToast } from "../ui/timed-toast";
 import { loadActiveEmployees } from "@/services/division/employees";
 import { createProject, loadCustomerOptions, loadProjects, updateProject } from "@/services/division/projects";
@@ -286,12 +286,12 @@ export function ProjectsScreen() {
                 onChange={(event) => setSearch(event.target.value)}
               />
             </label>
-            <Select
-              className="w-44 py-2.5 text-sm"
+            <Autocomplete
+              className="w-44"
               options={STATUS_OPTIONS.map((status) => ({ value: status, label: STATUS_LABELS[status] }))}
               placeholder="สถานะทั้งหมด"
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
+              onValueChange={setStatusFilter}
             />
             <Button
               icon={<RefreshCw className={dataStatus.loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />}
@@ -366,19 +366,19 @@ export function ProjectsScreen() {
               onChange={(event) => setForm((current) => ({ ...current, nameEn: event.target.value }))}
               value={form.nameEn}
             />
-            <Select
+            <Autocomplete
               label="ลูกค้า"
               options={customers.map((customer) => ({ value: customer.id, label: customer.name }))}
               placeholder="เลือกลูกค้า"
               value={form.customerId}
-              onChange={(event) => setForm((current) => ({ ...current, customerId: event.target.value }))}
+              onValueChange={(value) => setForm((current) => ({ ...current, customerId: value }))}
             />
-            <Select
+            <Autocomplete
               label="ผู้จัดการโครงการ"
               options={employees.map((employee) => ({ value: employee.id, label: employee.name }))}
               placeholder="เลือกพนักงาน"
               value={form.managerId}
-              onChange={(event) => setForm((current) => ({ ...current, managerId: event.target.value }))}
+              onValueChange={(value) => setForm((current) => ({ ...current, managerId: value }))}
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -422,12 +422,12 @@ export function ProjectsScreen() {
               onChange={(event) => setForm((current) => ({ ...current, closingDate: event.target.value }))}
               value={form.closingDate}
             />
-            <Select
+            <Autocomplete
               label="สถานะ"
               options={STATUS_OPTIONS.map((status) => ({ value: status, label: STATUS_LABELS[status] }))}
               value={form.status}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, status: event.target.value as ProjectStatusValue }))
+              onValueChange={(value) =>
+                setForm((current) => ({ ...current, status: value as ProjectStatusValue }))
               }
             />
           </div>

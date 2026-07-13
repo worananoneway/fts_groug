@@ -2,7 +2,7 @@
 
 import { RefreshCw } from "lucide-react";
 
-import { Select } from "../../ui/select";
+import { Autocomplete } from "../../ui/autocomplete";
 import { fmt } from "@/utils/format";
 import { useCutting } from "@/hooks/use-cutting";
 
@@ -20,8 +20,8 @@ export function RoundBarStockSelector() {
           </span>
         ) : null}
       </div>
-      <Select
-        onChange={(event) => setSelectedBarId(event.target.value)}
+      <Autocomplete
+        onValueChange={setSelectedBarId}
         options={stockBars.map((bar) => ({
           value: bar.id,
           label: `${bar.code} | Ø${fmt(bar.diameter)} x ${fmt(bar.length)} มม. (คงเหลือ ${bar.available_quantity})`,

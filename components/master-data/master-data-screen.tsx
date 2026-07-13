@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
-import { Select } from "@/components/ui/select";
+import { Autocomplete } from "@/components/ui/autocomplete";
 import { MASTER_DATA_SUBTITLE, STATUS_TONES } from "@/constants/master-data";
 import type { DataStatus, DataTableColumn } from "@/types/division";
 import type { MasterDataNavKey } from "@/types/master-data";
@@ -147,12 +147,12 @@ export function MasterDataScreen<T>({
               />
             </label>
             {statusOptions && statusOptions.length > 0 ? (
-              <Select
-                className="w-44 py-2.5 text-sm"
+              <Autocomplete
+                className="w-44"
                 options={statusOptions.map((status) => ({ value: status, label: status }))}
                 placeholder="สถานะทั้งหมด"
                 value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
+                onValueChange={setStatusFilter}
               />
             ) : null}
             <Button
