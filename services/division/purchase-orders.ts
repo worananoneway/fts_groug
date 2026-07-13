@@ -16,7 +16,7 @@ export interface OrdersData {
   materialMasters: MaterialMaster[];
 }
 
-// โหลด PO เฉพาะของโปรเจคหนึ่ง ๆ — GET จะตอบ 404 เมื่อโปรเจคยังไม่มี PO เลย ให้ถือเป็นลิสต์ว่าง
+
 export async function loadProjectOrders(projectId: string): Promise<PurchaseOrder[]> {
   let payload: { details?: unknown };
   try {
@@ -31,32 +31,32 @@ export async function loadProjectOrders(projectId: string): Promise<PurchaseOrde
     .filter((row): row is PurchaseOrder => Boolean(row));
 }
 
-// สร้าง PO ใต้โปรเจค — backend บังคับให้มี key ครบทุกตัว (field_validator) แต่ค่าเป็น null ได้ทั้งหมด
-// ยกเว้นที่ผู้ใช้กรอกจริง จึงส่ง null ให้ฟิลด์ที่ยังไม่ใช้ในหน้านี้
+// สร้าง PO ใต้โปรเจค — backend บังคับให้มี key ครบทุกตัว (field_validator) แต่ค่าเป็น null ได้
+// ฟิลด์ที่ผู้ใช้ไม่ได้กรอก (เช่น สถานะการส่ง/ชำระเงินที่ยังไม่เกิดตอนสร้างใหม่) ส่ง null
 export async function createProjectOrder(projectId: string, fields: PurchaseOrderCreateFields): Promise<string> {
   const payload = {
     cus_id: fields.customerId || null,
     due_date: fields.dueDate || null,
     issue_date: fields.issueDate || null,
-    ship_via: null,
-    qt_on: null,
-    shipping_terms: null,
+    ship_via: fields.shipVia.trim() || null,
+    qt_on: fields.qtOn.trim() || null,
+    shipping_terms: fields.shippingTerms.trim() || null,
     tax_rate: fields.taxRate,
-    recipient_id: null,
-    comment: null,
+    recipient_id: fields.recipientId.trim() || null,
+    comment: fields.comment.trim() || null,
     status_sent_date: null,
     status_goods_received_: null,
     status_paid_date: null,
     status_note: null,
     remark: fields.remark.trim() || null,
     project_id: projectId,
-    condition_paid: null,
-    delivery_province_id: null,
-    delivery_district_id: null,
-    delivery_subdistrict_id: null,
-    approved_by_emp_id: null,
-    purchasing_fname: null,
-    purchasing_lname: null,
+    condition_paid: fields.conditionPaid || null,
+    delivery_province_id: fields.deliveryProvinceId || null,
+    delivery_district_id: fields.deliveryDistrictId || null,
+    delivery_subdistrict_id: fields.deliverySubdistrictId || null,
+    approved_by_emp_id: fields.approvedByEmpId.trim() || null,
+    purchasing_fname: fields.purchasingFname.trim() || null,
+    purchasing_lname: fields.purchasingLname.trim() || null,
   };
   const reply = await requestJson(`/api/${API_VERSION}/purchase-orders`, {
     method: "POST",
@@ -205,7 +205,41 @@ export async function deletePurchaseOrder(poId: string): Promise<void> {
   });
 }
 
-function nestedId(row: Record<string, unknown>, ...path: string[]): string | undefined {
+// แก้ไข PO ที่มีอยู่แล้ว โดยฟอร์มเดียวกับตอนสร้าง (ครอบคลุมทุกคอลัมน์ที่ endpoint PUT นี้ต้องการ)
+// project_id ส่งแยกเป็นพารามิเตอร์เพราะฟอร์มแก้ไขไม่ได้ให้ย้าย PO ข้ามโปรเจค
+export async function updateProjectOrder(
+  poId: string,
+  fields: PurchaseOrderCreateFields,
+  projectId: string,
+): Promise<void> {
+  const payload = {
+    cus_id: fields.customerId || null,
+    due_date: fields.dueDate || null,
+    remark: fields.remark.trim() || null,
+    issue_date: fields.issueDate || null,
+    ship_via: fields.shipVia.trim() || null,
+    qt_on: fields.qtOn.trim() || null,
+    shipping_terms: fields.shippingTerms.trim() || null,
+    tax_rate: fields.taxRate,
+    recipient_id: fields.recipientId.trim() || null,
+    comment: fields.comment.trim() || null,
+    project_id: projectId,
+    condition_paid: fields.conditionPaid || null,
+    delivery_province_id: fields.deliveryProvinceId || null,
+    delivery_district_id: fields.deliveryDistrictId || null,
+    delivery_subdistrict_id: fields.deliverySubdistrictId || null,
+    approved_by_emp_id: fields.approvedByEmpId.trim() || null,
+    purchasing_fname: fields.purchasingFname.trim() || null,
+    purchasing_lname: fields.purchasingLname.trim() || null,
+  };
+  await requestJson(`/api/${API_VERSION}/purchase-orders/${poId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function nestedId(row: Record<string, unknown>, ...path: string[]): string | undefined {
   let current: unknown = row;
   for (const key of path) {
     if (!isRecord(current)) return undefined;
