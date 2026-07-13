@@ -61,6 +61,7 @@ const PROJECT_STATUS_TONES: Record<string, "slate" | "blue" | "amber" | "emerald
 };
 
 function poStatusTone(status: PurchaseOrderStatus) {
+  if (status === "CANCELLED") return "red";
   if (status === "IN_PROGRESS") return "blue";
   if (status === "DONE") return "emerald";
   return "amber";

@@ -151,6 +151,7 @@ export function mapShape(value: string): OrderShape | null {
 
 function mapPoStatus(value: unknown): PurchaseOrderStatus {
   const normalized = stringValue(value).trim().replace(/\s+/g, "_").toUpperCase();
+  if (normalized === "CANCELLED" || normalized === "CANCELED") return "CANCELLED";
   if (normalized === "DONE" || normalized === "PAID" || normalized === "COMPLETED") return "DONE";
   if (normalized === "IN_PROGRESS" || normalized === "IN_PROCESS" || normalized === "PROCESSING") return "IN_PROGRESS";
   return "PENDING";

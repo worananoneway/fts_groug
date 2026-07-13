@@ -120,6 +120,7 @@ export function PurchaseOrderList() {
 }
 
 function statusTone(status: PurchaseOrderStatus) {
+  if (status === "CANCELLED") return "red";
   if (status === "IN_PROGRESS") return "blue";
   if (status === "DONE") return "emerald";
   return "amber";

@@ -12,6 +12,7 @@ export function sqm(width: number, height: number): string {
 }
 
 export function statusLabel(status: PurchaseOrderStatus): string {
+  if (status === "CANCELLED") return "ยกเลิก";
   if (status === "IN_PROGRESS") return "กำลังตัด";
   if (status === "DONE") return "เสร็จสิ้น";
   return "รอดำเนินการ";
