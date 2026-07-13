@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 export type ModuleKey = "po" | "plate" | "roundbar";
 export type CuttingType = "plate" | "roundbar";
 export type SubTabKey = "settings" | "layout" | "scrap";
-export type PurchaseOrderStatus = "PENDING" | "IN_PROGRESS" | "DONE";
+export type PurchaseOrderStatus = "PENDING" | "IN_PROGRESS" | "DONE" | "CANCELLED";
 export type OrderDetailStatus = "DRAFT" | "REVISED" | "PENDING" | "IN_PROCESS" | "COMPLETED" | "REJECTED" | "CANCELLED";
 export type OrderShape = "ROUND" | "PLATE";
 

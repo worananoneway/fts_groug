@@ -15,7 +15,7 @@ import { EmptyState } from "../ui/empty-state";
 import { Field } from "../ui/field";
 import { IconButton } from "../ui/icon-button";
 import { Modal } from "../ui/modal";
-import { Select } from "../ui/select";
+import { Autocomplete } from "../ui/autocomplete";
 import { TimedToast } from "../ui/timed-toast";
 import { loadDistricts, loadProvinces, loadSubdistricts } from "@/services/division/address";
 import { loadActiveEmployees } from "@/services/division/employees";
@@ -61,6 +61,7 @@ const PROJECT_STATUS_TONES: Record<string, "slate" | "blue" | "amber" | "emerald
 };
 
 function poStatusTone(status: PurchaseOrderStatus) {
+  if (status === "CANCELLED") return "red";
   if (status === "IN_PROGRESS") return "blue";
   if (status === "DONE") return "emerald";
   return "amber";
@@ -583,12 +584,12 @@ function PurchaseOrderFieldsSections({
     <>
       <FormSection title="ข้อมูลใบสั่งซื้อ">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Select
+          <Autocomplete
             label="ลูกค้า"
             options={customers.map((customer) => ({ value: customer.id, label: customer.name }))}
             placeholder="เลือกลูกค้า"
             value={form.customerId}
-            onChange={(event) => setForm((current) => ({ ...current, customerId: event.target.value }))}
+            onValueChange={(value) => setForm((current) => ({ ...current, customerId: value }))}
           />
           <Field
             label="อ้างอิงใบเสนอราคา"
@@ -645,19 +646,19 @@ function PurchaseOrderFieldsSections({
 
       <FormSection title="ผู้เกี่ยวข้อง">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Select
+          <Autocomplete
             label="ผู้รับ"
             options={employees.map((employee) => ({ value: employee.id, label: employee.name }))}
             placeholder="เลือกพนักงาน"
             value={form.recipientId}
-            onChange={(event) => setForm((current) => ({ ...current, recipientId: event.target.value }))}
+            onValueChange={(value) => setForm((current) => ({ ...current, recipientId: value }))}
           />
-          <Select
+          <Autocomplete
             label="ผู้อนุมัติ"
             options={employees.map((employee) => ({ value: employee.id, label: employee.name }))}
             placeholder="เลือกพนักงาน"
             value={form.approvedByEmpId}
-            onChange={(event) => setForm((current) => ({ ...current, approvedByEmpId: event.target.value }))}
+            onValueChange={(value) => setForm((current) => ({ ...current, approvedByEmpId: value }))}
           />
           <Field
             label="ผู้จัดซื้อ (ชื่อ)"
@@ -674,39 +675,39 @@ function PurchaseOrderFieldsSections({
 
       <FormSection title="ที่อยู่จัดส่ง">
         <div className="grid gap-4 sm:grid-cols-3">
-          <Select
+          <Autocomplete
             label="จังหวัด"
             options={provinces.map((province) => ({ value: province.id, label: province.name }))}
             placeholder="เลือกจังหวัด"
             value={form.deliveryProvinceId}
-            onChange={(event) =>
+            onValueChange={(value) =>
               setForm((current) => ({
                 ...current,
-                deliveryProvinceId: event.target.value,
+                deliveryProvinceId: value,
                 deliveryDistrictId: "",
                 deliverySubdistrictId: "",
               }))
             }
           />
-          <Select
+          <Autocomplete
             label="อำเภอ/เขต"
             options={districtOptions.map((district) => ({ value: district.id, label: district.name }))}
             placeholder={form.deliveryProvinceId ? "เลือกอำเภอ/เขต" : "เลือกจังหวัดก่อน"}
             value={form.deliveryDistrictId}
-            onChange={(event) =>
+            onValueChange={(value) =>
               setForm((current) => ({
                 ...current,
-                deliveryDistrictId: event.target.value,
+                deliveryDistrictId: value,
                 deliverySubdistrictId: "",
               }))
             }
           />
-          <Select
+          <Autocomplete
             label="ตำบล/แขวง"
             options={subdistrictOptions.map((subdistrict) => ({ value: subdistrict.id, label: subdistrict.name }))}
             placeholder={form.deliveryDistrictId ? "เลือกตำบล/แขวง" : "เลือกอำเภอ/เขตก่อน"}
             value={form.deliverySubdistrictId}
-            onChange={(event) => setForm((current) => ({ ...current, deliverySubdistrictId: event.target.value }))}
+            onValueChange={(value) => setForm((current) => ({ ...current, deliverySubdistrictId: value }))}
           />
         </div>
       </FormSection>

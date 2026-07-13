@@ -77,7 +77,10 @@ export async function loadOrders(): Promise<OrdersData> {
   const purchaseOrders = poRows
     .map((row) => mapPurchaseOrder(row))
     .filter((row): row is PurchaseOrder => Boolean(row))
-    .map((po) => ({ ...po, status: poStatusFromDetails(orderDetails[po.id] ?? []) }));
+    .map((po) => ({
+      ...po,
+      status: po.status === "CANCELLED" ? po.status : poStatusFromDetails(orderDetails[po.id] ?? []),
+    }));
   const materialMasters = dedupeById(
     mapMaterialMasters(detailRows.map((row) => row.material).filter(isRecord)),
   );
@@ -87,6 +90,7 @@ export async function loadOrders(): Promise<OrdersData> {
 // po_status ในตาราง purchase_orders เป็นสถานะจัดซื้อ (Paid, Waiting Delivery, ...)
 // สถานะงานตัดของหน้านี้จึงสรุปจากสถานะของรายการตัดแทน
 function poStatusFromDetails(details: OrderDetail[]): PurchaseOrderStatus {
+  if (details.length > 0 && details.every((row) => row.status === "CANCELLED")) return "CANCELLED";
   const active = details.filter((row) => row.status !== "CANCELLED" && row.status !== "REJECTED");
   if (active.some((row) => row.status === "IN_PROCESS")) return "IN_PROGRESS";
   if (active.length > 0 && active.every((row) => row.status === "COMPLETED")) return "DONE";

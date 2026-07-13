@@ -306,7 +306,8 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
 async function soft_delete (po_id: string, emp_id: string): Promise<Response> {
     const sql = `
         UPDATE public.purchase_orders
-        SET  po_emp_id = $2
+        SET po_status = 'Deleted',
+            po_emp_id = $2
         WHERE po_id = $1;
     `;
     try {

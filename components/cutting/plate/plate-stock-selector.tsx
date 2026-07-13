@@ -2,7 +2,7 @@
 
 import { RefreshCw } from "lucide-react";
 
-import { Select } from "../../ui/select";
+import { Autocomplete } from "../../ui/autocomplete";
 import { fmt } from "@/utils/format";
 import { useCutting } from "@/hooks/use-cutting";
 
@@ -20,8 +20,8 @@ export function PlateStockSelector() {
           </span>
         ) : null}
       </div>
-      <Select
-        onChange={(event) => setSelectedPlateId(event.target.value)}
+      <Autocomplete
+        onValueChange={setSelectedPlateId}
         options={stockPlates.map((plate) => ({
           value: plate.id,
           label: `${plate.code} | ${fmt(plate.length)}x${fmt(plate.width)} หนา ${plate.thickness} มม. (คงเหลือ ${plate.available_quantity})`,

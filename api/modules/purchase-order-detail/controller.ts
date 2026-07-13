@@ -1,4 +1,5 @@
 import service from './service';
+import purchase_order_service from '../purchase_orders/service';
 import {
     ErrorField,
     ErrorMessage,
@@ -18,6 +19,7 @@ import {
     ReplyErrorField,
     ReplyErrorMessage,
     ReplySuccessMessage,
+    POStatus,
 } from '@/api/utils/shared_types';
 import field_validator from '@/api/utils/field_validator';
 import { reply_result } from '@/api/utils/controller_replys';
@@ -506,6 +508,84 @@ async function update(request: any, reply: any) {
             conditions.sql = sql_mainpart.join(', ');
         }        
         const result = await service.update(conditions);
+        if (result.statuscode !== HttpStatusCode.NO_CONTENT) {
+            return reply.code(result.statuscode).send(<Reply>
+                reply_result(module_name, result.statuscode, null, result.data)
+            );
+        }
+
+        conditions.params = [payload[0].po_id];
+        conditions.sql = ' AND podetail_po_id = $1 ';
+        const po_data = await service.get(conditions);
+        if (po_data.statuscode !== HttpStatusCode.OK && po_data.statuscode !== HttpStatusCode.NOT_FOUND) {
+            console.error("[Controller] Failed to retrieve purchase order details after update.");
+            return reply.code(po_data.statuscode).send(<Reply>
+                reply_result(module_name, po_data.statuscode)
+            );
+        }
+
+        const active_po_details = po_data.statuscode === HttpStatusCode.OK
+            ? (po_data.data as Array<{ podetail_status: string }>).filter(
+                (item) => item.podetail_status !== 'Deleted'
+            )
+            : [];
+        const all_cancelled = active_po_details.length > 0 && active_po_details.every(
+            (item) => item.podetail_status === PurchaseOrderDetailStatus.CANCELLED
+        );
+        const has_pending_or_waiting = active_po_details.some(
+            (item) => item.podetail_status === PurchaseOrderDetailStatus.PENDING
+                || item.podetail_status === PurchaseOrderDetailStatus.IN_PROCESS
+                || item.podetail_status === 'Waiting'
+        );
+
+        if (all_cancelled || (active_po_details.length > 0 && !has_pending_or_waiting)) {
+            const purchase_order_data = await purchase_order_service.get(
+                {
+                    sql: ' AND po.po_id = $1 ',
+                    params: [payload[0].po_id]
+                },
+                `
+                    po_id,
+                    po_status_sent_date,
+                    po_status_goods_received_date,
+                    po_status_paid_date,
+                    po_status_note
+                `
+            );
+            if (
+                purchase_order_data.statuscode !== HttpStatusCode.OK
+                || !Array.isArray(purchase_order_data.data)
+                || purchase_order_data.data.length === 0
+            ) {
+                console.error("[Controller] Failed to retrieve purchase order before updating its status.");
+                const statuscode = purchase_order_data.statuscode === HttpStatusCode.OK
+                    ? HttpStatusCode.INTERNAL_SERVER_ERROR
+                    : purchase_order_data.statuscode;
+                return reply.code(statuscode).send(<Reply>
+                    reply_result(module_name, statuscode)
+                );
+            }
+
+            const purchase_order = purchase_order_data.data[0];
+            const po_status_result = await purchase_order_service.update_status(
+                payload[0].po_id,
+                {
+                    sent_date: purchase_order.po_status_sent_date,
+                    goods_received_date: purchase_order.po_status_goods_received_date,
+                    paid_date: purchase_order.po_status_paid_date,
+                    status_note: purchase_order.po_status_note,
+                    status: all_cancelled ? POStatus.CANCELLED : POStatus.GOODS_RECEIVED
+                },
+                emp_id
+            );
+            if (po_status_result.statuscode !== HttpStatusCode.NO_CONTENT) {
+                console.error("[Controller] Failed to update purchase order status from its details.");
+                return reply.code(po_status_result.statuscode).send(<Reply>
+                    reply_result(module_name, po_status_result.statuscode)
+                );
+            }
+        }
+
         reply.code(result.statuscode).send(<Reply>
             reply_result(module_name, result.statuscode, null, result.data)
         );
