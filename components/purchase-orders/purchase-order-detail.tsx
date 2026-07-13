@@ -134,7 +134,7 @@ export function PurchaseOrderDetail() {
         <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 border-t border-blue-100 pt-3 text-sm sm:grid-cols-4">
           <PoInfoItem label="ลูกค้า" value={selectedPo.customer} />
           <PoInfoItem label="ช่องทางขนส่ง" value={selectedPo.shipVia} />
-          <PoInfoItem label="อ้างอิงใบเสนอราคา" value={selectedPo.qtOn} />
+          <PoInfoItem label="เลขประจำตัวผู้เสียภาษี" value={selectedPo.qtOn} />
           <PoInfoItem label="เงื่อนไขการส่ง" value={selectedPo.shippingTerms} />
           <PoInfoItem label="อัตราภาษี" value={selectedPo.taxRate ? `${selectedPo.taxRate}%` : ""} />
           <PoInfoItem className="col-span-2 sm:col-span-4" label="หมายเหตุ" value={selectedPo.comment} />
@@ -183,7 +183,7 @@ export function PurchaseOrderDetail() {
             value={poFields.shipVia}
           />
           <Field
-            label="อ้างอิงใบเสนอราคา"
+            label="เลขประจำตัวผู้เสียภาษี"
             onChange={(event) => setPoFields((current) => ({ ...current, qtOn: event.target.value }))}
             value={poFields.qtOn}
           />

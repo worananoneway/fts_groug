@@ -592,7 +592,7 @@ function PurchaseOrderFieldsSections({
             onValueChange={(value) => setForm((current) => ({ ...current, customerId: value }))}
           />
           <Field
-            label="อ้างอิงใบเสนอราคา"
+            label="เลขประจำตัวผู้เสียภาษี"
             value={form.qtOn}
             onChange={(event) => setForm((current) => ({ ...current, qtOn: event.target.value }))}
           />
