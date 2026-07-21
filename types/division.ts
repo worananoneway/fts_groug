@@ -37,6 +37,11 @@ export interface PurchaseOrder {
   vendorId?: string;
   managerId?: string;
 
+  /** true = รายการสดจาก Express ที่ยังไม่ได้นำเข้า (แสดงในลิสต์ แต่ยังไม่มีใน DB ของเว็บ) */
+  isLive?: boolean;
+  /** docloc ในระบบ Express สำหรับนำเข้าเงียบ ๆ ตอนผู้ใช้เปิดทำงาน */
+  legacyDocId?: string;
+
   /** แถวดิบจาก GET เก็บไว้ใช้ round-trip ฟิลด์ที่ไม่ได้แก้ในหน้านี้ตอนส่ง PUT (endpoint แทนที่ทั้งแถว) */
   raw?: Record<string, unknown>;
 }
@@ -144,6 +149,12 @@ export interface OrderDetail {
   qty: number;
   remaining: number;
   status: OrderDetailStatus;
+  /** หน่วยนับจากระบบเดิม (เช่น PC, กก.) — ใช้กับรายการที่นำเข้าจาก Express */
+  unit?: string;
+  /** รหัสสินค้าเดิมจาก Express (stkcod) */
+  productCode?: string;
+  /** true = รายการอ้างอิงที่นำเข้าจาก Express (ยังไม่ผูกวัสดุ ไม่มีขนาดสำหรับตัด) */
+  isReference?: boolean;
   /** Raw purchase_orders_details row, kept so updates round-trip pricing fields untouched by this screen. */
   raw?: Record<string, unknown>;
 }

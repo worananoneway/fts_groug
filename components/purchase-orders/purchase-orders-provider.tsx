@@ -19,6 +19,7 @@ import {
   updateOrderDetailStatus,
   updatePurchaseOrder,
 } from "@/services/division/purchase-orders";
+import { importLegacyOrder, legacyOrderToLivePO, loadLegacyOrders } from "@/services/division/legacy-orders";
 import type {
   DataStatus,
   MaterialMaster,
@@ -51,6 +52,7 @@ export interface PurchaseOrdersContextValue {
   updateOrderDetail: (detail: OrderDetail) => Promise<Notice>;
   updatePurchaseOrderFields: (fields: PurchaseOrderUpdateFields) => Promise<Notice>;
   deletePurchaseOrder: (poId: string) => Promise<Notice>;
+  importFromLegacy: (docId: string) => Promise<Notice>;
 
   pushOrderDetailToCutting: (orderDetailId: string) => void;
   pushRoundFromPo: (poId: string | null) => void;
@@ -67,6 +69,7 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
     source: "none",
   });
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [liveOrders, setLiveOrders] = useState<PurchaseOrder[]>([]);
   const [orderDetails, setOrderDetails] = useState<Record<string, OrderDetail[]>>({});
   const [materialMasters, setMaterialMasters] = useState<MaterialMaster[]>([]);
   const [poSearch, setPoSearch] = useState("");
@@ -77,6 +80,17 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
     setOrderDetails(data.orderDetails ?? {});
     setMaterialMasters(data.materialMasters ?? []);
     setDataStatus({ loading: false, error: null, source: "api" });
+  }
+
+  // โหลดใบสั่งตัดสดจาก Express (เฉพาะที่ยังไม่ได้นำเข้า) มาแสดงในลิสต์
+  async function refreshLiveOrders() {
+    try {
+      const legacy = await loadLegacyOrders("");
+      setLiveOrders(legacy.map(legacyOrderToLivePO));
+    } catch {
+      // ถ้า Express ต่อไม่ได้ ก็แค่ไม่มีรายการสด — ไม่ทำให้หน้าพัง
+      setLiveOrders([]);
+    }
   }
 
   useEffect(() => {
@@ -99,6 +113,8 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
           source: "none",
         });
       });
+    // ดึงรายการสดจาก Express มาแสดงคู่กันในลิสต์
+    void refreshLiveOrders();
 
     return () => {
       active = false;
@@ -110,20 +126,35 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
     applyOrders(data);
   }
 
+  // รวมรายการ: PO ที่นำเข้าแล้ว + ใบสั่งตัดสดจาก Express ที่ยังไม่ถูกนำเข้า (กันซ้ำด้วยเลข JP)
+  const mergedPurchaseOrders = useMemo(() => {
+    const importedNos = new Set(purchaseOrders.map((po) => po.no));
+    const pendingLive = liveOrders.filter((live) => !importedNos.has(live.no));
+    return [...purchaseOrders, ...pendingLive];
+  }, [purchaseOrders, liveOrders]);
+
   const filteredPurchaseOrders = useMemo(() => {
     const query = poSearch.trim().toLowerCase();
-    if (!query) return purchaseOrders;
-    return purchaseOrders.filter(
+    if (!query) return mergedPurchaseOrders;
+    return mergedPurchaseOrders.filter(
       (po) => po.no.toLowerCase().includes(query) || po.customer.toLowerCase().includes(query),
     );
-  }, [poSearch, purchaseOrders]);
+  }, [poSearch, mergedPurchaseOrders]);
 
-  const selectedPo = selectedPoId ? purchaseOrders.find((po) => po.id === selectedPoId) ?? null : null;
+  const selectedPo = selectedPoId ? mergedPurchaseOrders.find((po) => po.id === selectedPoId) ?? null : null;
   const selectedOrderRows = selectedPoId ? orderDetails[selectedPoId] ?? [] : [];
   const selectedRoundRows = selectedOrderRows.filter((row) => row.shape === "ROUND" && isCuttableOrderDetail(row));
   const selectedPlateRows = selectedOrderRows.filter((row) => row.shape === "PLATE" && isCuttableOrderDetail(row));
 
-  function selectPo(id: string) {
+  // เลือก PO — ถ้าเป็นรายการสดจาก Express ให้นำเข้าเงียบ ๆ ก่อนแล้วค่อยเปิด
+  async function selectPo(id: string) {
+    const target = mergedPurchaseOrders.find((po) => po.id === id);
+    if (target?.isLive && target.legacyDocId) {
+      // นำเข้าอัตโนมัติ (ไม่ต้องกดปุ่ม) แล้วเลือก PO ที่เพิ่งสร้าง
+      await importFromLegacy(target.legacyDocId);
+      await refreshLiveOrders();
+      return;
+    }
     setSelectedPoId((current) => (current === id ? null : id));
   }
 
@@ -192,6 +223,18 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // นำเข้าใบสั่งขายจากระบบคลังเดิม (Express/ftsgroupstore) มาเป็น PO ใหม่
+  async function importFromLegacy(docId: string): Promise<Notice> {
+    try {
+      const newPoId = await importLegacyOrder(docId);
+      await refreshOrders();
+      setSelectedPoId(newPoId);
+      return { ok: true, text: "นำเข้าใบสั่งขายสำเร็จ — กรุณาเลือกวัสดุให้แต่ละรายการก่อนส่งตัด" };
+    } catch {
+      return { ok: false, text: "นำเข้าใบสั่งขายไม่สำเร็จ" };
+    }
+  }
+
   async function removePurchaseOrder(poId: string): Promise<Notice> {
     try {
       await deletePurchaseOrder(poId);
@@ -251,6 +294,7 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
     updateOrderDetail: updateOrderDetailRow,
     updatePurchaseOrderFields,
     deletePurchaseOrder: removePurchaseOrder,
+    importFromLegacy,
 
     pushOrderDetailToCutting,
     pushRoundFromPo,

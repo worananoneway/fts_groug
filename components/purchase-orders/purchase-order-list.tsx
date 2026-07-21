@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Trash2 } from "lucide-react";
+import { Database, Search, Trash2 } from "lucide-react";
 
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { Field } from "../ui/field";
 import { IconButton } from "../ui/icon-button";
@@ -11,13 +12,23 @@ import { EmptyState } from "../ui/empty-state";
 import { TimedToast } from "../ui/timed-toast";
 import { fmt, statusLabel } from "@/utils/format";
 import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
+import { usePurchaseOrdersContext } from "./purchase-orders-provider";
+import { ImportLegacyDialog } from "./import-legacy-dialog";
 import type { Notice, PurchaseOrder, PurchaseOrderStatus } from "@/types/division";
 
 export function PurchaseOrderList() {
   const { deletePurchaseOrder, poSearch, purchaseOrders, selectPo, selectedPoId, setPoSearch } = usePurchaseOrders();
+  const { importFromLegacy } = usePurchaseOrdersContext();
   const [deleteTarget, setDeleteTarget] = useState<PurchaseOrder | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+
+  async function handleImport(docId: string) {
+    const result = await importFromLegacy(docId);
+    setNotice(result);
+    if (result.ok) setImportOpen(false);
+  }
 
   async function confirmDelete() {
     if (!deleteTarget) return;
@@ -36,9 +47,19 @@ export function PurchaseOrderList() {
       <TimedToast notice={notice} onClose={() => setNotice(null)} />
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-slate-800">ใบสั่งซื้อ</h2>
-        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
-          {fmt(purchaseOrders.length)} รายการ
-        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            icon={<Database className="h-4 w-4" />}
+            onClick={() => setImportOpen(true)}
+            size="sm"
+            variant="secondary"
+          >
+            ดึงจาก Express
+          </Button>
+          <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+            {fmt(purchaseOrders.length)} รายการ
+          </span>
+        </div>
       </div>
 
       <div className="relative mb-4">
@@ -82,29 +103,48 @@ export function PurchaseOrderList() {
                   }`}
                 />
                 <div className="min-w-0">
-                  <p className="font-mono text-sm font-bold text-slate-800">{po.no}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono text-sm font-bold text-slate-800">{po.no}</p>
+                    {po.isLive ? (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                        สดจาก Express
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="truncate text-sm text-slate-500">{po.customer}</p>
                   <p className="mt-1 text-xs text-slate-400">
-                    ออก {po.date} | กำหนด {po.due}
+                    {po.isLive ? `ออก ${po.date} · คลิกเพื่อเริ่มทำงาน` : `ออก ${po.date} | กำหนด ${po.due}`}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <Badge tone={statusTone(po.status)}>{statusLabel(po.status)}</Badge>
-                  <IconButton
-                    icon={<Trash2 className="h-4 w-4" />}
-                    label="ลบใบสั่งซื้อ"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setDeleteTarget(po);
-                    }}
-                    tone="danger"
-                  />
+                  {po.isLive ? (
+                    <Badge tone="amber">ยังไม่นำเข้า</Badge>
+                  ) : (
+                    <>
+                      <Badge tone={statusTone(po.status)}>{statusLabel(po.status)}</Badge>
+                      <IconButton
+                        icon={<Trash2 className="h-4 w-4" />}
+                        label="ลบใบสั่งซื้อ"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setDeleteTarget(po);
+                        }}
+                        tone="danger"
+                      />
+                    </>
+                  )}
                 </div>
               </div>
             );
           })
         )}
       </div>
+
+      <ImportLegacyDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={handleImport}
+      />
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}
