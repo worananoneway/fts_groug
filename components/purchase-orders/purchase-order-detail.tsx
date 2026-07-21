@@ -57,7 +57,8 @@ export function PurchaseOrderDetail() {
   }
 
   function handleRowClick(row: OrderDetail) {
-    if (row.status === "COMPLETED" || row.status === "CANCELLED") {
+    // รายการสินค้าจาก Express / รายการที่ปิดแล้ว → เปิดดูอย่างเดียว ไม่ส่งไปตัด
+    if (row.isReference || row.status === "COMPLETED" || row.status === "CANCELLED") {
       setDetailView(row);
       return;
     }
@@ -448,18 +449,24 @@ function nonNegativeInt(value: unknown): number {
 }
 
 function DetailReadOnly({ row }: { row: OrderDetail }) {
+  const unit = row.unit || "ชิ้น";
   return (
     <div className="space-y-3 text-sm text-slate-600">
-      <p><b className="text-slate-800">วัสดุ:</b> {row.material}</p>
+      <p><b className="text-slate-800">สินค้า:</b> {row.material}</p>
+      {row.productCode ? <p><b className="text-slate-800">รหัสสินค้า:</b> {row.productCode}</p> : null}
       <p><b className="text-slate-800">สถานะ:</b> {orderDetailStatusLabel(row.status)}</p>
-      <p><b className="text-slate-800">จำนวน:</b> {fmt(row.qty)} ชิ้น</p>
-      <p><b className="text-slate-800">คงเหลือ:</b> {fmt(row.remaining)} ชิ้น</p>
-      <p>
-        <b className="text-slate-800">ขนาด:</b>{" "}
-        {row.shape === "ROUND"
-          ? `Ø${fmt(row.diameter ?? 0)} x ${fmt(row.length)} มม.`
-          : `${fmt(row.width ?? 0)} x ${fmt(row.length)} x หนา ${fmt(row.thickness ?? 0)} มม.`}
-      </p>
+      <p><b className="text-slate-800">จำนวน:</b> {fmt(row.qty)} {unit}</p>
+      <p><b className="text-slate-800">คงเหลือ:</b> {fmt(row.remaining)} {unit}</p>
+      {row.isReference ? (
+        <p className="text-slate-400">รายการนำเข้าจาก Express — ไม่มีขนาดสำหรับตัด</p>
+      ) : (
+        <p>
+          <b className="text-slate-800">ขนาด:</b>{" "}
+          {row.shape === "ROUND"
+            ? `Ø${fmt(row.diameter ?? 0)} x ${fmt(row.length)} มม.`
+            : `${fmt(row.width ?? 0)} x ${fmt(row.length)} x หนา ${fmt(row.thickness ?? 0)} มม.`}
+        </p>
+      )}
     </div>
   );
 }

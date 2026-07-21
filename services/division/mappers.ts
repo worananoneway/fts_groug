@@ -13,14 +13,22 @@ export function mapPurchaseOrder(raw: Record<string, unknown>): PurchaseOrder | 
   const id = stringValue(raw.id ?? raw.po_id);
   if (!id) return null;
 
+  const comment = stringValue(raw.comment ?? raw.po_comment);
+  // PO ที่นำเข้าจาก Express — ใช้เลขใบสั่งตัด (JP...) เป็นชื่อ PO เพื่อให้ดูตรงกับระบบเดิม
+  const legacyRef = comment.match(/Express:\s*(JP\d+)/);
+  const poNumber = stringValue(raw.no ?? raw.number ?? raw.po_number) || id;
+  // PO ที่นำเข้ายังไม่ผูก cus_id — ชื่อลูกค้าจริง (จากใบ SI) เก็บไว้ใน remark
+  const legacyCustomer = legacyRef ? stringValue(raw.remark ?? raw.po_remark) : "";
+
   return {
     id,
-    no: stringValue(raw.no ?? raw.number ?? raw.po_number) || id,
+    no: legacyRef ? legacyRef[1] : poNumber,
     customer:
       stringValue(raw.customer ?? raw.supplier_name ?? raw.po_supplier_name) ||
       nestedString(raw.customer, "name_th") ||
       nestedString(raw.customer, "name_en") ||
       nestedString(raw.supplier, "name") ||
+      legacyCustomer ||
       "ไม่ระบุลูกค้า",
     customerId: nestedString(raw.customer, "id") || stringValue(raw.po_customer_id ?? raw.po_cus_id),
     projectId: nestedString(raw.project, "id") || stringValue(raw.po_project_id),
@@ -44,17 +52,34 @@ export function mapOrderDetails(raw: unknown): Record<string, OrderDetail[]> {
     const row = item as Record<string, unknown>;
     const poId = stringValue(row.po_id ?? row.order_id ?? row.ord_id);
     const id = stringValue(row.id ?? row.odd_id ?? row.order_detail_id);
-    const shape = mapShape(stringValue(row.shape ?? row.shape_type) || nestedString(row.material, "shape_type"));
-    if (!poId || !id || !shape) return acc;
+    // แถวที่นำเข้าจากระบบเดิมยังไม่มีวัสดุ (mm_id null) — เดารูปทรงจากขนาดที่มี ไม่งั้นถือเป็นแผ่น
+    const shape =
+      mapShape(stringValue(row.shape ?? row.shape_type) || nestedString(row.material, "shape_type")) ??
+      (numberValue(row.required_diameter ?? row.required_diameter_mm) ? "ROUND" : "PLATE");
+    if (!poId || !id) return acc;
+
+    const materialId =
+      stringValue(row.material_id ?? row.mm_id ?? row.odd_mm_id) || nestedString(row.material, "id");
+    const description = stringValue(row.description);
+    const dia = numberValue(row.diameter ?? row.required_diameter ?? row.required_diameter_mm);
+    const len = numberValue(row.length ?? row.required_length ?? row.required_length_mm);
+    const wid = numberValue(row.width ?? row.required_width ?? row.required_width_mm);
+    const thk = numberValue(row.thickness ?? row.required_thickness ?? row.required_thickness_mm);
+    const hasDimensions = dia > 0 || len > 0 || wid > 0 || thk > 0;
+    // รายการอ้างอิง = ไม่มีวัสดุผูก + ไม่มีขนาดตัด (เช่น สินค้าทั่วไปที่ import มาแต่เดิม)
+    // ส่วนงานตัดเหล็กที่ import (มีขนาด) ไม่ถือเป็น reference — แก้ไข/ส่งตัดได้ปกติ
+    const isReference = !materialId && Boolean(description) && !hasDimensions;
+    const materialName =
+      stringValue(row.material ?? row.material_name ?? row.mm_name) ||
+      nestedString(row.material, "name") ||
+      description ||
+      "ไม่ระบุวัสดุ";
 
     const detail: OrderDetail = {
       id,
       shape,
-      materialId: stringValue(row.material_id ?? row.mm_id ?? row.odd_mm_id) || nestedString(row.material, "id"),
-      material:
-        stringValue(row.material ?? row.material_name ?? row.mm_name) ||
-        nestedString(row.material, "name") ||
-        "ไม่ระบุวัสดุ",
+      materialId,
+      material: materialName,
       diameter: numberValue(row.diameter ?? row.required_diameter ?? row.required_diameter_mm),
       length: numberValue(row.length ?? row.required_length ?? row.required_length_mm),
       width: numberValue(row.width ?? row.required_width ?? row.required_width_mm),
@@ -62,12 +87,21 @@ export function mapOrderDetails(raw: unknown): Record<string, OrderDetail[]> {
       qty: Math.max(1, Math.floor(numberValue(row.cut_quantity ?? row.qty ?? row.quantity) || 1)),
       remaining: Math.max(0, Math.floor(numberValue(row.remaining_quantity ?? row.remaining ?? row.quantity))),
       status: mapOrderDetailStatus(row.status ?? row.odd_status),
+      unit: stringValue(row.unit) || undefined,
+      productCode: extractProductCode(stringValue(row.remark)),
+      isReference,
       raw: row,
     };
 
     acc[poId] = [...(acc[poId] ?? []), detail];
     return acc;
   }, {});
+}
+
+// ดึงรหัสสินค้าเดิมออกจาก remark ที่ import มา (รูปแบบ "รหัสสินค้าเดิม: XXX")
+function extractProductCode(remark: string): string | undefined {
+  const match = remark.match(/รหัสสินค้าเดิม:\s*(.+)/);
+  return match ? match[1].trim() : undefined;
 }
 
 export function mapPlateStock(raw: Record<string, unknown>): PlateStock | null {

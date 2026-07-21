@@ -23,19 +23,34 @@ export function OrderShapeTable({
     {
       key: "shape",
       header: "ทรง",
-      cell: (row) => <Badge tone={row.shape === "ROUND" ? "blue" : "emerald"}>{shapeLabel(row.shape)}</Badge>,
+      cell: (row) =>
+        row.isReference ? (
+          <Badge tone="slate">สินค้า</Badge>
+        ) : (
+          <Badge tone={row.shape === "ROUND" ? "blue" : "emerald"}>{shapeLabel(row.shape)}</Badge>
+        ),
     },
     { key: "material", header: "วัสดุ", cell: (row) => row.material },
     {
       key: "size",
       header: "ขนาด",
-      cell: (row) => <span className="font-mono">{sizeLabel(row)}</span>,
+      cell: (row) =>
+        row.isReference ? (
+          <span className="text-slate-400">—</span>
+        ) : (
+          <span className="font-mono">{sizeLabel(row)}</span>
+        ),
     },
     {
       key: "qty",
       header: "จำนวน",
       className: "text-right",
-      cell: (row) => <span className="font-mono">{fmt(row.qty)}</span>,
+      cell: (row) => (
+        <span className="font-mono">
+          {fmt(row.qty)}
+          {row.isReference && row.unit ? ` ${row.unit}` : ""}
+        </span>
+      ),
     },
     {
       key: "remaining",
@@ -55,15 +70,18 @@ export function OrderShapeTable({
       cell: (row) =>
         row.status === "COMPLETED" || row.status === "CANCELLED" ? null : (
           <div className="flex justify-end gap-1">
-            <IconButton
-              icon={<Pencil className="h-4 w-4" />}
-              label={`แก้ไขรายละเอียด ${row.id}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                onEdit?.(row);
-              }}
-              tone="primary"
-            />
+            {/* รายการสินค้าที่นำเข้าจาก Express เป็นข้อมูลอ่านอย่างเดียว — แก้ไขไม่ได้ */}
+            {row.isReference ? null : (
+              <IconButton
+                icon={<Pencil className="h-4 w-4" />}
+                label={`แก้ไขรายละเอียด ${row.id}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEdit?.(row);
+                }}
+                tone="primary"
+              />
+            )}
             <IconButton
               icon={<Trash2 className="h-4 w-4" />}
               label={`ลบรายการ ${row.id}`}
@@ -93,8 +111,22 @@ function shapeLabel(shape: OrderDetail["shape"]) {
 }
 
 function sizeLabel(row: OrderDetail) {
-  if (row.shape === "ROUND") return `Ø${fmt(row.diameter ?? 0)} x ${fmt(row.length)} มม.`;
-  return `${fmt(row.width ?? 0)} x ${fmt(row.length)} x หนา ${fmt(row.thickness ?? 0)} มม.`;
+  if (row.shape === "ROUND") {
+    const dia = row.diameter ?? 0;
+    const len = row.length ?? 0;
+    if (dia > 0 && len > 0) return `Ø${fmt(dia)} x ${fmt(len)} มม.`;
+    if (dia > 0) return `Ø${fmt(dia)} มม. · รอระบุความยาว`;
+    return "รอระบุขนาด";
+  }
+  const width = row.width ?? 0;
+  const len = row.length ?? 0;
+  const thickness = row.thickness ?? 0;
+  // แผ่นที่ Express ระบุ "สั่งทำ" จะมีแต่ความหนา — แสดงเท่าที่มี
+  if (width > 0 && len > 0) {
+    return `${fmt(width)} x ${fmt(len)}${thickness > 0 ? ` x หนา ${fmt(thickness)}` : ""} มม.`;
+  }
+  if (thickness > 0) return `หนา ${fmt(thickness)} มม. · รอระบุขนาด`;
+  return "รอระบุขนาด";
 }
 
 function statusTone(status: OrderDetail["status"]) {

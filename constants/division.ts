@@ -13,7 +13,8 @@ export const ITEM_COLORS = [
 
 // เรียงตามลำดับงานจริง: เปิดโปรเจคก่อน แล้วค่อยออกใบสั่งซื้อภายใต้โปรเจค
 export const DIVISION_NAV: DivisionNavItem[] = [
-  { key: "projects", label: "โปรเจค", href: "/projects" },
+  // แท็บ "โปรเจค" ถูกซ่อนไว้ (ข้อมูลดึงจาก Express แทน) — หน้า /projects ยังอยู่ กลับมาเปิดได้ภายหลัง
+  // { key: "projects", label: "โปรเจค", href: "/projects" },
   { key: "po", label: "ใบสั่งซื้อ PO", href: "/po" },
 ];
 
