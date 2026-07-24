@@ -136,9 +136,16 @@ export function WastrelSteelRoundBarsScreen() {
           label: "ขนาด (Ø×ยาว)",
           value: `Ø${formatNumber(row.diameter)} × ${formatNumber(row.length)} มม.`,
         },
-        { label: "จำนวนรวมคงเหลือ", value: formatNumber(row.total_available) },
-        { label: "จำนวนชิ้นในกลุ่ม", value: `${formatNumber(row.piece_count)} รหัส` },
-        { label: "รายละเอียดแต่ละชิ้น", value: <MembersTable members={row.members} /> },
+        {
+          label: "จำนวนรวมคงเหลือ",
+          value: (
+            <span className="text-lg font-bold text-emerald-700">
+              {formatNumber(row.total_available)}{" "}
+              <span className="text-xs font-normal text-slate-400">({formatNumber(row.piece_count)} รหัส)</span>
+            </span>
+          ),
+        },
+        { label: `รายละเอียดแต่ละชิ้น (${formatNumber(row.piece_count)} รหัส)`, value: <MembersTable members={row.members} />, fullWidth: true },
       ]}
     />
   );

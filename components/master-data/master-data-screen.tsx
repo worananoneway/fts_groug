@@ -21,6 +21,7 @@ import type { MasterDataNavKey } from "@/types/master-data";
 export interface DetailItem {
   label: string;
   value: ReactNode;
+  fullWidth?: boolean;
 }
 
 interface MasterDataScreenProps<T> {
@@ -196,13 +197,17 @@ export function MasterDataScreen<T>({
           open={selectedRow !== null}
           onClose={() => setSelectedRow(null)}
           title={selectedRow && detailTitle ? detailTitle(selectedRow) : "รายละเอียด"}
+          wide={selectedRow ? detailItems(selectedRow).some((item) => item.fullWidth) : false}
         >
           {selectedRow ? (
             <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
               {detailItems(selectedRow).map((item) => (
-                <div key={item.label} className="border-b border-slate-100 pb-2">
+                <div
+                  key={item.label}
+                  className={`border-b border-slate-100 pb-2 ${item.fullWidth ? "sm:col-span-2" : ""}`}
+                >
                   <dt className="text-xs text-slate-400">{item.label}</dt>
-                  <dd className="mt-0.5 text-sm text-slate-700">{item.value}</dd>
+                  <dd className="mt-1 text-sm text-slate-700">{item.value}</dd>
                 </div>
               ))}
             </dl>
