@@ -134,6 +134,35 @@ export interface WastrelMsPlateRow {
   emp: EmployeeRef | null;
 }
 
+// เศษที่ถูกจัดกลุ่มตามขนาด (ชิ้นขนาดเท่ากันรวมเป็นกลุ่มเดียว)
+export interface ScrapMember {
+  display_id: string | null;
+  source_code: string | null;
+  available_quantity: number | null;
+  order_no: string | null;
+}
+export interface WastrelMsPlateGroup {
+  id: string;
+  material: MaterialRef | null;
+  length: number | null;
+  width: number | null;
+  thickness: number | null;
+  total_available: number;
+  total_quantity: number;
+  piece_count: number;
+  members: ScrapMember[];
+}
+export interface WastrelSteelRoundBarGroup {
+  id: string;
+  material: MaterialRef | null;
+  diameter: number | null;
+  length: number | null;
+  total_available: number;
+  total_quantity: number;
+  piece_count: number;
+  members: ScrapMember[];
+}
+
 export interface WastrelSteelRoundBarRow {
   id: string;
   material: MaterialRef | null;

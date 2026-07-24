@@ -38,7 +38,6 @@ interface MasterDataScreenProps<T> {
   detailItems?: (row: T) => DetailItem[];
 }
 
-// แปลง reply {status, statuscode, details} จาก API เป็น rows — 404 ถือว่าไม่มีข้อมูล
 export function unwrapListReply<T>(reply: unknown): T[] {
   const result = reply as { statuscode?: number; details?: unknown } | null;
   if (result?.statuscode === 200 && Array.isArray(result.details)) {
