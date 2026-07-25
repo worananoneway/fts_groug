@@ -10,6 +10,7 @@ export function Modal({
   children,
   footer,
   fullscreen = false,
+  wide = false,
   onClose,
   open,
   title,
@@ -17,6 +18,7 @@ export function Modal({
   children: ReactNode;
   footer?: ReactNode;
   fullscreen?: boolean;
+  wide?: boolean;
   onClose: () => void;
   open: boolean;
   title: string;
@@ -28,7 +30,7 @@ export function Modal({
       <div
         className={cn(
           "flex max-h-[92vh] w-full flex-col overflow-hidden rounded-lg bg-white shadow-2xl",
-          fullscreen ? "h-[92vh] max-w-[96vw]" : "max-w-xl",
+          fullscreen ? "h-[92vh] max-w-[96vw]" : wide ? "max-w-3xl" : "max-w-xl",
         )}
         role="dialog"
         aria-modal="true"

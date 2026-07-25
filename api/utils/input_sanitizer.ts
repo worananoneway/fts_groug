@@ -26,6 +26,6 @@ export function sanitize_string(input: string): string {
     if (typeof input !== 'string') {
         throw new Error('Input must be a string for sanitization.');
     }
-    // Remove any HTML tags and trim whitespace
+
     return input.normalize('NFKC').replaceAll(/<.*?>/g, '').trim();
 }

@@ -14,10 +14,8 @@ export function mapPurchaseOrder(raw: Record<string, unknown>): PurchaseOrder | 
   if (!id) return null;
 
   const comment = stringValue(raw.comment ?? raw.po_comment);
-  // PO ที่นำเข้าจาก Express — ใช้เลขใบสั่งตัด (JP...) เป็นชื่อ PO เพื่อให้ดูตรงกับระบบเดิม
   const legacyRef = comment.match(/Express:\s*(JP\d+)/);
   const poNumber = stringValue(raw.no ?? raw.number ?? raw.po_number) || id;
-  // PO ที่นำเข้ายังไม่ผูก cus_id — ชื่อลูกค้าจริง (จากใบ SI) เก็บไว้ใน remark
   const legacyCustomer = legacyRef ? stringValue(raw.remark ?? raw.po_remark) : "";
 
   return {
@@ -98,7 +96,6 @@ export function mapOrderDetails(raw: unknown): Record<string, OrderDetail[]> {
   }, {});
 }
 
-// ดึงรหัสสินค้าเดิมออกจาก remark ที่ import มา (รูปแบบ "รหัสสินค้าเดิม: XXX")
 function extractProductCode(remark: string): string | undefined {
   const match = remark.match(/รหัสสินค้าเดิม:\s*(.+)/);
   return match ? match[1].trim() : undefined;

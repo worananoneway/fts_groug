@@ -14,7 +14,7 @@ export interface OrdersData {
   purchaseOrders: PurchaseOrder[];
   orderDetails: Record<string, OrderDetail[]>;
   materialMasters: MaterialMaster[];
-}
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
 
 
 export async function loadProjectOrders(projectId: string): Promise<PurchaseOrder[]> {
@@ -30,9 +30,6 @@ export async function loadProjectOrders(projectId: string): Promise<PurchaseOrde
     .map((row) => mapPurchaseOrder(row))
     .filter((row): row is PurchaseOrder => Boolean(row));
 }
-
-// สร้าง PO ใต้โปรเจค — backend บังคับให้มี key ครบทุกตัว (field_validator) แต่ค่าเป็น null ได้
-// ฟิลด์ที่ผู้ใช้ไม่ได้กรอก (เช่น สถานะการส่ง/ชำระเงินที่ยังไม่เกิดตอนสร้างใหม่) ส่ง null
 export async function createProjectOrder(projectId: string, fields: PurchaseOrderCreateFields): Promise<string> {
   const payload = {
     cus_id: fields.customerId || null,
@@ -141,8 +138,6 @@ async function putOrderDetail(orderId: string, detail: OrderDetail): Promise<voi
   });
 }
 
-// สร้าง payload ของ purchase_orders_details โดยดึงฟิลด์ฝั่งบัญชี (ราคา, ส่วนลด, หน่วย ฯลฯ)
-// กลับมาจาก raw เดิม เพื่อไม่ให้การอัปเดตจากหน้างานตัดไปล้างข้อมูลเหล่านั้น
 function orderDetailPayload(orderId: string, detail: OrderDetail) {
   const raw = detail.raw ?? {};
   return {
@@ -167,8 +162,6 @@ function orderDetailPayload(orderId: string, detail: OrderDetail) {
   };
 }
 
-// endpoint นี้เป็น PUT แทนที่ทั้งแถว (ไม่ใช่ PATCH) — ต้อง round-trip ทุกฟิลด์จาก raw เดิม
-// ไม่งั้นฟิลด์ที่หน้านี้ไม่ได้แก้ (ลูกค้า, โครงการ, ที่อยู่จัดส่ง, ผู้อนุมัติ ฯลฯ) จะถูกเซ็ตเป็น NULL ทิ้ง
 export async function updatePurchaseOrder(
   poId: string,
   fields: PurchaseOrderUpdateFields,
@@ -209,8 +202,6 @@ export async function deletePurchaseOrder(poId: string): Promise<void> {
   });
 }
 
-// แก้ไข PO ที่มีอยู่แล้ว โดยฟอร์มเดียวกับตอนสร้าง (ครอบคลุมทุกคอลัมน์ที่ endpoint PUT นี้ต้องการ)
-// project_id ส่งแยกเป็นพารามิเตอร์เพราะฟอร์มแก้ไขไม่ได้ให้ย้าย PO ข้ามโปรเจค
 export async function updateProjectOrder(
   poId: string,
   fields: PurchaseOrderCreateFields,

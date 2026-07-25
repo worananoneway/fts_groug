@@ -19,7 +19,7 @@ export const DIVISION_NAV: DivisionNavItem[] = [
 ];
 
 // ปลายทางของปุ่ม "ข้อมูลหลัก" ที่มุมขวาบน header (แยกจากแท็บงานตัด)
-export const MASTER_DATA_ENTRY_HREF = "/master-data/setting/customer";
+export const MASTER_DATA_ENTRY_HREF = "/master-data/setting/ms_plates";
 
 export const SUB_TABS: Array<TabDefinition<SubTabKey>> = [
   { key: "settings", label: "ตั้งค่าและสั่งตัด" },

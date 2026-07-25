@@ -2,44 +2,67 @@
 
 import {
   dash,
-  formatDate,
   formatNumber,
   MasterDataScreen,
-  StatusBadge,
   unwrapListReply,
 } from "./master-data-screen";
 import useWastrelMsPlatesApi from "@/hooks/master-data/wastrel_ms_plates";
 import type { DataTableColumn } from "@/types/division";
-import type { WastrelMsPlateRow } from "@/types/master-data";
+import type { ScrapMember, WastrelMsPlateGroup, WastrelMsPlateRow } from "@/types/master-data";
 
 const wastrelMsPlatesApi = useWastrelMsPlatesApi();
 
-async function fetchWastrelMsPlates(): Promise<WastrelMsPlateRow[]> {
-  return unwrapListReply<WastrelMsPlateRow>(await wastrelMsPlatesApi.get());
+// จัดกลุ่มเศษเหล็กแผ่นตาม เกรดวัสดุ + ขนาด (ยาว×กว้าง×หนา) — ขนาดเท่ากันรวมเป็นกลุ่มเดียว
+function groupPlates(rows: WastrelMsPlateRow[]): WastrelMsPlateGroup[] {
+  const map = new Map<string, WastrelMsPlateGroup>();
+  for (const row of rows) {
+    if (row.status && ["Deleted", "Used", "Inactive"].includes(row.status)) continue;
+    const grade = row.material?.grade ?? row.material?.code ?? "-";
+    const key = `${grade}|${row.length ?? 0}x${row.width ?? 0}x${row.thickness ?? 0}`;
+    const member: ScrapMember = {
+      display_id: row.display_id ?? row.id,
+      source_code: row.source_ms_plate?.code ?? null,
+      available_quantity: row.available_quantity ?? 0,
+      order_no: row.order?.no ?? null,
+    };
+    const existing = map.get(key);
+    if (existing) {
+      existing.total_available += Number(row.available_quantity) || 0;
+      existing.total_quantity += Number(row.quantity) || 0;
+      existing.piece_count += 1;
+      existing.members.push(member);
+    } else {
+      map.set(key, {
+        id: key,
+        material: row.material,
+        length: row.length,
+        width: row.width,
+        thickness: row.thickness,
+        total_available: Number(row.available_quantity) || 0,
+        total_quantity: Number(row.quantity) || 0,
+        piece_count: 1,
+        members: [member],
+      });
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => b.total_available - a.total_available);
 }
 
-const columns: Array<DataTableColumn<WastrelMsPlateRow>> = [
-  {
-    key: "display_id",
-    header: "รหัสเศษ",
-    cell: (row) => (
-      <span className="font-mono text-xs font-semibold text-slate-700">{dash(row.display_id ?? row.id)}</span>
-    ),
-  },
+async function fetchGroups(): Promise<WastrelMsPlateGroup[]> {
+  const rows = unwrapListReply<WastrelMsPlateRow>(await wastrelMsPlatesApi.get());
+  return groupPlates(rows);
+}
+
+const columns: Array<DataTableColumn<WastrelMsPlateGroup>> = [
   {
     key: "material",
-    header: "วัสดุ",
+    header: "วัสดุ / เกรด",
     cell: (row) => (
       <div>
         <p>{dash(row.material?.name)}</p>
-        <p className="font-mono text-xs text-slate-400">{dash(row.material?.code)}</p>
+        <p className="font-mono text-xs text-slate-400">{dash(row.material?.grade ?? row.material?.code)}</p>
       </div>
     ),
-  },
-  {
-    key: "source",
-    header: "จากแผ่นต้นทาง",
-    cell: (row) => <span className="font-mono text-xs">{dash(row.source_ms_plate?.code)}</span>,
   },
   {
     key: "size",
@@ -51,60 +74,81 @@ const columns: Array<DataTableColumn<WastrelMsPlateRow>> = [
     ),
   },
   {
-    key: "quantity",
-    header: "คงเหลือ/ทั้งหมด",
-    cell: (row) => (
-      <span className="font-mono text-xs">
-        {formatNumber(row.available_quantity)} / {formatNumber(row.quantity)}
-      </span>
-    ),
+    key: "total",
+    header: "จำนวนรวมคงเหลือ",
+    className: "text-right",
+    cell: (row) => <span className="font-mono text-sm font-bold text-emerald-700">{formatNumber(row.total_available)}</span>,
   },
   {
-    key: "order",
-    header: "อ้างอิง PO",
-    cell: (row) => <span className="font-mono text-xs">{dash(row.order?.no)}</span>,
-  },
-  {
-    key: "status",
-    header: "สถานะ",
-    cell: (row) => <StatusBadge status={row.status} />,
+    key: "pieces",
+    header: "จำนวนชิ้น (รหัส)",
+    className: "text-right",
+    cell: (row) => <span className="font-mono text-xs">{formatNumber(row.piece_count)}</span>,
   },
 ];
 
+function MembersTable({ members }: { members: ScrapMember[] }) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-slate-200">
+      <table className="w-full text-xs">
+        <thead className="bg-slate-50 text-slate-500">
+          <tr>
+            <th className="px-3 py-2 text-left font-semibold">รหัสเศษ</th>
+            <th className="px-3 py-2 text-left font-semibold">จากเหล็กต้นทาง (รหัส)</th>
+            <th className="px-3 py-2 text-left font-semibold">อ้างอิง PO</th>
+            <th className="px-3 py-2 text-right font-semibold">คงเหลือ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {members.map((m, i) => (
+            <tr key={m.display_id ?? i} className="border-t border-slate-100">
+              <td className="px-3 py-1.5 font-mono">{dash(m.display_id)}</td>
+              <td className="px-3 py-1.5 font-mono text-slate-500">{dash(m.source_code)}</td>
+              <td className="px-3 py-1.5 font-mono text-slate-500">{dash(m.order_no)}</td>
+              <td className="px-3 py-1.5 text-right font-mono">{formatNumber(m.available_quantity)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function WastrelMsPlatesScreen() {
   return (
-    <MasterDataScreen<WastrelMsPlateRow>
+    <MasterDataScreen<WastrelMsPlateGroup>
       navKey="wastrel_ms_plates"
       title="เศษเหล็กแผ่น"
-      description="คลังเศษเหล็กแผ่นจากงานตัด | Wastrel MS Plates"
+      description="คลังเศษเหล็กแผ่นจากงานตัด — รวมชิ้นขนาดเท่ากันเป็นกลุ่มเดียว | Wastrel MS Plates"
       columns={columns}
-      fetchRows={fetchWastrelMsPlates}
-      rowKey={(row, index) => row.id ?? `wmsp-${index}`}
+      fetchRows={fetchGroups}
+      rowKey={(row, index) => row.id ?? `wmspg-${index}`}
       searchText={(row) =>
-        [row.display_id, row.material?.code, row.material?.name, row.source_ms_plate?.code, row.order?.no]
+        [row.material?.code, row.material?.name, row.material?.grade, ...row.members.map((m) => m.source_code)]
           .filter(Boolean)
           .join(" ")
       }
-      searchPlaceholder="ค้นหารหัสเศษ / วัสดุ / PO"
-      statusOf={(row) => row.status}
-      statusOptions={["Active", "Inactive", "Reserved", "Used", "AVAILABLE", "Deleted"]}
-      detailTitle={(row) => `เศษเหล็กแผ่น: ${dash(row.display_id ?? row.id)}`}
+      searchPlaceholder="ค้นหาวัสดุ / เกรด / รหัสเหล็กต้นทาง"
+      detailTitle={(row) =>
+        `เศษเหล็กแผ่น ${formatNumber(row.length)}×${formatNumber(row.width)}×${formatNumber(row.thickness)} มม.`
+      }
       detailItems={(row) => [
-        { label: "รหัสเศษ", value: dash(row.display_id ?? row.id) },
-        { label: "สถานะ", value: <StatusBadge status={row.status} /> },
         { label: "วัสดุ", value: dash(row.material?.name) },
-        { label: "รหัสวัสดุ", value: dash(row.material?.code) },
-        { label: "เกรด", value: dash(row.material?.grade) },
-        { label: "จากแผ่นต้นทาง", value: dash(row.source_ms_plate?.code) },
-        { label: "ความยาว (มม.)", value: formatNumber(row.length) },
-        { label: "ความกว้าง (มม.)", value: formatNumber(row.width) },
-        { label: "ความหนา (มม.)", value: formatNumber(row.thickness) },
-        { label: "จำนวนทั้งหมด", value: formatNumber(row.quantity) },
-        { label: "จำนวนคงเหลือ", value: formatNumber(row.available_quantity) },
-        { label: "อ้างอิง PO", value: dash(row.order?.no) },
-        { label: "หมายเหตุ", value: dash(row.remark) },
-        { label: "ผู้บันทึก", value: dash(row.emp?.name?.th) },
-        { label: "แก้ไขล่าสุด", value: formatDate(row.updated_at) },
+        { label: "เกรด", value: dash(row.material?.grade ?? row.material?.code) },
+        {
+          label: "ขนาด (ยาว×กว้าง×หนา)",
+          value: `${formatNumber(row.length)} × ${formatNumber(row.width)} × ${formatNumber(row.thickness)} มม.`,
+        },
+        {
+          label: "จำนวนรวมคงเหลือ",
+          value: (
+            <span className="text-lg font-bold text-emerald-700">
+              {formatNumber(row.total_available)}{" "}
+              <span className="text-xs font-normal text-slate-400">({formatNumber(row.piece_count)} รหัส)</span>
+            </span>
+          ),
+        },
+        { label: `รายละเอียดแต่ละชิ้น (${formatNumber(row.piece_count)} รหัส)`, value: <MembersTable members={row.members} />, fullWidth: true },
       ]}
     />
   );
