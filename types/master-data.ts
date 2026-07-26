@@ -129,6 +129,7 @@ export interface WastrelMsPlateRow {
   order: OrderRef | null;
   order_detail: { id: string | null; order_id: string | null } | null;
   remark: string | null;
+  location: string | null;
   created_at: string | null;
   updated_at: string | null;
   emp: EmployeeRef | null;
@@ -136,10 +137,12 @@ export interface WastrelMsPlateRow {
 
 // เศษที่ถูกจัดกลุ่มตามขนาด (ชิ้นขนาดเท่ากันรวมเป็นกลุ่มเดียว)
 export interface ScrapMember {
+  id: string;
   display_id: string | null;
   source_code: string | null;
   available_quantity: number | null;
   order_no: string | null;
+  location: string | null;
 }
 export interface WastrelMsPlateGroup {
   id: string;
@@ -150,6 +153,9 @@ export interface WastrelMsPlateGroup {
   total_available: number;
   total_quantity: number;
   piece_count: number;
+  /** ที่เก็บ: ถ้าทุกชิ้นเก็บที่เดียวกันจะเป็นชื่อพื้นที่, ถ้าต่างกันเป็น null (แสดง "หลายที่") */
+  location: string | null;
+  location_mixed: boolean;
   members: ScrapMember[];
 }
 export interface WastrelSteelRoundBarGroup {
@@ -160,6 +166,8 @@ export interface WastrelSteelRoundBarGroup {
   total_available: number;
   total_quantity: number;
   piece_count: number;
+  location: string | null;
+  location_mixed: boolean;
   members: ScrapMember[];
 }
 
@@ -176,6 +184,7 @@ export interface WastrelSteelRoundBarRow {
   order: OrderRef | null;
   order_detail: { id: string | null; order_id: string | null } | null;
   remark: string | null;
+  location: string | null;
   created_at: string | null;
   updated_at: string | null;
   emp: EmployeeRef | null;

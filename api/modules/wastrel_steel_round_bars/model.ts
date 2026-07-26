@@ -38,6 +38,7 @@ export const reply_options = {
             }
         },
         remark: 'wsrb_remark',
+        location: 'wsrb_location',
         created_at: 'wsrb_created_at',
         updated_at: 'wsrb_updated_at',
         emp: {

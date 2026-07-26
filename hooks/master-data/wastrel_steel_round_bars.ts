@@ -53,6 +53,16 @@ async function updateStatus(wsrb_id: string, data: Record<string, any>) {
     }
 }
 
+async function updateLocation(ids: string[], location: string | null) {
+    try {
+        const response = await api_handler.patch(`${BASE_URL}/location`, undefined, undefined, { ids, location });
+        return response.data;
+    } catch (error) {
+        console.error("[Hook] An error occurred while updating wastrel_steel_round_bar location:", error);
+        throw error;
+    }
+}
+
 export default function useWastrelSteelRoundBarsApi() {
-    return { create, get, getById, updated, updateStatus };
+    return { create, get, getById, updated, updateStatus, updateLocation };
 }
