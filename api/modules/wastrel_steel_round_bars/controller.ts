@@ -321,11 +321,39 @@ async function update_status(request: any, reply: any) {
     }
 }
 
+// PATCH พื้นที่จัดเก็บ — รับ { ids: string[], location: string|null }
+async function update_location(request: any, reply: any) {
+    try {
+        const emp_id: string = request?.user?.id;
+        emp_authentication(module_name, emp_id, reply);
+
+        const body = sanitize_payload(request.body ?? {});
+        const ids: string[] = Array.isArray(body.ids) ? body.ids.map((v: unknown) => String(v)) : [];
+        const location: string | null = body.location ? String(body.location).trim() : null;
+
+        if (ids.length === 0) {
+            return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>
+                reply_result(module_name, HttpStatusCode.BAD_REQUEST, ['ids'])
+            );
+        }
+        const result = await service.update_location(ids, location, emp_id);
+        return reply.code(result.statuscode).send(<Reply>
+            reply_result(module_name, result.statuscode)
+        );
+    } catch (error) {
+        console.error(`[Controller] An error occurred during updating ${module_name} location:`, error);
+        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
+            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
+        );
+    }
+}
+
 const controller = {
     create,
     get,
     update,
-    update_status
+    update_status,
+    update_location
 };
 
 export default controller;

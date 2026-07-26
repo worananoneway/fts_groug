@@ -60,7 +60,20 @@ async function create(payload: Payload, emp_id: string): Promise<Response> {
     }
 }
 
+// เพิ่มคอลัมน์ที่เก็บให้อัตโนมัติถ้ายังไม่มี (idempotent) — จะได้ไม่ต้องรัน migration เอง
+let locationColumnEnsured = false;
+async function ensureLocationColumn(): Promise<void> {
+    if (locationColumnEnsured) return;
+    try {
+        await sql_query(`ALTER TABLE public.wastrel_steel_round_bars ADD COLUMN IF NOT EXISTS wsrb_location text`);
+        locationColumnEnsured = true;
+    } catch (error) {
+        console.error(`[Service] ensure ${module_name} location column failed:`, error);
+    }
+}
+
 async function get(conditions: Condition = { sql: ``, params: [] }, filter: string = `*`): Promise<Response> {
+    await ensureLocationColumn();
     const sql = `
         WITH ${module_name}_cte AS (
             SELECT
@@ -83,6 +96,7 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
                 wsrb_podetail_id,
                 podetail_po_id AS wsrb_podetail_po_id,
                 wsrb_remark,
+                wsrb_location,
                 wsrb_created_at,
                 wsrb_updated_at,
                 wsrb_emp_id,
@@ -216,11 +230,32 @@ async function update_status(id: string, status: StockStatus, emp_id: string): P
     }
 }
 
+async function update_location(ids: string[], location: string | null, emp_id: string): Promise<Response> {
+    if (!ids.length) {
+        return { statuscode: HttpStatusCode.NO_CONTENT, error: null, data: null };
+    }
+    await ensureLocationColumn();
+    const sql = `
+        UPDATE public.wastrel_steel_round_bars
+        SET wsrb_location = $2, wsrb_emp_id = $3
+        WHERE wsrb_id = ANY($1::text[])
+        RETURNING wsrb_id;
+    `;
+    try {
+        await sql_query(sql, [ids, location, emp_id]);
+        return { statuscode: HttpStatusCode.NO_CONTENT, error: null, data: null };
+    } catch (error) {
+        console.error(`[Service] An error occurred during updating ${module_name} location:`, error);
+        return { statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR, error, data: null };
+    }
+}
+
 const service = {
     create,
     get,
     update,
-    update_status
+    update_status,
+    update_location
 };
 
 export default service;
