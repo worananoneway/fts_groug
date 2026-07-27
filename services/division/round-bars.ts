@@ -1,16 +1,25 @@
 import type { RoundBarStock, SavedRoundScrap } from "@/types/division";
-import steelRoundBarsApi from "@/hooks/master-data/steel_round_bars";
-import { API_VERSION, flatString, isRecord, nestedString, readArray, requestJson } from "./http";
-import { mapRoundStock } from "./mappers";
+import { API_VERSION, flatString, isRecord, nestedString, readArray, requestJson, stringValue } from "./http";
+import { classifyLegacyItem } from "./legacy-orders";
 
+// ดึงสต็อกเพลาเหล็กกลมจริงจาก Express (แทนข้อมูลตัวอย่าง PostgreSQL)
 export async function loadSteelRoundBars(): Promise<RoundBarStock[]> {
-  const reply = (await steelRoundBarsApi.get()) as { statuscode?: number; details?: unknown };
-  const rawRows = reply?.statuscode === 200 && Array.isArray(reply.details)
-    ? reply.details.filter(isRecord)
-    : [];
-  return rawRows
-    .map((row) => mapRoundStock(row))
-    .filter((row): row is RoundBarStock => row !== null && row.status !== "Inactive");
+  const payload = await requestJson(`/api/${API_VERSION}/legacy-steel-stock/round-bars`);
+  const details = (payload as { details?: unknown })?.details;
+  if (!Array.isArray(details)) return [];
+  return details.filter(isRecord).map((r) => {
+    const stkcod = stringValue(r.stkcod);
+    const stkdes = stringValue(r.stkdes);
+    const dims = classifyLegacyItem(stkdes);
+    return {
+      id: `${stkcod}::${stkdes}`,
+      code: stkcod,
+      diameter: dims.diameter ?? 0,
+      length: dims.length ?? 0,
+      available_quantity: Math.max(0, Math.round(Number(r.balance) || 0)),
+      status: "Active",
+    } as RoundBarStock;
+  }).filter((row) => row.available_quantity > 0);
 }
 
 export async function loadWastrelBars(): Promise<SavedRoundScrap[]> {

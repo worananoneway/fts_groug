@@ -8,14 +8,13 @@ import {
   StatusBadge,
   unwrapListReply,
 } from "./master-data-screen";
-import useMsPlatesApi from "@/hooks/master-data/ms_plates";
+import { loadPlateStockFromExpress } from "@/services/master-data/legacy-steel";
 import type { DataTableColumn } from "@/types/division";
 import type { MsPlateRow } from "@/types/master-data";
 
-const msPlatesApi = useMsPlatesApi();
-
+// ดึงสต็อกเหล็กแผ่นจริงจาก Express (แทนข้อมูลตัวอย่างเดิมใน PostgreSQL)
 async function fetchMsPlates(): Promise<MsPlateRow[]> {
-  return unwrapListReply<MsPlateRow>(await msPlatesApi.get());
+  return loadPlateStockFromExpress();
 }
 
 const columns: Array<DataTableColumn<MsPlateRow>> = [

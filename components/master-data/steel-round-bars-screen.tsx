@@ -8,12 +8,13 @@ import {
   StatusBadge,
   unwrapListReply,
 } from "./master-data-screen";
-import steelRoundBarsApi from "@/hooks/master-data/steel_round_bars";
+import { loadRoundBarStockFromExpress } from "@/services/master-data/legacy-steel";
 import type { DataTableColumn } from "@/types/division";
 import type { SteelRoundBarRow } from "@/types/master-data";
 
+// ดึงสต็อกเพลาเหล็กกลมจริงจาก Express (แทนข้อมูลตัวอย่างเดิมใน PostgreSQL)
 async function fetchSteelRoundBars(): Promise<SteelRoundBarRow[]> {
-  return unwrapListReply<SteelRoundBarRow>(await steelRoundBarsApi.get());
+  return loadRoundBarStockFromExpress();
 }
 
 const columns: Array<DataTableColumn<SteelRoundBarRow>> = [
