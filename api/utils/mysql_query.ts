@@ -3,12 +3,16 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: `${__dirname}/../config/legacy_db.env` });
 
+// trim กันค่ามีช่องว่างต่อท้ายในไฟล์ .env (เช่น host มี space แล้วต่อไม่ติด)
+const env = (key: string): string | undefined => process.env[key]?.trim();
+
 const legacy_db_config = {
-    host: process.env.LEGACY_DB_HOST,
-    port: Number(process.env.LEGACY_DB_PORT) || 3306,
-    user: process.env.LEGACY_DB_USER,
-    password: process.env.LEGACY_DB_PASSWORD,
-    database: process.env.LEGACY_DB_DATABASE,
+    host: env("LEGACY_DB_HOST"),
+    port: Number(env("LEGACY_DB_PORT")) || 3306,
+    user: env("LEGACY_DB_USER"),
+    password: env("LEGACY_DB_PASSWORD"),
+    database: env("LEGACY_DB_DATABASE"),
+    connectTimeout: 8000,
     charset: "utf8mb4",
     // คืนค่า DATE/TIMESTAMP เป็น string ตรง ๆ (เช่น "2026-07-20") ป้องกันวันเพี้ยนจาก timezone
     dateStrings: true,

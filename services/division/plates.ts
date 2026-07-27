@@ -1,12 +1,26 @@
 import type { PlateStock, SavedPlateScrap } from "@/types/division";
-import { API_VERSION, flatString, nestedString, readArray, readRows, requestJson } from "./http";
-import { mapPlateStock } from "./mappers";
+import { API_VERSION, flatString, isRecord, nestedString, readArray, requestJson, stringValue } from "./http";
+import { classifyLegacyItem } from "./legacy-orders";
 
+// ดึงสต็อกเหล็กแผ่นจริงจาก Express (แทนข้อมูลตัวอย่าง PostgreSQL)
 export async function loadMsPlates(): Promise<PlateStock[]> {
-  const payload = await requestJson(`/api/${API_VERSION}/ms-plates`);
-  return readRows(payload)
-    .map((row) => mapPlateStock(row))
-    .filter((row): row is PlateStock => row !== null && row.status !== "Inactive");
+  const payload = await requestJson(`/api/${API_VERSION}/legacy-steel-stock/plates`);
+  const details = (payload as { details?: unknown })?.details;
+  if (!Array.isArray(details)) return [];
+  return details.filter(isRecord).map((r) => {
+    const stkcod = stringValue(r.stkcod);
+    const stkdes = stringValue(r.stkdes);
+    const dims = classifyLegacyItem(stkdes);
+    return {
+      id: `${stkcod}::${stkdes}`,
+      code: stkcod,
+      length: dims.length ?? 0,
+      width: dims.width ?? 0,
+      thickness: dims.thickness ?? 0,
+      available_quantity: Math.max(0, Math.round(Number(r.balance) || 0)),
+      status: "Active",
+    } as PlateStock;
+  }).filter((row) => row.available_quantity > 0);
 }
 
 export async function loadWastrelPlates(): Promise<SavedPlateScrap[]> {

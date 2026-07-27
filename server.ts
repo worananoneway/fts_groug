@@ -86,6 +86,10 @@ app.prepare().then(async () => {
         prefix: "/api/:version/legacy-sales-orders"
     });
 
+    server.register(import("./api/modules/legacy_steel_stock/router"), {
+        prefix: "/api/:version/legacy-steel-stock"
+    });
+
     server.all("/*", async (request: FastifyRequest, reply: FastifyReply) => {
         try {
             await handle(request.raw, reply.raw);
@@ -103,12 +107,12 @@ app.prepare().then(async () => {
         port: Number(process.env.PORT) || 3000,
         host: "0.0.0.0"
     }).then((address: string) => {
-        console.log(` > Ready on ${address}`);
+        console.log(` > Ready
+    console.error(error); on ${address}`);
     }).catch((error: Error) => {
         console.error(error);
         process.exit(1);
     });
 }).catch((error: Error) => {
-    console.error(error);
     process.exit(1);
 })
