@@ -12,7 +12,7 @@ export interface TabDefinition<T extends string> {
   label: string;
 }
 
-export type DivisionNavKey = "projects" | "po" | "cutting" | "master-data";
+export type DivisionNavKey = "dashboard" | "projects" | "po" | "cutting" | "master-data";
 
 export interface DivisionNavItem {
   key: DivisionNavKey;
