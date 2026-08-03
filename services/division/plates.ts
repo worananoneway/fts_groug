@@ -1,5 +1,5 @@
 import type { PlateStock, SavedPlateScrap } from "@/types/division";
-import { API_VERSION, flatString, isRecord, nestedString, readArray, requestJson, stringValue } from "./http";
+import { API_VERSION, flatString, isRecord, nestedString, readRows, requestJson, stringValue } from "./http";
 import { classifyLegacyItem } from "./legacy-orders";
 
 // ดึงสต็อกเหล็กแผ่นจริงจาก Express (แทนข้อมูลตัวอย่าง PostgreSQL)
@@ -25,7 +25,7 @@ export async function loadMsPlates(): Promise<PlateStock[]> {
 
 export async function loadWastrelPlates(): Promise<SavedPlateScrap[]> {
   const payload = await requestJson(`/api/${API_VERSION}/wastrel-ms-plates`);
-  return readArray(payload, "wastrel_ms_plates")
+  return readRows(payload)
     .filter((row) => row.status !== "Deleted" && row.status !== "Inactive")
     .map((row) => ({
       id: String(row.id ?? ""),

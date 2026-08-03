@@ -1,5 +1,5 @@
 import type { RoundBarStock, SavedRoundScrap } from "@/types/division";
-import { API_VERSION, flatString, isRecord, nestedString, readArray, requestJson, stringValue } from "./http";
+import { API_VERSION, flatString, isRecord, nestedString, readRows, requestJson, stringValue } from "./http";
 import { classifyLegacyItem } from "./legacy-orders";
 
 // ดึงสต็อกเพลาเหล็กกลมจริงจาก Express (แทนข้อมูลตัวอย่าง PostgreSQL)
@@ -24,7 +24,7 @@ export async function loadSteelRoundBars(): Promise<RoundBarStock[]> {
 
 export async function loadWastrelBars(): Promise<SavedRoundScrap[]> {
   const payload = await requestJson(`/api/${API_VERSION}/wastrel-steel-round-bars`);
-  return readArray(payload, "wastrel_steel_round_bars")
+  return readRows(payload)
     .filter((row) => row.status !== "Deleted" && row.status !== "Inactive")
     .map((row) => ({
       id: String(row.id ?? ""),
