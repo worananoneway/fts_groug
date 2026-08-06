@@ -15,9 +15,7 @@ const server = fastify({
 });
 
 app.prepare().then(async () => {
-    //register plugins
-
-    //register routes
+  
     server.register(import("./api/modules/master_data/customer/router"), {
         prefix: "/api/:version/customers"
     });

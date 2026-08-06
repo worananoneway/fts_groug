@@ -6,6 +6,7 @@ import { Boxes, CircleDashed, Layers, Recycle, ScrollText } from "lucide-react";
 import { FactoryAppShell } from "@/components/shell/factory-app-shell";
 import { DivisionNav } from "@/components/shell/division-nav";
 import { Modal } from "@/components/ui/modal";
+import { useT } from "@/components/i18n/language-provider";
 import { loadMsPlates, loadWastrelPlates } from "@/services/division/plates";
 import { loadSteelRoundBars, loadWastrelBars } from "@/services/division/round-bars";
 import { loadLegacyOrders } from "@/services/division/legacy-orders";
@@ -25,6 +26,7 @@ export function DashboardScreen() {
   const [jp, setJp] = useState<LegacyOrder[]>([]);
   // modal ดูรายละเอียดรายการเหล็กในกลุ่มที่คลิก
   const [detail, setDetail] = useState<{ title: string; items: Array<{ code: string; size: string; qty: number }> } | null>(null);
+  const t = useT();
 
   useEffect(() => {
     let active = true;
@@ -102,33 +104,33 @@ export function DashboardScreen() {
       <div className="mx-auto max-w-7xl space-y-6">
         {/* หัวข้อ */}
         <div>
-          <h1 className="text-xl font-bold text-slate-800">ภาพรวมสต็อกเหล็ก</h1>
-          <p className="mt-0.5 text-sm text-slate-500">สรุปจำนวนเหล็กคงเหลือและงานตัด · ดึงสดจาก Express</p>
+          <h1 className="text-xl font-bold text-slate-800">{t("dash.title")}</h1>
+          <p className="mt-0.5 text-sm text-slate-500">{t("dash.subtitle")}</p>
         </div>
 
         {/* HERO — รวมสต็อกเหล็ก */}
         <div className="overflow-hidden rounded-2xl bg-[#1E2761] p-6 text-white shadow-lg sm:p-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm font-medium text-blue-200">รวมสต็อกเหล็กในคลัง (เพลา + แผ่น)</p>
+              <p className="text-sm font-medium text-blue-200">{t("dash.totalStock")}</p>
               <p className="mt-1 font-mono text-5xl font-extrabold leading-none">{fmt(barTotal + plateTotal)}</p>
               <p className="mt-2 text-xs text-blue-200/80">
-                เพลาเหล็กกลม {fmt(barTotal)} · เหล็กแผ่น {fmt(plateTotal)}
+                {t("dash.roundBars")} {fmt(barTotal)} · {t("dash.plates")} {fmt(plateTotal)}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              <MiniMetric label="เศษเหล็ก" value={fmt(scrapTotal)} sub={`แผ่น ${fmt(scrapPlates.length)} · เพลา ${fmt(scrapBars.length)}`} />
-              <MiniMetric label="ใบสั่งตัด" value={fmt(jp.length)} sub="จาก Express" />
+              <MiniMetric label={t("dash.scrap")} value={fmt(scrapTotal)} sub={`${t("dash.plates")} ${fmt(scrapPlates.length)} · ${t("dash.roundBars")} ${fmt(scrapBars.length)}`} />
+              <MiniMetric label={t("dash.jp")} value={fmt(jp.length)} sub={t("dash.fromExpress")} />
             </div>
           </div>
         </div>
 
         {/* การ์ดหมวดหลัก */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatBig icon={<CircleDashed className="h-5 w-5" />} tone="blue" label="เพลาเหล็กกลม" value={fmt(barTotal)} sub={`${fmt(bars.length)} รหัส · คงเหลือ`} />
-          <StatBig icon={<Layers className="h-5 w-5" />} tone="emerald" label="เหล็กแผ่น" value={fmt(plateTotal)} sub={`${fmt(plates.length)} รหัส · คงเหลือ`} />
-          <StatBig icon={<Recycle className="h-5 w-5" />} tone="amber" label="เศษเหล็กในคลัง" value={fmt(scrapTotal)} sub={`แผ่น ${fmt(scrapPlates.length)} · เพลา ${fmt(scrapBars.length)}`} />
-          <StatBig icon={<ScrollText className="h-5 w-5" />} tone="violet" label="ใบสั่งตัด" value={fmt(jp.length)} sub="รายการล่าสุด" />
+          <StatBig icon={<CircleDashed className="h-5 w-5" />} tone="blue" label={t("dash.roundBars")} value={fmt(barTotal)} sub={`${fmt(bars.length)} ${t("dash.codesUnit")} · ${t("dash.remainingUnit")}`} />
+          <StatBig icon={<Layers className="h-5 w-5" />} tone="emerald" label={t("dash.plates")} value={fmt(plateTotal)} sub={`${fmt(plates.length)} ${t("dash.codesUnit")} · ${t("dash.remainingUnit")}`} />
+          <StatBig icon={<Recycle className="h-5 w-5" />} tone="amber" label={t("dash.scrap")} value={fmt(scrapTotal)} sub={`${t("dash.plates")} ${fmt(scrapPlates.length)} · ${t("dash.roundBars")} ${fmt(scrapBars.length)}`} />
+          <StatBig icon={<ScrollText className="h-5 w-5" />} tone="violet" label={t("dash.jp")} value={fmt(jp.length)} sub={t("dash.latest")} />
         </div>
 
         {/* กราฟวงกลม — สัดส่วนสต็อก */}
@@ -144,34 +146,34 @@ export function DashboardScreen() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <BreakdownCard
             icon={<CircleDashed className="h-4 w-4" />}
-            title="เพลาเหล็กกลม — แยกตามขนาด Ø"
-            emptyText="ยังไม่มีข้อมูลสต็อกเพลา"
+            title={t("dash.byDiameter")}
+            emptyText={t("dash.emptyBars")}
             rows={barsByDia.map(([dia, v]) => ({ key: dia, label: `Ø${fmt(dia)} มม.`, count: v.count, qty: v.qty }))}
             onRowClick={openBarDetail}
           />
           <BreakdownCard
             icon={<Layers className="h-4 w-4" />}
-            title="เหล็กแผ่น — แยกตามความหนา"
-            emptyText="ยังไม่มีข้อมูลสต็อกแผ่น"
+            title={t("dash.byThickness")}
+            emptyText={t("dash.emptyPlates")}
             rows={platesByThk.map(([thk, v]) => ({ key: thk, label: `หนา ${fmt(thk)} มม.`, count: v.count, qty: v.qty }))}
             onRowClick={openPlateDetail}
           />
         </div>
 
         <p className="flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">
-          <Boxes className="h-3.5 w-3.5" /> คลิกแถวในกราฟเพื่อดูรายการเหล็กแต่ละรหัส · ข้อมูลอัปเดตทุกครั้งที่เปิดหน้านี้
+          <Boxes className="h-3.5 w-3.5" /> {t("dash.clickHint")}
         </p>
       </div>
 
-      <Modal open={detail !== null} onClose={() => setDetail(null)} title={detail?.title ?? "รายละเอียด"} wide>
+      <Modal open={detail !== null} onClose={() => setDetail(null)} title={detail?.title ?? ""} wide>
         {detail ? (
           <div className="overflow-hidden rounded-lg border border-slate-200">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-slate-500">
                 <tr>
-                  <th className="px-4 py-2 text-left font-semibold">รหัสสินค้า</th>
-                  <th className="px-4 py-2 text-left font-semibold">ขนาด</th>
-                  <th className="px-4 py-2 text-right font-semibold">คงเหลือ</th>
+                  <th className="px-4 py-2 text-left font-semibold">{t("dash.detailCode")}</th>
+                  <th className="px-4 py-2 text-left font-semibold">{t("dash.detailSize")}</th>
+                  <th className="px-4 py-2 text-right font-semibold">{t("dash.detailRemain")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -231,7 +233,7 @@ interface DonutSegment {
 }
 
 // กราฟโดนัท SVG (ไม่ต้องใช้ library) — วงกลม circumference = 100 เพื่อคิดเป็น %
-function DonutChart({ segments, size = 160 }: { segments: DonutSegment[]; size?: number }) {
+function DonutChart({ segments, size = 160, label = "" }: { segments: DonutSegment[]; size?: number; label?: string }) {
   const total = segments.reduce((s, seg) => s + Math.max(0, seg.value), 0);
   let offset = 25; // เริ่มที่ 12 นาฬิกา
   return (
@@ -263,19 +265,20 @@ function DonutChart({ segments, size = 160 }: { segments: DonutSegment[]; size?:
         {fmt(total)}
       </text>
       <text x="21" y="25.5" textAnchor="middle" className="fill-slate-400" style={{ fontSize: 2.6 }}>
-        รวม
+        {label}
       </text>
     </svg>
   );
 }
 
 function DonutCard({ segments }: { segments: DonutSegment[] }) {
+  const t = useT();
   const total = segments.reduce((s, seg) => s + Math.max(0, seg.value), 0);
   return (
     <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
-      <h3 className="mb-4 text-base font-bold text-slate-800">สัดส่วนสต็อกเหล็ก</h3>
+      <h3 className="mb-4 text-base font-bold text-slate-800">{t("dash.composition")}</h3>
       <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-around">
-        <DonutChart segments={segments} />
+        <DonutChart segments={segments} label={t("dash.total")} />
         <div className="space-y-3">
           {segments.map((seg) => {
             const pct = total > 0 ? Math.round((Math.max(0, seg.value) / total) * 100) : 0;
