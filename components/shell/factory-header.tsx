@@ -1,9 +1,13 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Database, Scissors } from "lucide-react";
 
 import { Badge } from "../ui/badge";
 import { cn } from "../ui/button";
+import { LanguageToggle } from "../i18n/language-toggle";
+import { useT } from "../i18n/language-provider";
 import { MASTER_DATA_ENTRY_HREF } from "@/constants/division";
 import type { DataStatus } from "@/types/division";
 
@@ -20,12 +24,13 @@ export function FactoryHeader({
   subTabs?: ReactNode;
   subtitle: string;
 }) {
+  const t = useT();
   const statusTone = dataStatus.loading ? "blue" : dataStatus.source === "api" ? "emerald" : "amber";
   const statusLabel = dataStatus.loading
-    ? "กำลังโหลดข้อมูล"
+    ? t("header.statusLoading")
     : dataStatus.source === "api"
-      ? "เชื่อมต่อข้อมูลจริง"
-      : "เชื่อมต่อข้อมูลไม่สำเร็จ";
+      ? t("header.statusOk")
+      : t("header.statusFail");
 
   return (
     <header className="sticky top-0 z-40 bg-[#1a2f7a] text-white shadow-lg shadow-slate-900/10">
@@ -41,6 +46,7 @@ export function FactoryHeader({
         </div>
 
         <div className="flex items-center gap-3">
+          <LanguageToggle />
           <Link
             href={MASTER_DATA_ENTRY_HREF}
             aria-current={masterDataActive ? "page" : undefined}
@@ -52,7 +58,7 @@ export function FactoryHeader({
             )}
           >
             <Database className="h-4 w-4" strokeWidth={2.5} />
-            ข้อมูลหลัก
+            {t("header.masterData")}
           </Link>
 
           <div className="hidden flex-col items-end gap-2 sm:flex">
