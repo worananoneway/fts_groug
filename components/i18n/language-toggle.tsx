@@ -2,7 +2,6 @@
 
 import { useLang } from "./language-provider";
 
-// ปุ่มสลับภาษา TH / EN แบบ segmented เล็ก ๆ วางบน header
 export function LanguageToggle() {
   const { lang, setLang } = useLang();
   return (

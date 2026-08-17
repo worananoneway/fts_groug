@@ -138,9 +138,7 @@ export interface CuttingContextValue {
 }
 
 const CuttingContext = createContext<CuttingContextValue | null>(null);
-
-// หน้า /cutting รวมตัดแผ่นและตัดเพลาไว้ในหน้าเดียว สลับด้วย state ภายใน
-// query params (?type=&po=&detail=) ใช้เป็นค่าตั้งต้นตอนกดส่งงานมาจากหน้า /po เท่านั้น
+ 
 export function CuttingProvider({
   children,
   initialType,
@@ -165,7 +163,6 @@ export function CuttingProvider({
   const [plateTab, setPlateTab] = useState<SubTabKey>("settings");
   const [roundTab, setRoundTab] = useState<SubTabKey>("settings");
 
-  // ---- ข้อมูลใบสั่งซื้อ (ใช้ seed รายการตัดจาก query params และอัปเดตสถานะรายการ) ----
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState<string | null>(null);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
@@ -198,7 +195,6 @@ export function CuttingProvider({
     setOrderDetails(data.orderDetails ?? {});
   }
 
-  // ---- โหลดข้อมูลตามโมดูลที่เปิด (แผ่น / เพลากลม) เฉพาะครั้งแรกที่เข้าใช้ ----
   const [plateLoading, setPlateLoading] = useState(initialType === "plate");
   const [roundLoading, setRoundLoading] = useState(initialType === "roundbar");
   const startedPlateLoad = useRef(false);
@@ -209,7 +205,6 @@ export function CuttingProvider({
   const [stockBars, setStockBars] = useState<RoundBarStock[]>([]);
   const [scrapBars, setScrapBars] = useState<SavedRoundScrap[]>([]);
 
-  // ---- state ของโมดูลตัดแผ่น ----
   const [platePoId, setPlatePoId] = useState<string | null>(null);
   const [selectedPlateId, rawSetSelectedPlateId] = useState("");
   const [sheetW, setSheetW] = useState(2400);
@@ -230,7 +225,6 @@ export function CuttingProvider({
   const [plateScrapMessage, setPlateScrapMessage] = useState<Notice | null>(null);
   const [plateLoadedFromPo, setPlateLoadedFromPo] = useState<string | null>(null);
 
-  // ---- state ของโมดูลตัดเพลากลม ----
   const [roundPoId, setRoundPoId] = useState<string | null>(null);
   const [selectedBarId, rawSetSelectedBarId] = useState("");
   const [barDiameter, setBarDiameter] = useState(50);

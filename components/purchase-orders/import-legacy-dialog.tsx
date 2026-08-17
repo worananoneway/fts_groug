@@ -29,7 +29,6 @@ export function ImportLegacyDialog({
     let active = true;
     setLoading(true);
     setError(null);
-    // หน่วงค้นหาเล็กน้อยตอนพิมพ์
     const timer = setTimeout(() => {
       loadLegacyOrders(search)
         .then((rows) => {

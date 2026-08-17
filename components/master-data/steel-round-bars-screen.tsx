@@ -12,7 +12,6 @@ import { loadRoundBarStockFromExpress } from "@/services/master-data/legacy-stee
 import type { DataTableColumn } from "@/types/division";
 import type { SteelRoundBarRow } from "@/types/master-data";
 
-// ดึงสต็อกเพลาเหล็กกลมจริงจาก Express (แทนข้อมูลตัวอย่างเดิมใน PostgreSQL)
 async function fetchSteelRoundBars(): Promise<SteelRoundBarRow[]> {
   return loadRoundBarStockFromExpress();
 }
@@ -40,6 +39,7 @@ const columns: Array<DataTableColumn<SteelRoundBarRow>> = [
   {
     key: "quantity",
     header: "คงเหลือ/ทั้งหมด",
+
     cell: (row) => (
       <span className="font-mono text-xs">
         {formatNumber(row.available_quantity)} / {formatNumber(row.quantity)}
@@ -70,7 +70,7 @@ export function SteelRoundBarsScreen() {
       searchText={(row) => [row.code, row.mm_id, row.location].filter(Boolean).join(" ")}
       searchPlaceholder="ค้นหารหัสเพลา / วัสดุ / ตำแหน่ง"
       statusOf={(row) => row.status}
-      statusOptions={["AVAILABLE", "RESERVED", "USED", "SCRAP"]}
+      statusOptions={["Active", "Inactive", "Deleted"]}
       detailTitle={(row) => `เพลาเหล็กกลม: ${dash(row.code)}`}
       detailItems={(row) => [
         { label: "รหัสเพลา", value: dash(row.code) },

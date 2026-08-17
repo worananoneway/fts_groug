@@ -15,7 +15,6 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("th");
 
-  // อ่านภาษาที่เคยเลือกจาก localStorage หลัง mount (กัน hydration mismatch)
   useEffect(() => {
     const saved = typeof window !== "undefined" ? window.localStorage.getItem("fts_lang") : null;
     if (saved === "th" || saved === "en") setLangState(saved);

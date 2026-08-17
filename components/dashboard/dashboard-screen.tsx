@@ -24,7 +24,6 @@ export function DashboardScreen() {
   const [scrapBars, setScrapBars] = useState<SavedRoundScrap[]>([]);
   const [scrapPlates, setScrapPlates] = useState<SavedPlateScrap[]>([]);
   const [jp, setJp] = useState<LegacyOrder[]>([]);
-  // modal ดูรายละเอียดรายการเหล็กในกลุ่มที่คลิก
   const [detail, setDetail] = useState<{ title: string; items: Array<{ code: string; size: string; qty: number }> } | null>(null);
   const t = useT();
 
@@ -86,7 +85,6 @@ export function DashboardScreen() {
     setDetail({ title: `เหล็กแผ่น หนา ${fmt(thk)} มม.`, items });
   }
 
-  // สรุปเหล็กแผ่นตามความหนา
   const platesByThk = useMemo(() => {
     const map = new Map<number, { qty: number; count: number }>();
     for (const p of plates) {
@@ -102,13 +100,13 @@ export function DashboardScreen() {
   return (
     <FactoryAppShell dataStatus={status} moduleTabs={<DivisionNav active="dashboard" />} subtitle="ภาพรวมสต็อกเหล็กและงานตัด | Dashboard">
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* หัวข้อ */}
+    
         <div>
           <h1 className="text-xl font-bold text-slate-800">{t("dash.title")}</h1>
           <p className="mt-0.5 text-sm text-slate-500">{t("dash.subtitle")}</p>
         </div>
 
-        {/* HERO — รวมสต็อกเหล็ก */}
+    
         <div className="overflow-hidden rounded-2xl bg-[#1E2761] p-6 text-white shadow-lg sm:p-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
