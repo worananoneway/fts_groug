@@ -102,4 +102,3 @@ export function PlateLayoutCanvas({
     </section>
   );
 }
-

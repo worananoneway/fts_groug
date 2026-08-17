@@ -3,7 +3,7 @@ import fastify, { FastifyRequest, FastifyReply } from "fastify";
 import next from "next";
 
 dotenv.config();
-//build server
+
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
