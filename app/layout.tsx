@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { LanguageProvider } from "@/components/i18n/language-provider";
+import { RouteTransitionProvider } from "@/components/loading/route-transition";
 
 export const metadata: Metadata = {
   title: "FTS-GROUP · Steel Sheet Cutting Optimizer",
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body>
-        <LanguageProvider>{children}</LanguageProvider>
+        <LanguageProvider>
+          <RouteTransitionProvider>{children}</RouteTransitionProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

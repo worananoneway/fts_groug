@@ -151,7 +151,7 @@ export function PurchaseOrderList() {
         title="ยืนยันการลบใบสั่งซื้อ"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => void confirmDelete()}
-        loading={isDeleting}
+        isLoading={isDeleting}
       >
         ต้องการลบใบสั่งซื้อ {deleteTarget?.no} จริงหรือไม่? ระบบจะเปลี่ยนสถานะเป็น Deleted และซ่อนออกจากรายการ
       </ConfirmDialog>

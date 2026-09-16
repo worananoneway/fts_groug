@@ -4,6 +4,7 @@ import { FactoryAppShell } from "../shell/factory-app-shell";
 import { DivisionNav } from "../shell/division-nav";
 import { PurchaseOrdersProvider, usePurchaseOrdersContext } from "./purchase-orders-provider";
 import { PurchaseOrderPanel } from "./purchase-order-panel";
+import { LoadingGate } from "@/components/loading";
 
 export function PurchaseOrdersScreen() {
   return (
@@ -22,7 +23,15 @@ function PurchaseOrdersContent() {
       moduleTabs={<DivisionNav active="po" />}
       subtitle={headerSubtitle}
     >
-      <PurchaseOrderPanel />
+      <LoadingGate
+        isLoading={dataStatus.isLoading}
+        className="min-h-[60vh]"
+        error={dataStatus.error}
+        label="กำลังโหลดใบสั่งซื้อ..."
+        onRetry={() => window.location.reload()}
+      >
+        <PurchaseOrderPanel />
+      </LoadingGate>
     </FactoryAppShell>
   );
 }

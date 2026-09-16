@@ -13,6 +13,7 @@ export function usePurchaseOrders() {
     setPoSearch: context.setPoSearch,
     selectedPoId: context.selectedPoId,
     selectPo: context.selectPo,
+    clearSelectedPo: context.clearSelectedPo,
     selectedPo: context.selectedPo,
     materialMasters: context.materialMasters,
     selectedOrderRows: context.selectedOrderRows,

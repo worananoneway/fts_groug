@@ -21,6 +21,7 @@ export enum ErrorField {
     PO_ID = 'po_id',
     PODETAIL_ID = 'podetail_id',
     REMARK = 'remark',
+    SCHEDULED_AT = 'scheduled_at',
 }
 
 export enum ErrorMessage {
@@ -45,6 +46,7 @@ export enum ErrorMessage {
     STATUS_CONFLICT = 'Status update conflicts with current wastrel steel round bar status.',
     PO_ID_MAX_LENGTH = 'Purchase order ID must be at most 20 characters long.',
     PODETAIL_ID_MAX_LENGTH = 'Purchase order detail ID must be at most 20 characters long.',
+    SCHEDULED_AT_INVALID = 'Scheduled at must be a valid ISO-8601 date-time.',
 }
 
 export interface Payload {

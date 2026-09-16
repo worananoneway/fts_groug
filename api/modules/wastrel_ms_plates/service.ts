@@ -7,6 +7,7 @@ async function create(payload: Payload, emp_id: string): Promise<Response> {
         INSERT INTO public.wastrel_ms_plates (
             wmsp_mm_id,
             wmsp_msp_id,
+            wmsp_stock_code,
             wmsp_length,
             wmsp_width,
             wmsp_thickness,
@@ -17,7 +18,10 @@ async function create(payload: Payload, emp_id: string): Promise<Response> {
             wmsp_remark,
             wmsp_emp_id
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+            $1, $2,
+            -- ไม่ส่ง stock_code มาก็ออกรหัสให้เอง (คอลัมน์นี้ NOT NULL + UNIQUE)
+            COALESCE($3, 'WMSP-' || to_char(clock_timestamp(), 'YYMMDDHH24MISSMS')),
+            $4, $5, $6, $7, $8, $9, $10, $11, $12
         ) RETURNING *;
     `;
     try {
@@ -26,6 +30,7 @@ async function create(payload: Payload, emp_id: string): Promise<Response> {
         const result = await sql_query(sql, [
             payload.mm_id,
             payload.msp_id ?? null,
+            payload.stock_code ?? null,
             payload.length,
             payload.width,
             payload.thickness,
@@ -71,8 +76,21 @@ async function ensureLocationColumn(): Promise<void> {
     }
 }
 
+// เพิ่มคอลัมน์วัน-เวลาที่กำหนดให้อัตโนมัติถ้ายังไม่มี (idempotent)
+let scheduleColumnEnsured = false;
+async function ensureScheduleColumn(): Promise<void> {
+    if (scheduleColumnEnsured) return;
+    try {
+        await sql_query(`ALTER TABLE public.wastrel_ms_plates ADD COLUMN IF NOT EXISTS wmsp_scheduled_at timestamptz`);
+        scheduleColumnEnsured = true;
+    } catch (error) {
+        console.error(`[Service] ensure ${module_name} scheduled_at column failed:`, error);
+    }
+}
+
 async function get(conditions: Condition = { sql: ``, params: [] }, filter: string = `*`): Promise<Response> {
     await ensureLocationColumn();
+    await ensureScheduleColumn();
     const sql = `
         WITH ${module_name}_cte AS (
             SELECT
@@ -97,6 +115,7 @@ async function get(conditions: Condition = { sql: ``, params: [] }, filter: stri
                 podetail_po_id AS wmsp_podetail_po_id,
                 wmsp_remark,
                 wmsp_location,
+                wmsp_scheduled_at,
                 wmsp_created_at,
                 wmsp_updated_at,
                 wmsp_emp_id,
@@ -254,12 +273,34 @@ async function update_location(ids: string[], location: string | null, emp_id: s
     }
 }
 
+// อัปเดตวัน-เวลาที่กำหนดของเศษหลายชิ้นพร้อมกัน (ทั้งกลุ่มขนาดเดียวกัน)
+async function update_schedule(ids: string[], scheduled_at: string | null, emp_id: string): Promise<Response> {
+    if (!ids.length) {
+        return { statuscode: HttpStatusCode.NO_CONTENT, error: null, data: null };
+    }
+    await ensureScheduleColumn();
+    const sql = `
+        UPDATE public.wastrel_ms_plates
+        SET wmsp_scheduled_at = $1::timestamptz, wmsp_updated_at = NOW(), wmsp_emp_id = $3
+        WHERE wmsp_id = ANY($2::text[])
+        RETURNING wmsp_id;
+    `;
+    try {
+        await sql_query(sql, [scheduled_at, ids, emp_id]);
+        return { statuscode: HttpStatusCode.NO_CONTENT, error: null, data: null };
+    } catch (error) {
+        console.error(`[Service] An error occurred during updating ${module_name} scheduled_at:`, error);
+        return { statuscode: HttpStatusCode.INTERNAL_SERVER_ERROR, error, data: null };
+    }
+}
+
 const service = {
     create,
     get,
     update,
     update_status,
-    update_location
+    update_location,
+    update_schedule
 };
 
 export default service;

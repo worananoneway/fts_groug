@@ -38,7 +38,7 @@ export function PurchaseOrderDetail() {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [poFields, setPoFields] = useState<PurchaseOrderUpdateFields>(toPoFields(selectedPo));
   const [editPoOpen, setEditPoOpen] = useState(false);
-  const [savingPo, setSavingPo] = useState(false);
+  const [isSavingPo, setIsSavingPo] = useState(false);
 
   function openEditPo() {
     setPoFields(toPoFields(selectedPo));
@@ -46,13 +46,13 @@ export function PurchaseOrderDetail() {
   }
 
   async function savePoFields() {
-    setSavingPo(true);
+    setIsSavingPo(true);
     try {
       const result = await updatePurchaseOrderFields(poFields);
       setNotice(result);
       if (result.ok) setEditPoOpen(false);
     } finally {
-      setSavingPo(false);
+      setIsSavingPo(false);
     }
   }
 
@@ -168,11 +168,11 @@ export function PurchaseOrderDetail() {
         onClose={() => setEditPoOpen(false)}
         footer={
           <div className="flex justify-end gap-3">
-            <Button disabled={savingPo} onClick={() => setEditPoOpen(false)} variant="secondary">
+            <Button disabled={isSavingPo} onClick={() => setEditPoOpen(false)} variant="secondary">
               ยกเลิก
             </Button>
-            <Button disabled={savingPo} onClick={() => void savePoFields()}>
-              {savingPo ? "กำลังบันทึก..." : "บันทึก"}
+            <Button isLoading={isSavingPo} loadingLabel="กำลังบันทึก..." onClick={() => void savePoFields()}>
+              บันทึก
             </Button>
           </div>
         }

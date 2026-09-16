@@ -1,5 +1,5 @@
 import type { PurchaseOrder } from "@/types/division";
-import { API_VERSION, isRecord, readRows, requestJson, stringValue } from "./http";
+import { API_VERSION, isRecord, readRows, requestJson, requestLegacyJson, stringValue } from "./http";
 
 // ---------------------------------------------------------------------------
 // ประเภทข้อมูลจากระบบคลังเดิม (ftsgroupstore MySQL ผ่าน /api/v1/legacy-sales-orders)
@@ -40,7 +40,7 @@ export async function loadLegacyOrders(search: string): Promise<LegacyOrder[]> {
     if (/^[A-Za-z]/.test(query)) params.set("docnum", query);
     else params.set("cusnam", query);
   }
-  const payload = await requestJson(`/api/${API_VERSION}/legacy-sales-orders?${params.toString()}`);
+  const payload = await requestLegacyJson(`/api/${API_VERSION}/legacy-sales-orders?${params.toString()}`);
   return readRows(payload)
     .map(mapLegacyOrder)
     .filter((row): row is LegacyOrder => Boolean(row));
@@ -68,7 +68,7 @@ function formatThaiShortDate(iso: string): string {
 }
 
 export async function loadLegacyOrderDetail(docId: string): Promise<LegacyOrderDetail> {
-  const payload = await requestJson(
+  const payload = await requestLegacyJson(
     `/api/${API_VERSION}/legacy-sales-orders/${encodeURIComponent(docId)}`,
   );
   const details = (payload as { details?: unknown }).details;

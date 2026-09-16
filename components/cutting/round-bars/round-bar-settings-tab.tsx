@@ -16,6 +16,8 @@ export function RoundBarSettingsTab() {
     barDiameter,
     barLength,
     calculateRound,
+    dismissRoundCalcNotice,
+    roundCalcNotice,
     clearRoundPoLoad,
     rKerf,
     rMinScrap,
@@ -91,6 +93,15 @@ export function RoundBarSettingsTab() {
             รวม <b className="text-base text-slate-800">{roundTotalPieces}</b> ชิ้น
           </span>
         </div>
+        {roundCalcNotice ? (
+          <AlertBanner className="mt-4" tone={roundCalcNotice.ok ? "success" : "danger"}>
+            {roundCalcNotice.text}
+            <button type="button" className="ml-2 font-semibold underline" onClick={dismissRoundCalcNotice}>
+              ปิด
+            </button>
+          </AlertBanner>
+        ) : null}
+
         <Button
           className="mt-4 w-full py-4 text-base"
           disabled={roundMatchedCount === 0}

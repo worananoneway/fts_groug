@@ -1,8 +1,7 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
-
 import { Autocomplete } from "../../ui/autocomplete";
+import { InlineLoading } from "@/components/loading";
 import { fmt } from "@/utils/format";
 import { useCutting } from "@/hooks/use-cutting";
 
@@ -13,19 +12,19 @@ export function PlateStockSelector() {
     <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-4">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-sm font-semibold text-slate-700">เลือกแผ่นจากคลัง (ms_plates)</span>
-        {dataStatus.loading ? (
-          <span className="flex items-center gap-1 text-xs text-blue-600">
-            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-            โหลด
-          </span>
-        ) : null}
+        <InlineLoading isLoading={dataStatus.isLoading} label="กำลังโหลดคลัง..." />
       </div>
       <Autocomplete
         onValueChange={setSelectedPlateId}
-        options={stockPlates.map((plate) => ({
-          value: plate.id,
-          label: `${plate.code} | ${fmt(plate.length)}x${fmt(plate.width)} หนา ${plate.thickness} มม. (คงเหลือ ${plate.available_quantity})`,
-        }))}
+        options={stockPlates.map((plate) => {
+          // บางรหัสจากคลังเดิมแกะขนาดจากชื่อสินค้าไม่ได้ — บอกให้ชัดว่าต้องกรอกเอง
+          const hasSize = Number(plate.length) > 0 && Number(plate.width) > 0;
+          const size = hasSize ? `${fmt(plate.length)}×${fmt(plate.width)} มม.` : "ไม่ระบุขนาด (ต้องกรอกเอง)";
+          return {
+            value: plate.id,
+            label: `${plate.code} | ${size} หนา ${plate.thickness || "-"} มม. (คงเหลือ ${plate.available_quantity})`,
+          };
+        })}
         placeholder={stockPlates.length === 0 ? "ไม่มีแผ่นในคลัง" : "เลือกแผ่นจากคลัง"}
         value={selectedPlateId}
       />

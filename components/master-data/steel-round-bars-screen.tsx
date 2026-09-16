@@ -8,12 +8,31 @@ import {
   StatusBadge,
   unwrapListReply,
 } from "./master-data-screen";
+import { StockLocationEditor } from "./stock-location-editor";
+import { formatDateTime } from "@/utils/format";
 import { loadRoundBarStockFromExpress } from "@/services/master-data/legacy-steel";
+import { loadStockLocationMap } from "@/services/master-data/locations";
 import type { DataTableColumn } from "@/types/division";
 import type { SteelRoundBarRow } from "@/types/master-data";
 
+// ดึงสต็อกเพลาจริงจาก Express แล้วเติม "ที่จัดเก็บ" จากตาราง stock_locations ของเว็บ
 async function fetchSteelRoundBars(): Promise<SteelRoundBarRow[]> {
-  return loadRoundBarStockFromExpress();
+  const [rows, locationMap] = await Promise.all([
+    loadRoundBarStockFromExpress(),
+    loadStockLocationMap("Round_bar"),
+  ]);
+  return rows.map((row) => {
+    const entry = row.code ? locationMap[row.code] : undefined;
+    if (!entry) return row;
+    return {
+      ...row,
+      loc_id: entry.location?.id ?? null,
+      location: entry.location?.name ?? null,
+      location_type: entry.location?.type ?? null,
+      scheduled_at: entry.scheduledAt,
+      recorded_at: entry.recordedAt,
+    };
+  });
 }
 
 const columns: Array<DataTableColumn<SteelRoundBarRow>> = [
@@ -52,6 +71,31 @@ const columns: Array<DataTableColumn<SteelRoundBarRow>> = [
     cell: (row) => formatDate(row.received_date),
   },
   {
+    key: "location",
+    header: "ที่จัดเก็บ",
+    cell: (row) =>
+      row.location ? (
+        <span className="text-sm text-slate-700">{row.location}</span>
+      ) : (
+        <span className="text-slate-300">—</span>
+      ),
+  },
+  {
+    key: "scheduled_at",
+    header: "วัน-เวลาที่กำหนด",
+    cell: (row) =>
+      row.scheduled_at ? (
+        <span className="font-mono text-xs">{formatDateTime(row.scheduled_at)}</span>
+      ) : (
+        <span className="text-slate-300">—</span>
+      ),
+  },
+  {
+    key: "recorded_at",
+    header: "บันทึกเมื่อ",
+    cell: (row) => <span className="font-mono text-xs text-slate-500">{formatDateTime(row.recorded_at)}</span>,
+  },
+  {
     key: "status",
     header: "สถานะ",
     cell: (row) => <StatusBadge status={row.status} />,
@@ -80,8 +124,20 @@ export function SteelRoundBarsScreen() {
         { label: "ความยาว (มม.)", value: formatNumber(row.length) },
         { label: "จำนวนทั้งหมด", value: formatNumber(row.quantity) },
         { label: "จำนวนคงเหลือ", value: formatNumber(row.available_quantity) },
-        { label: "ตำแหน่งจัดเก็บ", value: `${dash(row.location)} (${dash(row.location_type)})` },
+        {
+          label: "ตำแหน่งจัดเก็บ",
+          value: (
+            <StockLocationEditor
+              initialLocId={row.loc_id}
+              initialScheduledAt={row.scheduled_at ?? null}
+              stockCode={row.code}
+              stockType="Round_bar"
+            />
+          ),
+          fullWidth: true,
+        },
         { label: "วันที่รับเข้า", value: formatDate(row.received_date) },
+        { label: "บันทึกที่จัดเก็บ/วันเวลาเมื่อ", value: formatDateTime(row.recorded_at) },
         { label: "หมายเหตุ", value: dash(row.remark) },
         { label: "แก้ไขล่าสุด", value: formatDate(row.updated_at) },
       ]}

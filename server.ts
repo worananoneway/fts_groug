@@ -56,6 +56,14 @@ app.prepare().then(async () => {
         prefix: "/api/:version/employees"
     });
 
+    server.register(import("./api/modules/master_data/locations/router"), {
+        prefix: "/api/:version/locations"
+    });
+
+    server.register(import("./api/modules/stock_locations/router"), {
+        prefix: "/api/:version/stock-locations"
+    });
+
     server.register(import("./api/modules/address/router"), {
         prefix: "/api/:version/addresses"
     });
@@ -88,16 +96,22 @@ app.prepare().then(async () => {
         prefix: "/api/:version/legacy-steel-stock"
     });
 
+    // ทุก request ที่ไม่ใช่ /api ให้ Next จัดการ
+    // ต้องเรียก reply.hijack() ก่อน เพื่อบอก fastify ว่าอย่ามายุ่งกับ response นี้
+    // ไม่งั้น streaming SSR ของ Next จะถูกแทรก/สลับลำดับ chunk — script ที่ปิด
+    // Suspense boundary ($RC) จะมาก่อนเนื้อหา ทำให้หน้าค้างที่ loading.tsx ตลอด
     server.all("/*", async (request: FastifyRequest, reply: FastifyReply) => {
+        reply.hijack();
         try {
             await handle(request.raw, reply.raw);
-            return reply;
         } catch (error) {
             console.error("Error handling request:", error);
-            if (!reply.sent) {
-                return reply.code(500).send("Internal Server Error");
+            if (!reply.raw.headersSent) {
+                reply.raw.statusCode = 500;
+                reply.raw.end("Internal Server Error");
+            } else {
+                reply.raw.end();
             }
-            return reply;
         }
     });
 

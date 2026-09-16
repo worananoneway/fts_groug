@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@/hooks/use-navigate";
 import { CheckCircle2 } from "lucide-react";
 
 import { Badge } from "../../ui/badge";
@@ -11,16 +11,24 @@ import { EmptyState } from "../../ui/empty-state";
 import { Modal } from "../../ui/modal";
 import { TimedToast } from "../../ui/timed-toast";
 import { CalculationSummary } from "../shared/calculation-summary";
-import { UnfulfilledAlert } from "../shared/unfulfilled-alert";
+import { UnfulfilledAlert, groupUnfulfilled } from "../shared/unfulfilled-alert";
 import { fmt } from "@/utils/format";
 import { RoundBarLayoutCanvas } from "./round-bar-layout-canvas";
 import { useCutting } from "@/hooks/use-cutting";
 import type { Notice, RoundBarLayout } from "@/types/division";
 
 export function RoundBarLayoutTab() {
-  const { barDiameter, barLength, cancelRoundPlan, confirmRoundPlan, roundAverageUtilization, roundResult, roundScraps } =
-    useCutting();
-  const router = useRouter();
+  const {
+    barDiameter,
+    barLength,
+    cancelRoundPlan,
+    confirmRoundPlan,
+    roundAverageUtilization,
+    roundResult,
+    roundScraps,
+    selectedBar,
+  } = useCutting();
+  const router = useNavigate();
   const [previewBar, setPreviewBar] = useState<{ bar: RoundBarLayout; barNo: number } | null>(null);
   const [planAction, setPlanAction] = useState<PlanAction | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -38,12 +46,9 @@ export function RoundBarLayoutTab() {
     return <EmptyState>ยังไม่มีแผนการตัด ไปที่แท็บตั้งค่าแล้วกดคำนวณ</EmptyState>;
   }
 
-  const unfulfilledMessage =
-    roundResult.unplaced.length > 0
-      ? `มี ${roundResult.unplaced.length} ชิ้นที่ยาวเกินแท่งเหล็ก: ${roundResult.unplaced
-          .map((item) => `${item.code} (${fmt(item.length)} มม.)`)
-          .join(", ")}`
-      : "";
+  const unfulfilledItems = groupUnfulfilled(
+    roundResult.unplaced.map((item) => `${item.code} · ${fmt(item.length)} มม.`),
+  );
 
   function markResolved(sourceNo: number | undefined, status: "confirmed" | "cancelled") {
     const next = { ...resolvedBars };
@@ -91,7 +96,11 @@ export function RoundBarLayoutTab() {
   return (
     <div className="space-y-6">
       <TimedToast notice={notice} onClose={() => setNotice(null)} />
-      <UnfulfilledAlert message={unfulfilledMessage} />
+      <UnfulfilledAlert
+        hint={`แท่งที่ใช้อยู่ยาว ${fmt(barLength)} มม. — ถ้าไม่ถูกต้อง กลับไปแท็บ “ตั้งค่าและสั่งตัด” เพื่อแก้ความยาวแท่งหรือเลือกแท่งใหม่`}
+        items={unfulfilledItems}
+        total={roundResult.unplaced.length}
+      />
       <div className="grid gap-5 xl:grid-cols-[minmax(160px,1fr)_minmax(0,4fr)_minmax(0,4fr)]">
         <div className="space-y-4 xl:sticky xl:top-56 xl:row-span-2 xl:self-start">
           <CalculationSummary
@@ -102,14 +111,31 @@ export function RoundBarLayoutTab() {
             vertical
           />
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-2 rounded-lg bg-white p-4 shadow-sm xl:col-span-2">
-          <Button onClick={() => setPlanAction({ mode: "confirm" })} variant="success">
-            ยืนยันทั้งหมด
-          </Button>
-          <Button onClick={() => setPlanAction({ mode: "cancel" })} variant="danger">
-            ยกเลิกทั้งหมด
-          </Button>
-        </div>
+        {roundResult.bars.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center xl:col-span-2">
+            <p className="text-base font-semibold text-slate-700">ยังไม่มีแท่งไหนตัดได้</p>
+            <p className="mt-1 text-sm text-slate-500">
+              ทุกชิ้นในรายการยาวกว่าแท่งขนาด {fmt(barLength)} มม. ที่เลือกไว้
+            </p>
+            <p className="mt-3 text-sm text-slate-500">
+              กลับไปแท็บ <b>ตั้งค่าและสั่งตัด</b> แล้วแก้ความยาวแท่ง หรือเลือกแท่งจากคลังที่ยาวพอ
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm xl:col-span-2">
+            <p className="text-sm text-slate-500">
+              ตรวจแผนแต่ละแท่งแล้วกดยืนยันทีละแท่ง หรือยืนยันทั้งหมดพร้อมกัน
+            </p>
+            <div className="flex gap-2">
+              <Button onClick={() => setPlanAction({ mode: "confirm" })} variant="success">
+                ยืนยันทั้งหมด
+              </Button>
+              <Button onClick={() => setPlanAction({ mode: "cancel" })} variant="danger">
+                ยกเลิกทั้งหมด
+              </Button>
+            </div>
+          </div>
+        )}
         {columns.map((column, columnIndex) => (
           <div key={columnIndex} className="space-y-5">
             {column.map(({ bar, index }) => {
@@ -165,6 +191,7 @@ export function RoundBarLayoutTab() {
                   barDiameter={barDiameter}
                   barLength={barLength}
                   barNo={barNo}
+                  sourceCode={selectedBar?.code}
                 />
               </div>
               );
@@ -179,6 +206,7 @@ export function RoundBarLayoutTab() {
             barDiameter={barDiameter}
             barLength={barLength}
             barNo={previewBar.barNo}
+            sourceCode={selectedBar?.code}
           />
         ) : null}
       </Modal>
@@ -188,7 +216,7 @@ export function RoundBarLayoutTab() {
         onCancel={() => setPlanAction(null)}
         onConfirm={() => void runConfirm()}
         confirmLabel="ยืนยัน"
-        loading={isProcessing}
+        isLoading={isProcessing}
         variant="success"
       >
         {planAction?.sourceNo
@@ -201,7 +229,7 @@ export function RoundBarLayoutTab() {
         onCancel={() => setPlanAction(null)}
         onConfirm={() => void runCancel()}
         confirmLabel="ยืนยันยกเลิก"
-        loading={isProcessing}
+        isLoading={isProcessing}
       >
         {planAction?.sourceNo
           ? "ระบบจะเปลี่ยนสถานะรายการในแท่งนี้เป็น Cancelled"

@@ -17,6 +17,7 @@ import { Autocomplete } from "@/components/ui/autocomplete";
 import { MASTER_DATA_SUBTITLE, STATUS_TONES } from "@/constants/master-data";
 import type { DataStatus, DataTableColumn } from "@/types/division";
 import type { MasterDataNavKey } from "@/types/master-data";
+import { LoadingGate, LoadingOverlay, SkeletonTable } from "@/components/loading";
 
 export interface DetailItem {
   label: string;
@@ -37,6 +38,18 @@ interface MasterDataScreenProps<T> {
   statusOptions?: string[];
   detailTitle?: (row: T) => string;
   detailItems?: (row: T) => DetailItem[];
+}
+
+/**
+ * แปลง error ตอนโหลดข้อมูลให้เป็นข้อความที่ผู้ใช้อ่านรู้เรื่อง
+ * ถ้าเป็นข้อความที่เราตั้งเอง (เช่น คลังเดิมต่อไม่ได้) ให้แสดงตรง ๆ
+ * ถ้าเป็น error ดิบจาก fetch ค่อยใช้ข้อความกลาง
+ */
+export function describeLoadError(error: unknown): string {
+  const message = error instanceof Error ? error.message.trim() : "";
+  const isRawError = message === "" || /^(Request failed|Failed to fetch|NetworkError|TypeError)/i.test(message);
+  if (!isRawError) return message;
+  return "ไม่สามารถเชื่อมต่อ API ได้ — ตรวจสอบว่า API server ทำงานอยู่ แล้วกดรีเฟรชอีกครั้ง";
 }
 
 export function unwrapListReply<T>(reply: unknown): T[] {
@@ -86,21 +99,21 @@ export function MasterDataScreen<T>({
   title,
 }: MasterDataScreenProps<T>) {
   const [rows, setRows] = useState<T[]>([]);
-  const [dataStatus, setDataStatus] = useState<DataStatus>({ loading: true, error: null, source: "none" });
+  const [dataStatus, setDataStatus] = useState<DataStatus>({ isLoading: true, error: null, source: "none" });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedRow, setSelectedRow] = useState<T | null>(null);
 
   const load = useCallback(async () => {
-    setDataStatus((prev) => ({ ...prev, loading: true, error: null }));
+    setDataStatus((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       const nextRows = await fetchRows();
       setRows(nextRows);
-      setDataStatus({ loading: false, error: null, source: "api" });
+      setDataStatus({ isLoading: false, error: null, source: "api" });
     } catch (error) {
       console.error(`[MasterData] โหลดข้อมูล ${title} ไม่สำเร็จ:`, error);
       setRows([]);
-      setDataStatus({ loading: false, error: "ไม่สามารถเชื่อมต่อ API ได้", source: "none" });
+      setDataStatus({ isLoading: false, error: describeLoadError(error), source: "none" });
     }
   }, [fetchRows, title]);
 
@@ -156,10 +169,11 @@ export function MasterDataScreen<T>({
               />
             ) : null}
             <Button
-              icon={<RefreshCw className={dataStatus.loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />}
+              icon={<RefreshCw className="h-4 w-4" />}
+              isLoading={dataStatus.isLoading}
+              loadingLabel="กำลังโหลด..."
               size="sm"
               variant="secondary"
-              disabled={dataStatus.loading}
               onClick={() => void load()}
             >
               รีเฟรช
@@ -169,26 +183,31 @@ export function MasterDataScreen<T>({
 
         {dataStatus.error ? (
           <div className="p-5">
-            <AlertBanner tone="danger">
-              {dataStatus.error} — ตรวจสอบว่า API server ทำงานอยู่ แล้วกดรีเฟรชอีกครั้ง
-            </AlertBanner>
+            <AlertBanner tone="danger">{dataStatus.error}</AlertBanner>
           </div>
-        ) : dataStatus.loading && rows.length === 0 ? (
-          <p className="p-10 text-center text-sm text-slate-400">กำลังโหลดข้อมูล...</p>
         ) : (
-          <DataTable<T>
-            columns={columns}
-            rows={filteredRows}
-            rowKey={rowKey}
-            onRowClick={detailItems ? (row) => setSelectedRow(row) : undefined}
-            empty={
-              <div className="p-5">
-                <EmptyState>
-                  {rows.length === 0 ? "ยังไม่มีข้อมูลในระบบ" : "ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา"}
-                </EmptyState>
-              </div>
-            }
-          />
+          // ยังไม่มีข้อมูลเลย = โครงตาราง / มีข้อมูลแล้วกำลังรีเฟรช = ทับด้วย overlay
+          <LoadingGate
+            isLoading={dataStatus.isLoading && rows.length === 0}
+            fallback={<SkeletonTable columns={columns.length} rows={8} />}
+          >
+            <div className="relative">
+              <DataTable<T>
+                columns={columns}
+                rows={filteredRows}
+                rowKey={rowKey}
+                onRowClick={detailItems ? (row) => setSelectedRow(row) : undefined}
+                empty={
+                  <div className="p-5">
+                    <EmptyState>
+                      {rows.length === 0 ? "ยังไม่มีข้อมูลในระบบ" : "ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา"}
+                    </EmptyState>
+                  </div>
+                }
+              />
+              <LoadingOverlay isLoading={dataStatus.isLoading && rows.length > 0} label="กำลังรีเฟรช..." />
+            </div>
+          </LoadingGate>
         )}
       </section>
 

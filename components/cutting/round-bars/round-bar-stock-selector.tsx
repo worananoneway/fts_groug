@@ -1,8 +1,7 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
-
 import { Autocomplete } from "../../ui/autocomplete";
+import { InlineLoading } from "@/components/loading";
 import { fmt } from "@/utils/format";
 import { useCutting } from "@/hooks/use-cutting";
 
@@ -13,19 +12,21 @@ export function RoundBarStockSelector() {
     <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-4">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-sm font-semibold text-slate-700">เลือกแท่งจากคลัง (steel_round_bars)</span>
-        {dataStatus.loading ? (
-          <span className="flex items-center gap-1 text-xs text-blue-600">
-            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-            โหลด
-          </span>
-        ) : null}
+        <InlineLoading isLoading={dataStatus.isLoading} label="กำลังโหลดคลัง..." />
       </div>
       <Autocomplete
         onValueChange={setSelectedBarId}
-        options={stockBars.map((bar) => ({
-          value: bar.id,
-          label: `${bar.code} | Ø${fmt(bar.diameter)} x ${fmt(bar.length)} มม. (คงเหลือ ${bar.available_quantity})`,
-        }))}
+        options={stockBars.map((bar) => {
+          // บางรหัสจากคลังเดิมแกะขนาดจากชื่อสินค้าไม่ได้ — บอกให้ชัดว่าต้องกรอกเอง
+          const hasSize = Number(bar.diameter) > 0 && Number(bar.length) > 0;
+          const size = hasSize
+            ? `Ø${fmt(bar.diameter)} × ${fmt(bar.length)} มม.`
+            : "ไม่ระบุขนาด (ต้องกรอกเอง)";
+          return {
+            value: bar.id,
+            label: `${bar.code} | ${size} (คงเหลือ ${bar.available_quantity})`,
+          };
+        })}
         placeholder={stockBars.length === 0 ? "ไม่มีแท่งในคลัง" : undefined}
         value={selectedBarId}
       />

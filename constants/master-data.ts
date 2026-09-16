@@ -8,6 +8,7 @@ export const MASTER_DATA_NAV: MasterDataNavItem[] = [
   { key: "steel_round_bars", label: "เพลาเหล็กกลม", href: "/master-data/setting/steel_round_bars" },
   { key: "wastrel_ms_plates", label: "เศษเหล็กแผ่น", href: "/master-data/setting/wastrel_ms_plates" },
   { key: "wastrel_steel_round_bars", label: "เศษเพลาเหล็กกลม", href: "/master-data/setting/wastrel_steel_round_bars" },
+  { key: "locations", label: "ที่จัดเก็บ", href: "/master-data/setting/locations" },
 ];
 
 export const MASTER_DATA_SUBTITLE = "ข้อมูลหลักของระบบ | Master Data";

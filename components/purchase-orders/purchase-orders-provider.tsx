@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@/hooks/use-navigate";
 
 import { MODULE_SUBTITLES } from "@/constants/division";
 import {
@@ -40,6 +40,8 @@ export interface PurchaseOrdersContextValue {
   setPoSearch: (value: string) => void;
   selectedPoId: string | null;
   selectPo: (id: string) => void;
+  /** ล้างการเลือก (ใช้เป็นปุ่มย้อนกลับตอนจอเล็ก) */
+  clearSelectedPo: () => void;
   filteredPurchaseOrders: PurchaseOrder[];
   selectedPo: PurchaseOrder | null;
   materialMasters: MaterialMaster[];
@@ -62,9 +64,9 @@ export interface PurchaseOrdersContextValue {
 const PurchaseOrdersContext = createContext<PurchaseOrdersContextValue | null>(null);
 
 export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
+  const router = useNavigate();
   const [dataStatus, setDataStatus] = useState<DataStatus>({
-    loading: true,
+    isLoading: true,
     error: null,
     source: "none",
   });
@@ -79,7 +81,7 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
     setPurchaseOrders(data.purchaseOrders ?? []);
     setOrderDetails(data.orderDetails ?? {});
     setMaterialMasters(data.materialMasters ?? []);
-    setDataStatus({ loading: false, error: null, source: "api" });
+    setDataStatus({ isLoading: false, error: null, source: "api" });
   }
 
   // โหลดใบสั่งตัดสดจาก Express (เฉพาะที่ยังไม่ได้นำเข้า) มาแสดงในลิสต์
@@ -108,7 +110,7 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
       .catch((error) => {
         if (!active) return;
         setDataStatus({
-          loading: false,
+          isLoading: false,
           error: error instanceof Error ? error.message : "โหลดข้อมูลไม่สำเร็จ",
           source: "none",
         });
@@ -282,6 +284,7 @@ export function PurchaseOrdersProvider({ children }: { children: ReactNode }) {
     setPoSearch,
     selectedPoId,
     selectPo,
+    clearSelectedPo: () => setSelectedPoId(null),
     filteredPurchaseOrders,
     selectedPo,
     materialMasters,

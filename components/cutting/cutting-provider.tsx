@@ -11,7 +11,7 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@/hooks/use-navigate";
 
 import { ITEM_COLORS, MODULE_SUBTITLES } from "@/constants/division";
 import { loadOrders, updateOrderDetail, updateOrderDetailStatus, createOrderDetail } from "@/services/division/purchase-orders";
@@ -27,7 +27,7 @@ import {
   loadSteelRoundBars,
   loadWastrelBars,
 } from "@/services/division/round-bars";
-import { safeRequest } from "@/services/division/http";
+import { safeRequest, dbStockId } from "@/services/division/http";
 import { nextCode, packGuillotine, packRoundBars } from "@/utils/packing";
 import type {
   CuttingType,
@@ -85,6 +85,9 @@ export interface CuttingContextValue {
   editPlateItem: (id: number) => void;
   removePlateItem: (id: number) => void;
   calculatePlate: () => Promise<void>;
+  /** ข้อความเตือนก่อนคำนวณแผ่น (เช่น ยังไม่ได้ใส่ขนาด) */
+  plateCalcNotice: Notice | null;
+  dismissPlateCalcNotice: () => void;
   confirmPlatePlan: (options?: PlanActionOptions) => Promise<Notice>;
   cancelPlatePlan: (options?: PlanActionOptions) => Promise<Notice>;
   plateResult: PlateResult | null;
@@ -121,6 +124,9 @@ export interface CuttingContextValue {
   editRoundItem: (id: number) => void;
   removeRoundItem: (id: number) => void;
   calculateRound: () => Promise<void>;
+  /** ข้อความเตือนก่อนคำนวณเพลา */
+  roundCalcNotice: Notice | null;
+  dismissRoundCalcNotice: () => void;
   confirmRoundPlan: (options?: PlanActionOptions) => Promise<Notice>;
   cancelRoundPlan: (options?: PlanActionOptions) => Promise<Notice>;
   roundResult: RoundResult | null;
@@ -139,6 +145,16 @@ export interface CuttingContextValue {
 
 const CuttingContext = createContext<CuttingContextValue | null>(null);
  
+/**
+ * สต็อกที่ดึงจาก Express บางรหัสแกะขนาดจากชื่อสินค้าไม่ได้ (เป็น 0/null)
+ * ถ้าเอา 0 ไปตั้งเป็นขนาดแผ่น/แท่ง จะคำนวณไม่ได้เลย ("ทุกชิ้นใหญ่เกินแผ่นเหล็ก")
+ * จึงรับเฉพาะค่าที่มากกว่า 0 เท่านั้น นอกนั้นคงค่าเดิมไว้ให้ผู้ใช้กรอกเอง
+ */
+function positiveSize(value: number | null | undefined): number | null {
+  const size = Number(value);
+  return Number.isFinite(size) && size > 0 ? size : null;
+}
+
 export function CuttingProvider({
   children,
   initialType,
@@ -150,7 +166,7 @@ export function CuttingProvider({
   poId?: string;
   detailId?: string;
 }) {
-  const router = useRouter();
+  const router = useNavigate();
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
@@ -214,6 +230,9 @@ export function CuttingProvider({
   const [plateItems, setPlateItems] = useState<PlateItem[]>([]);
   const [plateNextId, setPlateNextId] = useState(1);
   const [plateResult, setPlateResult] = useState<PlateResult | null>(null);
+  // ข้อความเตือนก่อนคำนวณ (เช่น ยังไม่ได้ใส่ขนาดแผ่น)
+  const [plateCalcNotice, setPlateCalcNotice] = useState<Notice | null>(null);
+  const [roundCalcNotice, setRoundCalcNotice] = useState<Notice | null>(null);
   const [plateForm, setPlateForm] = useState<PlateFormState>({
     code: "",
     width: "1",
@@ -256,8 +275,10 @@ export function CuttingProvider({
       const firstPlate = stock[0];
       if (firstPlate) {
         rawSetSelectedPlateId(firstPlate.id);
-        setSheetW(firstPlate.length);
-        setSheetH(firstPlate.width);
+        const seedW = positiveSize(firstPlate.length);
+        const seedH = positiveSize(firstPlate.width);
+        if (seedW) setSheetW(seedW);
+        if (seedH) setSheetH(seedH);
       }
       setPlateLoading(false);
     });
@@ -284,7 +305,7 @@ export function CuttingProvider({
 
   const moduleLoading = module === "plate" ? plateLoading : roundLoading;
   const dataStatus: DataStatus = {
-    loading: ordersLoading || moduleLoading,
+    isLoading: ordersLoading || moduleLoading,
     error: ordersError,
     source: !ordersLoading && !moduleLoading && !ordersError ? "api" : "none",
   };
@@ -398,8 +419,8 @@ export function CuttingProvider({
     };
     const matchPlate = stockPlates.find((plate) => Number(plate.thickness) === Number(row.thickness));
     const shouldShowLayout = row.status === "IN_PROCESS";
-    const nextSheetW = matchPlate?.length ?? sheetW;
-    const nextSheetH = matchPlate?.width ?? sheetH;
+    const nextSheetW = positiveSize(matchPlate?.length) ?? sheetW;
+    const nextSheetH = positiveSize(matchPlate?.width) ?? sheetH;
 
     setModule("plate");
     setPlateTab(shouldShowLayout ? "layout" : "settings");
@@ -408,8 +429,10 @@ export function CuttingProvider({
     setPlateNextId(startId + 1);
     if (matchPlate) {
       rawSetSelectedPlateId(matchPlate.id);
-      setSheetW(matchPlate.length);
-      setSheetH(matchPlate.width);
+      const matchW = positiveSize(matchPlate.length);
+      const matchH = positiveSize(matchPlate.width);
+      if (matchW) setSheetW(matchW);
+      if (matchH) setSheetH(matchH);
     } else {
       rawSetSelectedPlateId("");
     }
@@ -490,8 +513,10 @@ export function CuttingProvider({
     setPlateNextId(startId + nextItems.length);
     if (matchPlate) {
       rawSetSelectedPlateId(matchPlate.id);
-      setSheetW(matchPlate.length);
-      setSheetH(matchPlate.width);
+      const matchW = positiveSize(matchPlate.length);
+      const matchH = positiveSize(matchPlate.width);
+      if (matchW) setSheetW(matchW);
+      if (matchH) setSheetH(matchH);
     } else {
       rawSetSelectedPlateId("");
     }
@@ -534,8 +559,19 @@ export function CuttingProvider({
     rawSetSelectedPlateId(id);
     const plate = stockPlates.find((item) => item.id === id);
     if (plate) {
-      setSheetW(plate.length);
-      setSheetH(plate.width);
+      // แผ่นที่ไม่มีขนาดในระบบคลังเดิม → คงขนาดเดิมไว้ ให้ผู้ใช้กรอกเอง
+      const nextW = positiveSize(plate.length);
+      const nextH = positiveSize(plate.width);
+      if (nextW) setSheetW(nextW);
+      if (nextH) setSheetH(nextH);
+      setPlateCalcNotice(
+        nextW && nextH
+          ? null
+          : {
+              ok: false,
+              text: `แผ่น ${plate.code} ไม่มีขนาดในระบบคลังเดิม — กรุณากรอกความกว้าง/ความยาวเองก่อนคำนวณ`,
+            },
+      );
     }
   }
 
@@ -543,8 +579,18 @@ export function CuttingProvider({
     rawSetSelectedBarId(id);
     const bar = stockBars.find((item) => item.id === id);
     if (bar) {
-      setBarDiameter(bar.diameter);
-      setBarLength(bar.length);
+      const nextDiameter = positiveSize(bar.diameter);
+      const nextLength = positiveSize(bar.length);
+      if (nextDiameter) setBarDiameter(nextDiameter);
+      if (nextLength) setBarLength(nextLength);
+      setRoundCalcNotice(
+        nextDiameter && nextLength
+          ? null
+          : {
+              ok: false,
+              text: `แท่ง ${bar.code} ไม่มีขนาดในระบบคลังเดิม — กรุณากรอกเส้นผ่านศูนย์กลาง/ความยาวเองก่อนคำนวณ`,
+            },
+      );
     }
   }
 
@@ -586,14 +632,14 @@ export function CuttingProvider({
     setPlateLoadedFromPo(null);
     setPlatePoId(null);
     seededKeyRef.current = null;
-    router.replace("/cutting");
+    router.silentReplace("/cutting");
   }
 
   function clearRoundPoLoad() {
     setRoundLoadedFromPo(null);
     setRoundPoId(null);
     seededKeyRef.current = null;
-    router.replace("/cutting");
+    router.silentReplace("/cutting");
   }
 
   function beginNewPlateItem() {
@@ -695,6 +741,22 @@ export function CuttingProvider({
 
   async function calculatePlate() {
     if (plateItems.length === 0) return;
+    if (!(sheetW > 0) || !(sheetH > 0)) {
+      setPlateCalcNotice({
+        ok: false,
+        text: "ยังไม่ได้ระบุขนาดแผ่นเหล็ก — กรอกความกว้าง (W) และความยาว (H) ให้มากกว่า 0 ก่อนคำนวณ",
+      });
+      return;
+    }
+    const biggest = plateItems.reduce((max, item) => Math.max(max, Math.min(item.w, item.h)), 0);
+    if (biggest > Math.max(sheetW, sheetH)) {
+      setPlateCalcNotice({
+        ok: false,
+        text: `ชิ้นงานใหญ่กว่าแผ่นที่เลือก (แผ่น ${sheetW}×${sheetH} มม.) — ตรวจขนาดแผ่นหรือเลือกแผ่นที่ใหญ่พอ`,
+      });
+      return;
+    }
+    setPlateCalcNotice(null);
     setPlateResult(packGuillotine(sheetW, sheetH, kerf, plateItems));
     setPlateSavedScrapKeys([]);
     setPlateScrapMessage(null);
@@ -732,7 +794,8 @@ export function CuttingProvider({
     for (const [index, scrap] of scraps.entries()) {
       await createWastrelPlate({
         mm_id: mmId,
-        msp_id: selectedPlate?.id ?? null,
+        // สต็อกจาก Express ผูก FK ไม่ได้ (id ยาวเกิน 20) — เก็บรหัสต้นทางไว้ใน remark แทน
+        msp_id: dbStockId(selectedPlate?.id),
         stock_code: `SCRAP-${stamp}-${index + 1}`,
         length: Math.max(1, Math.floor(scrap.w)),
         width: Math.max(1, Math.floor(scrap.h)),
@@ -741,7 +804,9 @@ export function CuttingProvider({
         available_quantity: 1,
         po_id: ordId ?? null,
         podetail_id: oddId ?? null,
-        remark: `เศษจากแผ่นที่ ${scrap.sheetNo}${plateLoadedFromPo ? ` (${plateLoadedFromPo})` : ""}`,
+        remark: `เศษจากแผ่นที่ ${scrap.sheetNo}${plateLoadedFromPo ? ` (${plateLoadedFromPo})` : ""}${
+          selectedPlate?.code ? ` · ตัดจาก ${selectedPlate.code}` : ""
+        }`,
       });
     }
     setScrapPlates(await loadWastrelPlates());
@@ -889,6 +954,22 @@ export function CuttingProvider({
 
   async function calculateRound() {
     if (roundMatchedItems.length === 0) return;
+    if (!(barLength > 0)) {
+      setRoundCalcNotice({
+        ok: false,
+        text: "ยังไม่ได้ระบุความยาวแท่งเหล็ก — กรอกความยาวให้มากกว่า 0 ก่อนคำนวณ",
+      });
+      return;
+    }
+    const longest = roundMatchedItems.reduce((max, item) => Math.max(max, item.length), 0);
+    if (longest > barLength) {
+      setRoundCalcNotice({
+        ok: false,
+        text: `มีชิ้นยาว ${longest} มม. ซึ่งยาวกว่าแท่งที่เลือก (${barLength} มม.) — ตรวจความยาวแท่งอีกครั้ง`,
+      });
+      return;
+    }
+    setRoundCalcNotice(null);
     setRoundResult(packRoundBars(barLength, rKerf, roundMatchedItems));
     setRoundSavedScrapKeys([]);
     setRoundScrapMessage(null);
@@ -920,7 +1001,8 @@ export function CuttingProvider({
     for (const [index, scrap] of scraps.entries()) {
       await createWastrelBar({
         mm_id: mmId,
-        srb_id: selectedBar?.id ?? null,
+        // สต็อกจาก Express ผูก FK ไม่ได้ (id ยาวเกิน 20) — เก็บรหัสต้นทางไว้ใน remark แทน
+        srb_id: dbStockId(selectedBar?.id),
         code: `WSRB-${stamp}-${index + 1}`,
         diameter: barDiameter,
         length: Math.max(1, Math.floor(scrap.length)),
@@ -928,7 +1010,9 @@ export function CuttingProvider({
         available_quantity: 1,
         po_id: ordId ?? null,
         podetail_id: oddId ?? null,
-        remark: `เศษจากแท่งที่ ${scrap.barNo}${roundLoadedFromPo ? ` (${roundLoadedFromPo})` : ""}`,
+        remark: `เศษจากแท่งที่ ${scrap.barNo}${roundLoadedFromPo ? ` (${roundLoadedFromPo})` : ""}${
+          selectedBar?.code ? ` · ตัดจาก ${selectedBar.code}` : ""
+        }`,
       });
     }
     setScrapBars(await loadWastrelBars());
@@ -1020,6 +1104,8 @@ export function CuttingProvider({
     editPlateItem,
     removePlateItem,
     calculatePlate,
+    plateCalcNotice,
+    dismissPlateCalcNotice: () => setPlateCalcNotice(null),
     confirmPlatePlan,
     cancelPlatePlan,
     plateResult,
@@ -1062,6 +1148,8 @@ export function CuttingProvider({
     editRoundItem,
     removeRoundItem,
     calculateRound,
+    roundCalcNotice,
+    dismissRoundCalcNotice: () => setRoundCalcNotice(null),
     confirmRoundPlan,
     cancelRoundPlan,
     roundResult,

@@ -63,6 +63,16 @@ async function updateLocation(ids: string[], location: string | null) {
     }
 }
 
+async function updateSchedule(ids: string[], scheduled_at: string | null) {
+    try {
+        const response = await api_handler.patch(`${BASE_URL}/schedule`, undefined, undefined, { ids, scheduled_at });
+        return response.data;
+    } catch (error) {
+        console.error("[Hook] An error occurred while updating wastrel_ms_plate schedule:", error);
+        throw error;
+    }
+}
+
 export default function useWastrelMsPlatesApi() {
-    return { create, get, getById, updated, updateStatus, updateLocation };
+    return { create, get, getById, updated, updateStatus, updateLocation, updateSchedule };
 }

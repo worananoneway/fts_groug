@@ -7,6 +7,7 @@ import { Modal } from "../ui/modal";
 import { Button } from "../ui/button";
 import { Field } from "../ui/field";
 import { EmptyState } from "../ui/empty-state";
+import { LoadingBlock } from "@/components/loading";
 import { loadLegacyOrders, type LegacyOrder } from "@/services/division/legacy-orders";
 
 export function ImportLegacyDialog({
@@ -20,26 +21,26 @@ export function ImportLegacyDialog({
 }) {
   const [search, setSearch] = useState("");
   const [orders, setOrders] = useState<LegacyOrder[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [importingId, setImportingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     let active = true;
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
     const timer = setTimeout(() => {
       loadLegacyOrders(search)
         .then((rows) => {
           if (!active) return;
           setOrders(rows);
-          setLoading(false);
+          setIsLoading(false);
         })
         .catch(() => {
           if (!active) return;
           setError("โหลดข้อมูลจากระบบคลังเดิมไม่สำเร็จ — ตรวจสอบการเชื่อมต่อฐานข้อมูล");
-          setLoading(false);
+          setIsLoading(false);
         });
     }, 300);
     return () => {
@@ -72,8 +73,8 @@ export function ImportLegacyDialog({
 
       {error ? (
         <EmptyState>{error}</EmptyState>
-      ) : loading ? (
-        <EmptyState>กำลังโหลดข้อมูล...</EmptyState>
+      ) : isLoading ? (
+        <LoadingBlock label="กำลังโหลดใบสั่งตัดจากระบบคลังเดิม..." />
       ) : orders.length === 0 ? (
         <EmptyState>ไม่พบเอกสารที่ตรงกับคำค้นหา</EmptyState>
       ) : (
@@ -93,10 +94,12 @@ export function ImportLegacyDialog({
               <Button
                 disabled={importingId !== null}
                 icon={<Download className="h-4 w-4" />}
+                isLoading={importingId === order.id}
+                loadingLabel="กำลังนำเข้า..."
                 onClick={() => void handleImport(order.id)}
                 size="sm"
               >
-                {importingId === order.id ? "กำลังนำเข้า..." : "นำเข้า"}
+                นำเข้า
               </Button>
             </div>
           ))}

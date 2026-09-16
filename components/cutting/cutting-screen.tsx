@@ -6,6 +6,7 @@ import { CuttingProvider, useCuttingContext } from "./cutting-provider";
 import { CuttingSubTabs } from "./shared/cutting-sub-tabs";
 import { PlateModule } from "./plate/plate-module";
 import { RoundBarModule } from "./round-bars/round-bar-module";
+import { LoadingGate } from "@/components/loading";
 import type { CuttingType } from "@/types/division";
 
 export function CuttingScreen({
@@ -34,7 +35,15 @@ function CuttingContent() {
       subTabs={<CuttingSubTabs />}
       subtitle={headerSubtitle}
     >
-      {module === "plate" ? <PlateModule /> : <RoundBarModule />}
+      <LoadingGate
+        isLoading={dataStatus.isLoading}
+        className="min-h-[60vh]"
+        error={dataStatus.error}
+        label="กำลังโหลดข้อมูลงานตัด..."
+        onRetry={() => window.location.reload()}
+      >
+        {module === "plate" ? <PlateModule /> : <RoundBarModule />}
+      </LoadingGate>
     </FactoryAppShell>
   );
 }

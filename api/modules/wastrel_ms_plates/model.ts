@@ -40,6 +40,7 @@ export const reply_options = {
         },
         remark: 'wmsp_remark',
         location: 'wmsp_location',
+        scheduled_at: 'wmsp_scheduled_at',
         created_at: 'wmsp_created_at',
         updated_at: 'wmsp_updated_at',
         emp: {

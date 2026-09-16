@@ -25,8 +25,8 @@ export function FactoryHeader({
   subtitle: string;
 }) {
   const t = useT();
-  const statusTone = dataStatus.loading ? "blue" : dataStatus.source === "api" ? "emerald" : "amber";
-  const statusLabel = dataStatus.loading
+  const statusTone = dataStatus.isLoading ? "blue" : dataStatus.source === "api" ? "emerald" : "amber";
+  const statusLabel = dataStatus.isLoading
     ? t("header.statusLoading")
     : dataStatus.source === "api"
       ? t("header.statusOk")

@@ -1,4 +1,4 @@
-import { API_VERSION, isRecord, requestJson, stringValue } from "@/services/division/http";
+import { API_VERSION, isRecord, requestLegacyJson, stringValue } from "@/services/division/http";
 import { classifyLegacyItem } from "@/services/division/legacy-orders";
 import type { MsPlateRow, SteelRoundBarRow } from "@/types/master-data";
 
@@ -22,7 +22,7 @@ function readStockRows(payload: unknown): StockRow[] {
 
 // เหล็กแผ่นจริงจาก Express → รูปแบบ MsPlateRow (แกะ หนา/กว้าง/ยาว จากชื่อสินค้า)
 export async function loadPlateStockFromExpress(): Promise<MsPlateRow[]> {
-  const payload = await requestJson(`/api/${API_VERSION}/legacy-steel-stock/plates`);
+  const payload = await requestLegacyJson(`/api/${API_VERSION}/legacy-steel-stock/plates`);
   return readStockRows(payload).map((row) => {
     const dims = classifyLegacyItem(row.stkdes);
     const qty = Math.max(0, Math.round(row.balance));
@@ -52,7 +52,7 @@ export async function loadPlateStockFromExpress(): Promise<MsPlateRow[]> {
 
 // เพลาเหล็กกลมจริงจาก Express → รูปแบบ SteelRoundBarRow (แกะ Ø/ยาว จากชื่อสินค้า)
 export async function loadRoundBarStockFromExpress(): Promise<SteelRoundBarRow[]> {
-  const payload = await requestJson(`/api/${API_VERSION}/legacy-steel-stock/round-bars`);
+  const payload = await requestLegacyJson(`/api/${API_VERSION}/legacy-steel-stock/round-bars`);
   return readStockRows(payload).map((row) => {
     const dims = classifyLegacyItem(row.stkdes);
     const qty = Math.max(0, Math.round(row.balance));

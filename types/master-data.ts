@@ -5,7 +5,8 @@ export type MasterDataNavKey =
   | "ms_plates"
   | "steel_round_bars"
   | "wastrel_ms_plates"
-  | "wastrel_steel_round_bars";
+  | "wastrel_steel_round_bars"
+  | "locations";
 
 export interface MasterDataNavItem {
   key: MasterDataNavKey;
@@ -71,6 +72,10 @@ export interface MsPlateRow {
   loc_id: string | null;
   location_type: string | null;
   location: string | null;
+  /** วัน-เวลาที่กำหนด (มาจากตาราง stock_locations ของเว็บ) */
+  scheduled_at?: string | null;
+  /** วันที่บันทึกที่จัดเก็บ/วันเวลาไว้ในระบบ */
+  recorded_at?: string | null;
   status: string | null;
   received_date: string | null;
   remark: string | null;
@@ -95,6 +100,10 @@ export interface SteelRoundBarRow {
   loc_id: string | null;
   location_type: string | null;
   location: string | null;
+  /** วัน-เวลาที่กำหนด (มาจากตาราง stock_locations ของเว็บ) */
+  scheduled_at?: string | null;
+  /** วันที่บันทึกที่จัดเก็บ/วันเวลาไว้ในระบบ */
+  recorded_at?: string | null;
   status: string | null;
   received_date: string | null;
   remark: string | null;
@@ -130,6 +139,7 @@ export interface WastrelMsPlateRow {
   order_detail: { id: string | null; order_id: string | null } | null;
   remark: string | null;
   location: string | null;
+  scheduled_at: string | null;
   created_at: string | null;
   updated_at: string | null;
   emp: EmployeeRef | null;
@@ -143,6 +153,10 @@ export interface ScrapMember {
   available_quantity: number | null;
   order_no: string | null;
   location: string | null;
+  /** วัน-เวลาที่ผู้ใช้กำหนดเอง (ISO) */
+  scheduled_at: string | null;
+  /** วันที่ระบบบันทึกเข้าคลัง (ISO) */
+  created_at: string | null;
 }
 export interface WastrelMsPlateGroup {
   id: string;
@@ -156,6 +170,11 @@ export interface WastrelMsPlateGroup {
   /** ที่เก็บ: ถ้าทุกชิ้นเก็บที่เดียวกันจะเป็นชื่อพื้นที่, ถ้าต่างกันเป็น null (แสดง "หลายที่") */
   location: string | null;
   location_mixed: boolean;
+  /** วัน-เวลาที่กำหนด: ถ้าทุกชิ้นตรงกันจะเป็นค่านั้น ถ้าต่างกันเป็น null + scheduled_mixed */
+  scheduled_at: string | null;
+  scheduled_mixed: boolean;
+  /** วันที่บันทึกล่าสุดในกลุ่ม */
+  latest_created_at: string | null;
   members: ScrapMember[];
 }
 export interface WastrelSteelRoundBarGroup {
@@ -168,6 +187,9 @@ export interface WastrelSteelRoundBarGroup {
   piece_count: number;
   location: string | null;
   location_mixed: boolean;
+  scheduled_at: string | null;
+  scheduled_mixed: boolean;
+  latest_created_at: string | null;
   members: ScrapMember[];
 }
 
@@ -185,6 +207,7 @@ export interface WastrelSteelRoundBarRow {
   order_detail: { id: string | null; order_id: string | null } | null;
   remark: string | null;
   location: string | null;
+  scheduled_at: string | null;
   created_at: string | null;
   updated_at: string | null;
   emp: EmployeeRef | null;

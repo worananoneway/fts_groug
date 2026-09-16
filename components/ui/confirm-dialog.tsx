@@ -9,7 +9,7 @@ export function ConfirmDialog({
   cancelLabel = "ยกเลิก",
   children,
   confirmLabel = "ยืนยัน",
-  loading = false,
+  isLoading = false,
   onCancel,
   onConfirm,
   open,
@@ -19,7 +19,8 @@ export function ConfirmDialog({
   cancelLabel?: string;
   children: ReactNode;
   confirmLabel?: string;
-  loading?: boolean;
+  /** กำลังทำงาน — ปิด dialog ไม่ได้ และปุ่มขึ้นสปินเนอร์ */
+  isLoading?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
   open: boolean;
@@ -30,14 +31,19 @@ export function ConfirmDialog({
     <Modal
       open={open}
       title={title}
-      onClose={loading ? () => undefined : onCancel}
+      onClose={isLoading ? () => undefined : onCancel}
       footer={
         <div className="flex justify-end gap-3">
-          <Button disabled={loading} onClick={onCancel} variant="secondary">
+          <Button disabled={isLoading} onClick={onCancel} variant="secondary">
             {cancelLabel}
           </Button>
-          <Button disabled={loading} onClick={onConfirm} variant={variant}>
-            {loading ? "กำลังทำงาน..." : confirmLabel}
+          <Button
+            isLoading={isLoading}
+            loadingLabel="กำลังทำงาน..."
+            onClick={onConfirm}
+            variant={variant}
+          >
+            {confirmLabel}
           </Button>
         </div>
       }

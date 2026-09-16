@@ -33,6 +33,8 @@ export async function loadWastrelBars(): Promise<SavedRoundScrap[]> {
       length: Number(row.length) || 0,
       quantity: Number(row.quantity) || 1,
       remark: String(row.remark ?? ""),
+      location: row.location ? String(row.location) : null,
+      scheduledAt: row.scheduled_at ? String(row.scheduled_at) : null,
       orderId: flatString(row, "ord_id", "wsrb_ord_id") ?? nestedString(row.order, "id"),
       orderDetailId: flatString(row, "odd_id", "wsrb_odd_id") ?? nestedString(row.order_detail, "id"),
     }))

@@ -81,7 +81,7 @@ export interface AddressOption {
   parentId: string;
 }
 
-// ค่าตรงกับ project_enum ในฐานข้อมูล — ฝั่ง update ส่งค่านี้ตรง ๆ (ดู statusForCreate ใน services/division/projects.ts)
+
 export type ProjectStatusValue = "Opened" | "Waiting - PO" | "Closed" | "Completed" | "Cancelled";
 
 export interface Project {
@@ -269,6 +269,10 @@ export interface SavedPlateScrap {
   remark: string;
   orderId?: string;
   orderDetailId?: string;
+  /** ที่เก็บที่ผู้ใช้กำหนด (ว่าง = ยังไม่กำหนด) */
+  location?: string | null;
+  /** วัน-เวลาที่กำหนด (ISO) */
+  scheduledAt?: string | null;
 }
 
 export interface SavedRoundScrap {
@@ -280,6 +284,10 @@ export interface SavedRoundScrap {
   remark: string;
   orderId?: string;
   orderDetailId?: string;
+  /** ที่เก็บที่ผู้ใช้กำหนด (ว่าง = ยังไม่กำหนด) */
+  location?: string | null;
+  /** วัน-เวลาที่กำหนด (ISO) */
+  scheduledAt?: string | null;
 }
 
 export interface FormState {
@@ -302,7 +310,7 @@ export interface Notice {
 }
 
 export interface DataStatus {
-  loading: boolean;
+  isLoading: boolean;
   error: string | null;
   source: "api" | "none";
 }

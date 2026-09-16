@@ -8,7 +8,9 @@ import {
   MasterDataScreen,
   unwrapListReply,
 } from "./master-data-screen";
+import { ScheduleEditor } from "./schedule-editor";
 import { ScrapLocationEditor } from "./scrap-location-editor";
+import { formatDateTime } from "@/utils/format";
 import useWastrelMsPlatesApi from "@/hooks/master-data/wastrel_ms_plates";
 import type { DataTableColumn } from "@/types/division";
 import type { ScrapMember, WastrelMsPlateGroup, WastrelMsPlateRow } from "@/types/master-data";
@@ -29,6 +31,8 @@ function groupPlates(rows: WastrelMsPlateRow[]): WastrelMsPlateGroup[] {
       available_quantity: row.available_quantity ?? 0,
       order_no: row.order?.no ?? null,
       location: row.location ?? null,
+      scheduled_at: row.scheduled_at ?? null,
+      created_at: row.created_at ?? null,
     };
     const existing = map.get(key);
     if (existing) {
@@ -48,6 +52,9 @@ function groupPlates(rows: WastrelMsPlateRow[]): WastrelMsPlateGroup[] {
         piece_count: 1,
         location: null,
         location_mixed: false,
+        scheduled_at: null,
+        scheduled_mixed: false,
+        latest_created_at: null,
         members: [member],
       });
     }
@@ -63,6 +70,24 @@ function groupPlates(rows: WastrelMsPlateRow[]): WastrelMsPlateGroup[] {
       g.location = null;
       g.location_mixed = true;
     }
+
+    // วัน-เวลาที่กำหนด: ตรงกันทุกชิ้น = แสดงค่านั้น, ต่างกัน = "หลายค่า"
+    const schedules = new Set(g.members.map((m) => m.scheduled_at ?? ""));
+    if (schedules.size === 1) {
+      const only = [...schedules][0];
+      g.scheduled_at = only || null;
+      g.scheduled_mixed = false;
+    } else {
+      g.scheduled_at = null;
+      g.scheduled_mixed = true;
+    }
+
+    // วันที่บันทึกเข้าคลัง = ชิ้นล่าสุดในกลุ่ม
+    g.latest_created_at = g.members
+      .map((m) => m.created_at)
+      .filter((value): value is string => Boolean(value))
+      .sort()
+      .pop() ?? null;
   }
   return Array.from(map.values()).sort((a, b) => b.total_available - a.total_available);
 }
@@ -103,6 +128,23 @@ const columns: Array<DataTableColumn<WastrelMsPlateGroup>> = [
     cell: (row) => <LocationCell group={row} />,
   },
   {
+    key: "scheduled_at",
+    header: "วัน-เวลาที่กำหนด",
+    cell: (row) =>
+      row.scheduled_mixed ? (
+        <span className="text-amber-600">หลายค่า</span>
+      ) : row.scheduled_at ? (
+        <span className="font-mono text-xs">{formatDateTime(row.scheduled_at)}</span>
+      ) : (
+        <span className="text-slate-300">— ยังไม่กำหนด</span>
+      ),
+  },
+  {
+    key: "created_at",
+    header: "บันทึกเมื่อ",
+    cell: (row) => <span className="font-mono text-xs text-slate-500">{formatDateTime(row.latest_created_at)}</span>,
+  },
+  {
     key: "total",
     header: "จำนวนรวมคงเหลือ",
     className: "text-right",
@@ -126,6 +168,8 @@ function MembersTable({ members }: { members: ScrapMember[] }) {
             <th className="px-3 py-2 text-left font-semibold">จากเหล็กต้นทาง (รหัส)</th>
             <th className="px-3 py-2 text-left font-semibold">อ้างอิง PO</th>
             <th className="px-3 py-2 text-left font-semibold">ที่เก็บ</th>
+            <th className="px-3 py-2 text-left font-semibold">วัน-เวลาที่กำหนด</th>
+            <th className="px-3 py-2 text-left font-semibold">บันทึกเมื่อ</th>
             <th className="px-3 py-2 text-right font-semibold">คงเหลือ</th>
           </tr>
         </thead>
@@ -136,6 +180,8 @@ function MembersTable({ members }: { members: ScrapMember[] }) {
               <td className="px-3 py-1.5 font-mono text-slate-500">{dash(m.source_code)}</td>
               <td className="px-3 py-1.5 font-mono text-slate-500">{dash(m.order_no)}</td>
               <td className="px-3 py-1.5 text-slate-500">{dash(m.location)}</td>
+              <td className="px-3 py-1.5 font-mono text-slate-500">{formatDateTime(m.scheduled_at)}</td>
+              <td className="px-3 py-1.5 font-mono text-slate-400">{formatDateTime(m.created_at)}</td>
               <td className="px-3 py-1.5 text-right font-mono">{formatNumber(m.available_quantity)}</td>
             </tr>
           ))}
@@ -154,6 +200,20 @@ function GroupLocationEditor({ group }: { group: WastrelMsPlateGroup }) {
       onSave={async (loc) => {
         await wastrelMsPlatesApi.updateLocation(group.members.map((m) => m.id), loc);
         setValue(loc);
+      }}
+    />
+  );
+}
+
+function GroupScheduleEditor({ group }: { group: WastrelMsPlateGroup }) {
+  const [value, setValue] = useState<string | null>(group.scheduled_at);
+  return (
+    <ScheduleEditor
+      current={value}
+      mixed={group.scheduled_mixed && value === group.scheduled_at}
+      onSave={async (iso) => {
+        await wastrelMsPlatesApi.updateSchedule(group.members.map((m) => m.id), iso);
+        setValue(iso);
       }}
     />
   );
@@ -194,6 +254,8 @@ export function WastrelMsPlatesScreen() {
           ),
         },
         { label: "พื้นที่จัดเก็บ (ทั้งกลุ่ม)", value: <GroupLocationEditor group={row} />, fullWidth: true },
+        { label: "วัน-เวลาที่กำหนด (ทั้งกลุ่ม)", value: <GroupScheduleEditor group={row} />, fullWidth: true },
+        { label: "บันทึกเข้าคลังล่าสุด", value: formatDateTime(row.latest_created_at) },
         { label: `รายละเอียดแต่ละชิ้น (${formatNumber(row.piece_count)} รหัส)`, value: <MembersTable members={row.members} />, fullWidth: true },
       ]}
     />

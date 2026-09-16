@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@/hooks/use-navigate";
 import { ArrowLeft, ClipboardList, FolderKanban, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { newOrderDetailDraft, OrderDetailFields, validateDetail } from "../purchase-orders/order-detail-fields";
@@ -43,6 +43,7 @@ import type {
   PurchaseOrderCreateFields,
   PurchaseOrderStatus,
 } from "@/types/division";
+import { LoadingGate, LoadingOverlay, SkeletonTable } from "@/components/loading";
 
 const PROJECT_STATUS_LABELS: Record<string, string> = {
   Opened: "เปิดโครงการ",
@@ -132,7 +133,7 @@ function orderToFields(order: PurchaseOrder): PurchaseOrderCreateFields {
 }
 
 export function ProjectDetailScreen({ projectId }: { projectId: string }) {
-  const router = useRouter();
+  const router = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
@@ -141,18 +142,18 @@ export function ProjectDetailScreen({ projectId }: { projectId: string }) {
   const [districts, setDistricts] = useState<AddressOption[]>([]);
   const [subdistricts, setSubdistricts] = useState<AddressOption[]>([]);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
-  const [dataStatus, setDataStatus] = useState<DataStatus>({ loading: true, error: null, source: "none" });
+  const [dataStatus, setDataStatus] = useState<DataStatus>({ isLoading: true, error: null, source: "none" });
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<PurchaseOrderCreateFields>(emptyPoForm(""));
   const [items, setItems] = useState<OrderDetail[]>([]);
-  const [saving, setSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
   const [editForm, setEditForm] = useState<PurchaseOrderCreateFields>(emptyPoForm(""));
-  const [editSaving, setEditSaving] = useState(false);
+  const [isEditSaving, setIsEditSaving] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const load = useCallback(async () => {
-    setDataStatus((prev) => ({ ...prev, loading: true, error: null }));
+    setDataStatus((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       const [
         nextProject,
@@ -182,10 +183,10 @@ export function ProjectDetailScreen({ projectId }: { projectId: string }) {
       setDistricts(nextDistricts);
       setSubdistricts(nextSubdistricts);
       setEmployees(nextEmployees);
-      setDataStatus({ loading: false, error: nextProject ? null : "ไม่พบโปรเจคนี้", source: "api" });
+      setDataStatus({ isLoading: false, error: nextProject ? null : "ไม่พบโปรเจคนี้", source: "api" });
     } catch (error) {
       console.error("[ProjectDetail] โหลดข้อมูลไม่สำเร็จ:", error);
-      setDataStatus({ loading: false, error: "ไม่สามารถเชื่อมต่อ API ได้", source: "none" });
+      setDataStatus({ isLoading: false, error: "ไม่สามารถเชื่อมต่อ API ได้", source: "none" });
     }
   }, [projectId]);
 
@@ -227,7 +228,7 @@ export function ProjectDetailScreen({ projectId }: { projectId: string }) {
         return;
       }
     }
-    setSaving(true);
+    setIsSaving(true);
     try {
       const newPoId = await createProjectOrder(projectId, form);
       // สร้างรายการเหล็กตามลำดับ ให้ผูกกับ PO ที่เพิ่งสร้าง
@@ -248,7 +249,7 @@ export function ProjectDetailScreen({ projectId }: { projectId: string }) {
       console.error("[ProjectDetail] สร้าง PO ไม่สำเร็จ:", error);
       setNotice({ ok: false, text: "สร้างใบสั่งซื้อไม่สำเร็จ กรุณาลองใหม่" });
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   }
 
@@ -263,7 +264,7 @@ export function ProjectDetailScreen({ projectId }: { projectId: string }) {
       setNotice({ ok: false, text: "กรุณาเลือกลูกค้า" });
       return;
     }
-    setEditSaving(true);
+    setIsEditSaving(true);
     try {
       await updateProjectOrder(editingOrder.id, editForm, projectId);
       await load();
@@ -273,7 +274,7 @@ export function ProjectDetailScreen({ projectId }: { projectId: string }) {
       console.error("[ProjectDetail] แก้ไข PO ไม่สำเร็จ:", error);
       setNotice({ ok: false, text: "แก้ไขใบสั่งซื้อไม่สำเร็จ กรุณาลองใหม่" });
     } finally {
-      setEditSaving(false);
+      setIsEditSaving(false);
     }
   }
 
@@ -397,21 +398,25 @@ export function ProjectDetailScreen({ projectId }: { projectId: string }) {
               </Button>
             </div>
 
-            {dataStatus.loading && orders.length === 0 ? (
-              <p className="p-10 text-center text-sm text-slate-400">กำลังโหลดข้อมูล...</p>
-            ) : (
-              <DataTable<PurchaseOrder>
-                columns={columns}
-                rows={orders}
-                rowKey={(row) => row.id}
-                onRowClick={(row) => router.push(`/po?po=${row.id}`)}
-                empty={
-                  <div className="p-5">
-                    <EmptyState>ยังไม่มีใบสั่งซื้อในโปรเจคนี้ — กดปุ่ม “สร้างใบสั่งซื้อ” เพื่อเริ่มต้น</EmptyState>
-                  </div>
-                }
-              />
-            )}
+            <LoadingGate
+              isLoading={dataStatus.isLoading && orders.length === 0}
+              fallback={<SkeletonTable columns={columns.length} rows={5} />}
+            >
+              <div className="relative">
+                <DataTable<PurchaseOrder>
+                  columns={columns}
+                  rows={orders}
+                  rowKey={(row) => row.id}
+                  onRowClick={(row) => router.push(`/po?po=${row.id}`)}
+                  empty={
+                    <div className="p-5">
+                      <EmptyState>ยังไม่มีใบสั่งซื้อในโปรเจคนี้ — กดปุ่ม “สร้างใบสั่งซื้อ” เพื่อเริ่มต้น</EmptyState>
+                    </div>
+                  }
+                />
+                <LoadingOverlay isLoading={dataStatus.isLoading && orders.length > 0} label="กำลังรีเฟรช..." />
+              </div>
+            </LoadingGate>
           </section>
         </div>
       )}
@@ -420,16 +425,16 @@ export function ProjectDetailScreen({ projectId }: { projectId: string }) {
         open={formOpen}
         title="สร้างใบสั่งซื้อ PO"
         onClose={() => {
-          if (!saving) setFormOpen(false);
+          if (!isSaving) setFormOpen(false);
         }}
         fullscreen
         footer={
           <div className="flex justify-end gap-3">
-            <Button disabled={saving} onClick={() => setFormOpen(false)} variant="secondary">
+            <Button disabled={isSaving} onClick={() => setFormOpen(false)} variant="secondary">
               ยกเลิก
             </Button>
-            <Button disabled={saving} onClick={() => void saveForm()}>
-              {saving ? "กำลังบันทึก..." : "สร้างใบสั่งซื้อ"}
+            <Button isLoading={isSaving} loadingLabel="กำลังบันทึก..." onClick={() => void saveForm()}>
+              สร้างใบสั่งซื้อ
             </Button>
           </div>
         }
@@ -498,16 +503,16 @@ export function ProjectDetailScreen({ projectId }: { projectId: string }) {
         open={Boolean(editingOrder)}
         title={editingOrder ? `แก้ไขใบสั่งซื้อ ${editingOrder.no}` : "แก้ไขใบสั่งซื้อ"}
         onClose={() => {
-          if (!editSaving) setEditingOrder(null);
+          if (!isEditSaving) setEditingOrder(null);
         }}
         fullscreen
         footer={
           <div className="flex justify-end gap-3">
-            <Button disabled={editSaving} onClick={() => setEditingOrder(null)} variant="secondary">
+            <Button disabled={isEditSaving} onClick={() => setEditingOrder(null)} variant="secondary">
               ยกเลิก
             </Button>
-            <Button disabled={editSaving} onClick={() => void saveEdit()}>
-              {editSaving ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
+            <Button isLoading={isEditSaving} loadingLabel="กำลังบันทึก..." onClick={() => void saveEdit()}>
+              บันทึกการแก้ไข
             </Button>
           </div>
         }

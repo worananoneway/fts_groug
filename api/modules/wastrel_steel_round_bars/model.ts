@@ -39,6 +39,7 @@ export const reply_options = {
         },
         remark: 'wsrb_remark',
         location: 'wsrb_location',
+        scheduled_at: 'wsrb_scheduled_at',
         created_at: 'wsrb_created_at',
         updated_at: 'wsrb_updated_at',
         emp: {

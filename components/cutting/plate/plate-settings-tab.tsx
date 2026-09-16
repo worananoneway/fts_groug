@@ -15,6 +15,8 @@ export function PlateSettingsTab() {
   const {
     calculatePlate,
     clearPlatePoLoad,
+    dismissPlateCalcNotice,
+    plateCalcNotice,
     kerf,
     minScrap,
     plateItems,
@@ -82,6 +84,15 @@ export function PlateSettingsTab() {
             รวม <b className="text-base text-slate-800">{plateTotalPieces}</b> ชิ้น
           </span>
         </div>
+        {plateCalcNotice ? (
+          <AlertBanner className="mt-4" tone={plateCalcNotice.ok ? "success" : "danger"}>
+            {plateCalcNotice.text}
+            <button type="button" className="ml-2 font-semibold underline" onClick={dismissPlateCalcNotice}>
+              ปิด
+            </button>
+          </AlertBanner>
+        ) : null}
+
         <Button
           className="mt-4 w-full py-4 text-base"
           disabled={plateItems.length === 0}

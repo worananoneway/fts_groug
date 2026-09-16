@@ -348,12 +348,56 @@ async function update_location(request: any, reply: any) {
     }
 }
 
+// PATCH วัน-เวลาที่กำหนด — รับ { ids: string[], scheduled_at: string|null }
+async function update_schedule(request: any, reply: any) {
+    try {
+        const emp_id: string = request?.user?.id;
+        emp_authentication(module_name, emp_id, reply);
+
+        const body = sanitize_payload(request.body ?? {});
+        const ids: string[] = Array.isArray(body.ids) ? body.ids.map((v: unknown) => String(v)) : [];
+        // ค่าว่าง/null = ล้างวัน-เวลาที่กำหนด
+        const scheduled_at: string | null = body.scheduled_at ? String(body.scheduled_at).trim() || null : null;
+
+        if (ids.length === 0) {
+            return reply.code(HttpStatusCode.BAD_REQUEST).send(<Reply>
+                reply_result(module_name, HttpStatusCode.BAD_REQUEST, ['ids'])
+            );
+        }
+
+        const invalid_fields: ValidationError[] = [];
+        if (scheduled_at !== null && Number.isNaN(Date.parse(scheduled_at))) {
+            invalid_fields.push({
+                field: ErrorField.SCHEDULED_AT,
+                message: ErrorMessage.SCHEDULED_AT_INVALID
+            });
+        }
+        if (invalid_fields.length > 0) {
+            console.error(`[Controller] Validation errors found in ${module_name} schedule payload:`, invalid_fields);
+            return reply.code(HttpStatusCode.UNPROCESSABLE_CONTENT).send(<Reply>
+                reply_result(module_name, HttpStatusCode.UNPROCESSABLE_CONTENT, invalid_fields)
+            );
+        }
+
+        const result = await service.update_schedule(ids, scheduled_at, emp_id);
+        return reply.code(result.statuscode).send(<Reply>
+            reply_result(module_name, result.statuscode)
+        );
+    } catch (error) {
+        console.error(`[Controller] An error occurred during updating ${module_name} scheduled_at:`, error);
+        return reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send(<Reply>
+            reply_result(module_name, HttpStatusCode.INTERNAL_SERVER_ERROR)
+        );
+    }
+}
+
 const controller = {
     create,
     get,
     update,
     update_status,
-    update_location
+    update_location,
+    update_schedule
 };
 
 export default controller;

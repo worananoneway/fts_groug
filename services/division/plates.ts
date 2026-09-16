@@ -34,6 +34,8 @@ export async function loadWastrelPlates(): Promise<SavedPlateScrap[]> {
       width: Number(row.width) || 0,
       thickness: Number(row.thickness) || 0,
       remark: String(row.remark ?? ""),
+      location: row.location ? String(row.location) : null,
+      scheduledAt: row.scheduled_at ? String(row.scheduled_at) : null,
       orderId: flatString(row, "ord_id", "wmsp_ord_id") ?? nestedString(row.order, "id"),
       orderDetailId: flatString(row, "odd_id", "wmsp_odd_id") ?? nestedString(row.order_detail, "id"),
     }))

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@/hooks/use-navigate";
 import { FolderKanban, Pencil, Plus, RefreshCw, Search } from "lucide-react";
 
 import { DivisionNav } from "../shell/division-nav";
@@ -28,6 +28,7 @@ import type {
   ProjectFields,
   ProjectStatusValue,
 } from "@/types/division";
+import { LoadingGate, LoadingOverlay, SkeletonTable } from "@/components/loading";
 
 const STATUS_OPTIONS: ProjectStatusValue[] = ["Opened", "Waiting - PO", "Closed", "Completed", "Cancelled"];
 
@@ -123,21 +124,21 @@ function formatDate(value: string): string {
 }
 
 export function ProjectsScreen() {
-  const router = useRouter();
+  const router = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
-  const [dataStatus, setDataStatus] = useState<DataStatus>({ loading: true, error: null, source: "none" });
+  const [dataStatus, setDataStatus] = useState<DataStatus>({ isLoading: true, error: null, source: "none" });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProjectFields>(emptyForm());
-  const [saving, setSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const load = useCallback(async () => {
-    setDataStatus((prev) => ({ ...prev, loading: true, error: null }));
+    setDataStatus((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       const [nextProjects, nextCustomers, nextEmployees] = await Promise.all([
         loadProjects(),
@@ -147,10 +148,10 @@ export function ProjectsScreen() {
       setProjects(nextProjects);
       setCustomers(nextCustomers);
       setEmployees(nextEmployees);
-      setDataStatus({ loading: false, error: null, source: "api" });
+      setDataStatus({ isLoading: false, error: null, source: "api" });
     } catch (error) {
       console.error("[Projects] โหลดข้อมูลไม่สำเร็จ:", error);
-      setDataStatus({ loading: false, error: "ไม่สามารถเชื่อมต่อ API ได้", source: "none" });
+      setDataStatus({ isLoading: false, error: "ไม่สามารถเชื่อมต่อ API ได้", source: "none" });
     }
   }, []);
 
@@ -193,7 +194,7 @@ export function ProjectsScreen() {
       setNotice({ ok: false, text: validation });
       return;
     }
-    setSaving(true);
+    setIsSaving(true);
     try {
       if (editingId) {
         await updateProject(editingId, form);
@@ -207,7 +208,7 @@ export function ProjectsScreen() {
       console.error("[Projects] บันทึกไม่สำเร็จ:", error);
       setNotice({ ok: false, text: saveErrorText(error) });
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   }
 
@@ -294,10 +295,11 @@ export function ProjectsScreen() {
               onValueChange={setStatusFilter}
             />
             <Button
-              icon={<RefreshCw className={dataStatus.loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />}
+              icon={<RefreshCw className="h-4 w-4" />}
+              isLoading={dataStatus.isLoading}
+              loadingLabel="กำลังโหลด..."
               size="sm"
               variant="secondary"
-              disabled={dataStatus.loading}
               onClick={() => void load()}
             >
               รีเฟรช
@@ -314,24 +316,31 @@ export function ProjectsScreen() {
               {dataStatus.error} — ตรวจสอบว่า API server ทำงานอยู่ แล้วกดรีเฟรชอีกครั้ง
             </AlertBanner>
           </div>
-        ) : dataStatus.loading && projects.length === 0 ? (
-          <p className="p-10 text-center text-sm text-slate-400">กำลังโหลดข้อมูล...</p>
         ) : (
-          <DataTable<Project>
-            columns={columns}
-            rows={filteredProjects}
-            rowKey={(row) => row.id}
-            onRowClick={(row) => router.push(`/projects/${row.id}`)}
-            empty={
-              <div className="p-5">
-                <EmptyState>
-                  {projects.length === 0
-                    ? "ยังไม่มีโปรเจคในระบบ — กดปุ่ม “สร้างโปรเจค” เพื่อเริ่มต้น"
-                    : "ไม่พบโปรเจคที่ตรงกับเงื่อนไขการค้นหา"}
-                </EmptyState>
-              </div>
-            }
-          />
+          // ยังไม่มีข้อมูลเลย = โครงตาราง / มีข้อมูลแล้วกำลังรีเฟรช = ทับด้วย overlay
+          <LoadingGate
+            isLoading={dataStatus.isLoading && projects.length === 0}
+            fallback={<SkeletonTable columns={columns.length} rows={8} />}
+          >
+            <div className="relative">
+              <DataTable<Project>
+                columns={columns}
+                rows={filteredProjects}
+                rowKey={(row) => row.id}
+                onRowClick={(row) => router.push(`/projects/${row.id}`)}
+                empty={
+                  <div className="p-5">
+                    <EmptyState>
+                      {projects.length === 0
+                        ? "ยังไม่มีโปรเจคในระบบ — กดปุ่ม “สร้างโปรเจค” เพื่อเริ่มต้น"
+                        : "ไม่พบโปรเจคที่ตรงกับเงื่อนไขการค้นหา"}
+                    </EmptyState>
+                  </div>
+                }
+              />
+              <LoadingOverlay isLoading={dataStatus.isLoading && projects.length > 0} label="กำลังรีเฟรช..." />
+            </div>
+          </LoadingGate>
         )}
       </section>
 
@@ -339,15 +348,15 @@ export function ProjectsScreen() {
         open={formOpen}
         title={editingId ? "แก้ไขโปรเจค" : "สร้างโปรเจค"}
         onClose={() => {
-          if (!saving) setFormOpen(false);
+          if (!isSaving) setFormOpen(false);
         }}
         footer={
           <div className="flex justify-end gap-3">
-            <Button disabled={saving} onClick={() => setFormOpen(false)} variant="secondary">
+            <Button disabled={isSaving} onClick={() => setFormOpen(false)} variant="secondary">
               ยกเลิก
             </Button>
-            <Button disabled={saving} onClick={() => void saveForm()}>
-              {saving ? "กำลังบันทึก..." : editingId ? "บันทึกการแก้ไข" : "สร้างโปรเจค"}
+            <Button isLoading={isSaving} loadingLabel="กำลังบันทึก..." onClick={() => void saveForm()}>
+              {editingId ? "บันทึกการแก้ไข" : "สร้างโปรเจค"}
             </Button>
           </div>
         }

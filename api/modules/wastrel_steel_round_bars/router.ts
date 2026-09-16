@@ -8,4 +8,5 @@ export default async function wastrel_steel_round_bars_router(fastify: FastifyIn
     fastify.put("/:wsrb_id", controller.update);
     fastify.patch("/status/:wsrb_id", controller.update_status);
     fastify.patch("/location", controller.update_location);
+    fastify.patch("/schedule", controller.update_schedule);
 }
